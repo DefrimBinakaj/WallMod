@@ -99,7 +99,8 @@ public class ImageHelper
                 int width = skBitmap.Width;
                 int height = skBitmap.Height;
 
-                float aspectRatio = (float) (width / height);
+                // this line MUST have this exact structure in order to ensure height scaling in UI
+                float aspectRatio = (float)width / height;
 
                 int targetWidth = thumbnailWidth;
                 int targetHeight = (int) (thumbnailWidth / aspectRatio);
