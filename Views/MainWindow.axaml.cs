@@ -180,6 +180,7 @@ public partial class MainWindow : Window
             if (wallpaper != lastTapImage)
             {
                 ResetRectangle();
+                SetBackgroundButton.IsEnabled = false;
             }
 
             var viewModel = DataContext as MainWindowViewModel;
@@ -229,9 +230,20 @@ public partial class MainWindow : Window
 
                 // size rect specific monitors real aspect ratio
                 ShowDraggableRectangle(monitor);
+                SetBackgroundButton.IsEnabled = true;
             }
         }
     }
+
+    private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
+    {
+        SetBackgroundButton.IsEnabled = true;
+        ResetRectangle();
+        var viewModel = DataContext as MainWindowViewModel;
+        viewModel.StyleDropdownEnabled = true;
+        viewModel.AllMonitorsSelected();
+    }
+
 
     private void EnlargePreviewImg(object? sender, RoutedEventArgs e)
     {

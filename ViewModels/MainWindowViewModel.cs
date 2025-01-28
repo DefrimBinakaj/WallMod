@@ -37,8 +37,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IRelayCommand detectMonitorsButton { get; }
 
-    public IRelayCommand allMonitorsButton { get; }
-
     public IRelayCommand viewHistoryButton { get; }
 
     public ObservableCollection<Bitmap> MonitorThumbnailList { get; set; }
@@ -91,8 +89,6 @@ public partial class MainWindowViewModel : ViewModelBase
         detectMonitorsButton = new RelayCommand(DetectMonitors);
 
         viewHistoryButton = new RelayCommand(ViewHistory);
-
-        allMonitorsButton = new RelayCommand(AllMonitorsTapped);
 
         MonitorThumbnailList = new ObservableCollection<Bitmap>();
 
@@ -361,6 +357,19 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(LastSelectedWallpaper.FilePath);
         CurrentWallpaperName = wallpaper.Name;
         CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
+        
+        // set preview monitors to "unclicked"
+        foreach (var mon in MonitorList)
+        {
+            mon.FillColour = "Navy";
+        }
+
+        // disable set button
+        MainWindow mw = new MainWindow();
+        mw.SetBackgroundButton.IsEnabled = false;
+
+        // disable dropdown
+        StyleDropdownEnabled = false;
     }
 
     // currently not used for a valuable functionality, but maybe will be
@@ -565,14 +574,9 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
         StyleDropdownEnabled = false;
-    }
 
-    private void AllMonitorsTapped()
-    {
-        StyleDropdownEnabled = true;
         MainWindow mw = new MainWindow();
-        mw.ResetRectangle();
-        AllMonitorsSelected();
+        mw.SetBackgroundButton.IsEnabled = true;
     }
 
     public async Task AllMonitorsSelected()
