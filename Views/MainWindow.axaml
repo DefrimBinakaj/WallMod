@@ -228,13 +228,21 @@
 
 						<!-- Wallpaper Info -->
 						<Grid Grid.Row="2" Grid.ColumnSpan="2">
+							
+							<Button Content=">" Click="OpenImageClicked"
+								Margin="2"
+								HorizontalAlignment="Left">
+								<Image Source="avares://Wallmod/Assets/open-icon.png"
+									   Width="12" Height="10"/>
+							</Button>
 							<TextBlock Text="{Binding CurrentWallpaperName}"
 									   HorizontalAlignment="Left" FontSize="15"
-									   Foreground="#FFD82E" FontWeight="Bold" Margin="2"/>
+									   Foreground="#FFD82E" FontWeight="Bold" Margin="35, 4, 0, 0"
+									   MaxWidth="180" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
 
 							<TextBlock Text="{Binding CurrentWallpaperSize}"
 									   HorizontalAlignment="Right" FontSize="15"
-									   Foreground="#FF7C00" FontWeight="Bold" Margin="2"/>
+									   Foreground="#FF7C00" FontWeight="Bold" Margin="4"/>
 						</Grid>
 
 

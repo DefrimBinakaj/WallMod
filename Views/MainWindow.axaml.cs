@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using System;
 using System.Diagnostics;
+using WallMod.Helpers;
 using WallMod.Models;
 using WallMod.ViewModels;
 
@@ -260,6 +261,16 @@ public partial class MainWindow : Window
         {
             EnlargedPreviewImage.IsVisible = false;
             MainGrid.Opacity = 1;
+        }
+    }
+
+
+    private void OpenImageClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
+        {
+            FileExporerHelper fileExporerHelper = new FileExporerHelper();
+            fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
         }
     }
 
