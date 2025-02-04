@@ -270,7 +270,10 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
         {
             FileExporerHelper fileExporerHelper = new FileExporerHelper();
-            fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
+            if (viewModel.LastSelectedWallpaper != null)
+            {
+                fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
+            }
         }
     }
 
