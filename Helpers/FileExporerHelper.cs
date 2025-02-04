@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace WallMod.Helpers;
 
+/**
+ * Class for opening image in file explorer
+ */
 public class FileExporerHelper
 {
 
