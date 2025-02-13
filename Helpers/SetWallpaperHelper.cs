@@ -110,31 +110,6 @@ namespace WallMod.Helpers
             Span // Windows 8+ only
         }
 
-        // get monitor IDs w/ IDesktopWallpaper -- seems to be reliable enough?
-        public static List<string> GetMonitorIds()
-        {
-            var result = new List<string>();
-
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return result;
-
-            try
-            {
-                var dw = (IDesktopWallpaper)new DesktopWallpaper();
-                uint count = dw.GetMonitorDevicePathCount();
-                for (uint i = 0; i < count; i++)
-                {
-                    string path = dw.GetMonitorDevicePathAt(i);
-                    result.Add(path);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("GetMonitorIds failed: " + ex.Message);
-            }
-
-            return result;
-        }
 
         // platform branching
         public static void SetWallpaper(string imagePath, string wallpaperStyle, string monitorId)

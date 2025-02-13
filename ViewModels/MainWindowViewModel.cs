@@ -13,6 +13,7 @@ using WallMod.Models;
 using WallMod.Views;
 using System.IO;
 using Avalonia;
+using System.Linq;
 
 namespace WallMod.ViewModels;
 
@@ -404,38 +405,30 @@ public partial class MainWindowViewModel : ViewModelBase
     // set all monitors to same wallpaper
     public void SetWallpaper()
     {
-        var monitorIds = SetWallpaperHelper.GetMonitorIds();
-        if (monitorIds.Count == 0)
+        // if its null, that means either no monitors selected, or all monitors selected
+        if (LastSelMonitor == null)
         {
-            Debug.WriteLine("No monitors found via IDesktopWallpaper!");
+            Debug.WriteLine("set all monitors");
+            foreach (var mon in MonitorList)
+            {
+                SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, mon.MonitorIdPath);
+            }
+
+            if (allowSaveHistory)
+            {
+                historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
+            }
         }
         else
         {
-            // if its null, that means either no monitors selected, or all monitors selected
-            if (LastSelMonitor == null)
+            string firstMonitorId = LastSelMonitor.MonitorIdPath;
+            Debug.WriteLine("Using monitor ID: " + firstMonitorId);
+
+            SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, firstMonitorId);
+
+            if (allowSaveHistory)
             {
-                Debug.WriteLine("set all monitors");
-                foreach (var mon in MonitorList)
-                {
-                    SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, mon.MonitorIdPath);
-                }
-
-                if (allowSaveHistory)
-                {
-                    historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
-                }
-            }
-            else
-            {
-                string firstMonitorId = LastSelMonitor.MonitorIdPath;
-                Debug.WriteLine("Using monitor ID: " + firstMonitorId);
-
-                SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, firstMonitorId);
-
-                if (allowSaveHistory)
-                {
-                    historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
-                }
+                historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
         }
     }
@@ -495,32 +488,18 @@ public partial class MainWindowViewModel : ViewModelBase
     private void DetectMonitors()
     {
         Window window = new Window();
-        var monitors = MonitorHelper.GetMonitors(window);
-        MonitorList.Clear();
-        foreach (var mon in monitors)
+        try
         {
-            MonitorList.Add(mon);
-        }
-        var realIds = SetWallpaperHelper.GetMonitorIds();
-
-        for (int i = 0; i < MonitorList.Count; i++)
-        {
-            if (i < realIds.Count)
+            var monitors = MonitorHelper.GetMonitors(window);
+            MonitorList.Clear();
+            foreach (var mon in monitors)
             {
-                MonitorList[i].MonitorIdPath = realIds[i];
+                MonitorList.Add(mon);
             }
-            else
-            {
-                // fallback for fewer retrieved IDs than monitors
-                MonitorList[i].MonitorIdPath = "";
-            }
-            Debug.WriteLine("MONITOR ID --====== " + MonitorList[i].MonitorIdPath);
         }
-
-        for (int i = 0; i < MonitorList.Count; i++)
+        catch (Exception ex)
         {
-            var monitor = MonitorList[i];
-            Debug.WriteLine($"Monitor #{i}: Bounds={monitor.Bounds}, ID={monitor.MonitorIdPath}");
+            Debug.WriteLine("ERROR --" + ex);
         }
     }
     // ===============================

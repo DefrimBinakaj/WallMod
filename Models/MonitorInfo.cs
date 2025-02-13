@@ -35,6 +35,20 @@ public class MonitorInfo: INotifyPropertyChanged
         }
     }
 
+    private string strokeColour;
+    public string StrokeColour
+    {
+        get => strokeColour;
+        set
+        {
+            if (value != strokeColour)
+            {
+                strokeColour = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string propName = null)
     {

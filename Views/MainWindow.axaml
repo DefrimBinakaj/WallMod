@@ -176,7 +176,7 @@
 			<!-- Right Section: Preview and Controls ========= -->
 			<Border Grid.Column="2" Background="#707070" CornerRadius="10" Margin="8">
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
-					<Grid Margin="6">
+					<Grid Margin="18, 6, 18, 0">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="*" />
 							<ColumnDefinition Width="Auto" />
@@ -247,7 +247,7 @@
 
 
 						<!-- Monitors List -->
-						<Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,32,0,8">
+						<Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,8">
 							<TextBlock Text="Monitors:" FontSize="16"
 									   VerticalAlignment="Center" Margin="8,0,0,0"/>
 
@@ -258,28 +258,26 @@
 							</Button>
 						</Grid>
 
-						<ItemsControl ItemsSource="{Binding MonitorList}" HorizontalAlignment="Center" Grid.Row="4" Grid.ColumnSpan="2">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<WrapPanel Orientation="Horizontal"/>
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
+						<Border Grid.Row="4" Grid.ColumnSpan="2" CornerRadius="20" BorderBrush="DarkTurquoise" BorderThickness="2">
+							<ItemsControl ItemsSource="{Binding MonitorList}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<StackPanel Background="Transparent" Width="300" Height="140"/>
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
 
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<Grid Canvas.Left="{Binding UIBounds.X}" Canvas.Top="{Binding UIBounds.Y}" PointerPressed="OnPreviewMonitorTapped">
-										<Rectangle Width="{Binding UIBounds.Width}"
-												   Height="{Binding UIBounds.Height}"
-												   Fill="{Binding FillColour}"
-												   Stroke="White" StrokeThickness="2"/>
-										<Image Source="{Binding CurrWallpaper.ImageThumbnailBitmap}" Width="{Binding UIBounds.Width}" Height="{Binding UIBounds.Height}"/>
-										<TextBlock Text="{Binding IsPrimary}"
-												   HorizontalAlignment="Center"
-												   VerticalAlignment="Center"/>
-									</Grid>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Canvas>
+											<Rectangle Fill="{Binding FillColour}" Width="{Binding UIBounds.Width}" Height="{Binding UIBounds.Height}" 
+													   Stroke="{Binding StrokeColour}" StrokeThickness="3" Opacity="0.5"
+													   Canvas.Left="{Binding UIBounds.X}" Canvas.Top="{Binding UIBounds.Y}" 
+													   PointerPressed="OnPreviewMonitorTapped"/>
+										</Canvas>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</Border>
 
 						<!-- Selecting Monitor Dropdown / Handling -->
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.ColumnSpan="2" Margin="0,6,0,24">
