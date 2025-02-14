@@ -71,11 +71,15 @@ public class ImageHelper
 
     public Wallpaper getWallpaperObjectFromPath(string imgFilePath)
     {
+        var imgResult = GetThumbNailFromPath(imgFilePath);
+
         return new Wallpaper
         {
             FilePath = imgFilePath,
             ImageBitmap = null, // WE DO NOT NEED THIS IN ORDER TO SET BACKGROUND - uses filepath
-            ImageThumbnailBitmap = GetThumbNailFromPath(imgFilePath),
+            ImageWidth = imgResult.Item2,
+            ImageHeight = imgResult.Item3,
+            ImageThumbnailBitmap = imgResult.Item1,
             Category = "RandCategory",
             Name = Path.GetFileName(imgFilePath)
         };
@@ -83,7 +87,7 @@ public class ImageHelper
 
 
     // thumbnail size hardcoded in arg
-    public Bitmap GetThumbNailFromPath(string origImgPath, int thumbnailWidth = 350, int thumbnailHeight = 250)
+    public (Bitmap, int, int) GetThumbNailFromPath(string origImgPath, int thumbnailWidth = 350, int thumbnailHeight = 250)
     {
 
         using (var inputStream = File.OpenRead(origImgPath))
@@ -93,7 +97,7 @@ public class ImageHelper
                 if (skBitmap == null)
                 {
                     Debug.WriteLine("!!!!! failed to load img at " + origImgPath);
-                    return null;
+                    return (null, 0, 0);
                 }
 
                 int width = skBitmap.Width;
@@ -116,7 +120,7 @@ public class ImageHelper
                     if (resizedBitmap == null)
                     {
                         Debug.WriteLine("!!!!! failed to resize image at " + origImgPath);
-                        return null;
+                        return (null, 0, 0);
                     }
 
                     using (var image = SKImage.FromBitmap(resizedBitmap))
@@ -125,7 +129,7 @@ public class ImageHelper
                         {
                             using (var memStream = new MemoryStream(data.ToArray()))
                             {
-                                return new Bitmap(memStream);
+                                return (new Bitmap(memStream), width, height);
                             }
                         }
                     }
@@ -152,14 +156,13 @@ public class ImageHelper
 
         var imgCollec = new ObservableCollection<Wallpaper>();
 
-        Debug.WriteLine("---------------1");
         // open folder picker
         var folderChoice = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = "Select an Image Directory",
             AllowMultiple = false
         });
-        Debug.WriteLine("---------------2");
+
         if (folderChoice == null || !folderChoice.Any())
         {
             return null;

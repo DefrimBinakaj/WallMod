@@ -30,6 +30,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IRelayCommand filterClicked { get; }
 
+    public IRelayCommand<string> filterSearchCommand { get; }
+
+    public IRelayCommand<string> filterGroupSelectedCommand { get; set; }
+
     public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; }
 
     public IRelayCommand setWallpaperCommand { get; }
@@ -73,6 +77,10 @@ public partial class MainWindowViewModel : ViewModelBase
         selectedDirectory = new RelayCommand(execSelectDirec);
 
         filterClicked = new RelayCommand(filterExec);
+
+        filterSearchCommand = new RelayCommand<string>(filterSearchExec);
+
+        filterGroupSelectedCommand = new RelayCommand<string>(filterSelectExec);
 
         DisplayWallpaperList = new ObservableCollection<Wallpaper>();
 
@@ -294,6 +302,20 @@ public partial class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref stayRunningInBackground, value);
     }
 
+    private bool isFilterOpen;
+    public bool IsFilterOpen
+    {
+        get => isFilterOpen;
+        set => SetProperty(ref isFilterOpen, value);
+    }
+
+    private string filterSearchText = "";
+    public string FilterSearchText
+    {
+        get => filterSearchText;
+        set => SetProperty(ref filterSearchText, value);
+    }
+
 
     // ---------------------------------------------------
 
@@ -341,7 +363,6 @@ public partial class MainWindowViewModel : ViewModelBase
         Debug.WriteLine("direcbutton clicked");
         ImageHelper imgHelper = new ImageHelper();
         ObservableCollection<Wallpaper> directoryPath = await imgHelper.loadListFromDirectory(window, this);
-        // directoryPath.OrderBy(entr => entr.Name, StringComparer.OrdinalIgnoreCase);
         DisplayWallpaperList.Clear();
         if (directoryPath != null && directoryPath.Count > 0)
         {
@@ -355,11 +376,59 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
-    // filter ...
+    // ===============================
+    // filter stuff
+
     private void filterExec()
     {
         Debug.WriteLine("filter clicked");
+        IsFilterOpen = false;
+        IsFilterOpen = true;
     }
+
+    private void filterSearchExec(string searchText)
+    {
+        Debug.WriteLine("searchtext = " + searchText);
+    }
+
+    private void filterSelectExec(string selectedChoice)
+    {
+        Debug.WriteLine("select = " + selectedChoice);
+        if (selectedChoice == "Name")
+        {
+            var sorted = DisplayWallpaperList.OrderBy(entr => entr.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+            DisplayWallpaperList.Clear();
+            foreach (var item in sorted)
+            {
+                DisplayWallpaperList.Add(item);
+            }
+        }
+        else if (selectedChoice == "Date")
+        {
+            var sorted = DisplayWallpaperList.OrderBy(entr => entr.Category).ToList();
+
+            DisplayWallpaperList.Clear();
+            foreach (var item in sorted)
+            {
+                DisplayWallpaperList.Add(item);
+            }
+        }
+        else if (selectedChoice == "Size")
+        {
+            var sorted = DisplayWallpaperList.OrderByDescending(entr => entr.ImageWidth * entr.ImageHeight).ToList();
+
+            DisplayWallpaperList.Clear();
+            foreach (var item in sorted)
+            {
+                DisplayWallpaperList.Add(item);
+            }
+        }
+    }
+
+    // ===============================
+
+
 
 
 

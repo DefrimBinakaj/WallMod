@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -149,7 +150,7 @@ namespace WallMod.Helpers
 
                 // If monitorId is empty, Windows typically applies to all. 
                 // If monitorId is something like "\\.\DISPLAY2", it sets that monitor only.
-                dw.SetWallpaper(monitorId, imagePath);
+                dw.SetWallpaper(monitorId, EnsureImageUnderLimit(imagePath));
 
                 Debug.WriteLine($"SetWallpaper successful: monitor={monitorId}, file='{imagePath}'");
             }
@@ -158,6 +159,73 @@ namespace WallMod.Helpers
                 Debug.WriteLine("SetWallpaperWindows via DesktopWallpaper failed: " + ex.Message);
             }
         }
+
+
+
+        // func for pictures that will not set due to size
+        public static string EnsureImageUnderLimit(string originalPath, int maxWidth = 5000, int maxHeight = 5000)
+        {
+            try
+            {
+                using var inputStream = File.OpenRead(originalPath);
+                using var codec = SKCodec.Create(inputStream);
+                if (codec == null)
+                {
+                    Debug.WriteLine("Could not read image header for " + originalPath);
+                    return originalPath; // fallback
+                }
+
+                // img dimensions
+                var info = codec.Info;
+                int width = info.Width;
+                int height = info.Height;
+
+                // if image is within limit, just return the original path
+                if (width * height < 20000000)
+                    return originalPath;
+
+                // compute a scale factor so that neither dimension exceeds the limit
+                float scale = Math.Min((float)maxWidth / width, (float)maxHeight / height);
+                int newWidth = (int)(width * scale);
+                int newHeight = (int)(height * scale);
+
+                // rewind stream to decode fully
+                inputStream.Seek(0, SeekOrigin.Begin);
+                using var originalBitmap = SKBitmap.Decode(inputStream);
+                if (originalBitmap == null)
+                {
+                    Debug.WriteLine("Failed to decode " + originalPath);
+                    return originalPath;
+                }
+
+                using var resizedBitmap = originalBitmap
+                    .Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.Medium);
+
+                if (resizedBitmap == null)
+                {
+                    Debug.WriteLine("Failed to resize " + originalPath);
+                    return originalPath;
+                }
+
+                string tempPath = Path.Combine(Path.GetTempPath(), "wallmod_resized_" + Path.GetFileName(originalPath));
+                using var image = SKImage.FromBitmap(resizedBitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
+
+                using (var output = File.OpenWrite(tempPath))
+                {
+                    data.SaveTo(output);
+                }
+
+                Debug.WriteLine($"resized large image from {width}x{height} to {newWidth}x{newHeight}, saved at {tempPath}");
+                return tempPath;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("EnsureImageUnderLimit error: " + ex.Message);
+                return originalPath; // fallback if anything goes wrong
+            }
+        }
+
 
         private static void SetRegistryValues(string wallpaperStyle)
         {

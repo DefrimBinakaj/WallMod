@@ -57,9 +57,61 @@
 
 						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="BlueViolet" VerticalAlignment="Top" CornerRadius="10,0"/>
 
-						<Button Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
+						<Button x:Name="FilterButton" Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
 							<Image Source="avares://Wallmod/Assets/filtericon.png" Width="17" Height="17"></Image>
 						</Button>
+
+						<Popup x:Name="FilterPopup"
+							   PlacementTarget="{Binding #FilterButton}"
+							   PlacementMode="Bottom"
+							   IsLightDismissEnabled="True"
+							   IsOpen="{Binding IsFilterOpen}">
+
+							<!-- The content of the popup: a border containing a search bar & checkboxes -->
+							<Border Background="DarkGray"
+									CornerRadius="5"
+									Padding="10"
+									MinWidth="200">
+								<StackPanel Spacing="8">
+
+									<!-- Title -->
+									<TextBlock Text="Filter by:"
+											   Foreground="White"
+											   FontWeight="Bold" />
+
+									<!-- Search bar -->
+									<StackPanel Orientation="Horizontal" Spacing="4">
+										<TextBox x:Name="FilterSearchBox"
+												 Text="{Binding FilterSearchText}"
+												 Width="180"
+												 Watermark="Search..."
+												 Foreground="White"
+												 Background="Gray"/>
+										<Button Content="Search"
+												Command="{Binding filterSearchCommand}"
+												CommandParameter="{Binding FilterSearchText}" />
+									</StackPanel>
+
+									<StackPanel Orientation="Vertical" Spacing="4">
+										<RadioButton Content="Name"
+													 GroupName="FilterGroup"
+													 Command="{Binding filterGroupSelectedCommand}"
+													 CommandParameter="Name"/>
+										<RadioButton Content="Date"
+													 GroupName="FilterGroup"
+													 Command="{Binding filterGroupSelectedCommand}"
+													 CommandParameter="Date"/>
+										<RadioButton Content="Size"
+													 GroupName="FilterGroup"
+													 Command="{Binding filterGroupSelectedCommand}"
+													 CommandParameter="Size"/>
+									</StackPanel>
+
+								</StackPanel>
+							</Border>
+							
+						</Popup>
+						
 
 						<Button Grid.Row="1" Content="Set Directory" Command="{Binding selectedDirectory}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addfoldericon.png" Width="20" Height="20"></Image>

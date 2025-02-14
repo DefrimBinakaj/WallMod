@@ -14,6 +14,8 @@ public class Wallpaper
 {
     public string FilePath { get; set; }
     public Bitmap? ImageBitmap { get; set; }
+    public int? ImageWidth { get; set; }
+    public int? ImageHeight { get; set; }
     public Bitmap? ImageThumbnailBitmap { get; set; }
     public string? Name { get; set; }
     public string? Category { get; set; }
