@@ -111,7 +111,7 @@ public class ImageHelper
                     targetWidth = (int) (thumbnailHeight * aspectRatio);
                 }
 
-                using (var resizedBitmap = skBitmap.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.Medium))
+                using (var resizedBitmap = skBitmap.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.Low))
                 {
                     if (resizedBitmap == null)
                     {

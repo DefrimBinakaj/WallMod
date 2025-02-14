@@ -57,7 +57,7 @@
 
 						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="BlueViolet" VerticalAlignment="Top" CornerRadius="10,0"/>
 
-						<Button Grid.Row="1" Content="Filter" Command="" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
+						<Button Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
 							<Image Source="avares://Wallmod/Assets/filtericon.png" Width="17" Height="17"></Image>
 						</Button>
 
@@ -262,7 +262,7 @@
 							<ItemsControl ItemsSource="{Binding MonitorList}">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
-										<StackPanel Background="Transparent" Width="300" Height="140"/>
+										<StackPanel Background="Transparent" Width="240" Height="110"/>
 									</ItemsPanelTemplate>
 								</ItemsControl.ItemsPanel>
 

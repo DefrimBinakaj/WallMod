@@ -47,7 +47,8 @@ public class MonitorHelper
             for (uint i = 0; i < dw.GetMonitorDevicePathCount(); i++)
             {
                 string currMonitorId = dw.GetMonitorDevicePathAt(i);
-                if (dw.GetMonitorRECT(currMonitorId).Left == screen.Bounds.X && dw.GetMonitorRECT(currMonitorId).Top == screen.Bounds.Y)
+                Rect currMonitorRECT = dw.GetMonitorRECT(currMonitorId);
+                if (currMonitorRECT.Left == screen.Bounds.X && currMonitorRECT.Top == screen.Bounds.Y)
                 {
                     currMonId = currMonitorId;
                 }
@@ -62,6 +63,7 @@ public class MonitorHelper
                 IsPrimary = screen.IsPrimary ? "main" : "", // for main monitor, set to "main" - for others, set to empty string
                 CurrWallpaper = new Wallpaper(),
                 FillColour = "Navy",
+                StrokeColour = screen.IsPrimary ? "Gold" : "White",
             });
             Debug.WriteLine(
                 " -- id = " + currMonId +
@@ -69,26 +71,47 @@ public class MonitorHelper
                 " -- workingarea = " + screen.WorkingArea + 
                 " -- isprimary = " + screen.IsPrimary);
 
-            // adjust bounds and workingarea to fit in the UI
-            double positionScaleFactor = 0.03;
-            double sizeScaleFactor = 0.03;
-            monitors.Last().UIBounds = new PixelRect(
-                Convert.ToInt32(screen.Bounds.X * positionScaleFactor) + 80, 
-                Convert.ToInt32(screen.Bounds.Y * positionScaleFactor) + 70, 
-                Convert.ToInt32(screen.Bounds.Width * sizeScaleFactor), 
-                Convert.ToInt32(screen.Bounds.Height * sizeScaleFactor));
-            Debug.WriteLine("UIBounds = " + monitors.Last().UIBounds);
-
-            if (monitors.Last().IsPrimary == "main")
-            {
-                monitors.Last().StrokeColour = "Gold";
-            }
-            else
-            {
-                monitors.Last().StrokeColour = "White";
-            }
 
         }
+
+
+
+        // UIBounds manipulation code --------------------------------
+        double minX = monitors.Min(m => m.Bounds.X);
+        double minY = monitors.Min(m => m.Bounds.Y);
+        double maxX = monitors.Max(m => m.Bounds.X + m.Bounds.Width);
+        double maxY = monitors.Max(m => m.Bounds.Y + m.Bounds.Height);
+
+        double totalWidth = maxX - minX;
+        double totalHeight = maxY - minY;
+
+        // target width and height for UI (made slightly less tall than axaml)
+        double targetWidth = 240;
+        double targetHeight = 100;
+
+        double scaleX = targetWidth / totalWidth;
+        double scaleY = targetHeight / totalHeight;
+        double scaleFactor = Math.Min(scaleX, scaleY);
+
+
+        foreach (var mon in monitors)
+        {
+            double offsetX = mon.Bounds.X - minX;
+            double offsetY = mon.Bounds.Y - minY;
+
+            int uiX = (int)(offsetX * scaleFactor);
+            int uiY = (int)(offsetY * scaleFactor);
+            int uiW = (int)(mon.Bounds.Width * scaleFactor);
+            int uiH = (int)(mon.Bounds.Height * scaleFactor);
+
+            // set final UIBounds
+            mon.UIBounds = new PixelRect(uiX, uiY + 5, uiW, uiH);
+
+            Debug.WriteLine("UIBounds for " + mon.MonitorIdPath + " = " + mon.UIBounds);
+        }
+
+
+        
 
         return monitors;
     }

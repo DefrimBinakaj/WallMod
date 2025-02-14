@@ -28,6 +28,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IRelayCommand selectedDirectory { get; }
 
+    public IRelayCommand filterClicked { get; }
+
     public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; }
 
     public IRelayCommand setWallpaperCommand { get; }
@@ -69,6 +71,8 @@ public partial class MainWindowViewModel : ViewModelBase
         uploadClicked = new RelayCommand(execImgUpload);
 
         selectedDirectory = new RelayCommand(execSelectDirec);
+
+        filterClicked = new RelayCommand(filterExec);
 
         DisplayWallpaperList = new ObservableCollection<Wallpaper>();
 
@@ -329,22 +333,33 @@ public partial class MainWindowViewModel : ViewModelBase
         selectDirec();
     }
 
-    // MAKE SURE DOESNT ERROR OUT IF THERE IS A FOLDER
-    // ALSO erroring when spam clicked
+
+    // erroring when it is spam-clicked
     private async void selectDirec()
     {
         Window window = new Window();
         Debug.WriteLine("direcbutton clicked");
         ImageHelper imgHelper = new ImageHelper();
         ObservableCollection<Wallpaper> directoryPath = await imgHelper.loadListFromDirectory(window, this);
+        // directoryPath.OrderBy(entr => entr.Name, StringComparer.OrdinalIgnoreCase);
         DisplayWallpaperList.Clear();
-        // ERROR directoryPath doesnt exist? ? fix here WHEN BUTTON IS CLICKED BUT CANCEL IS CLICKED THEREAFTER
-        foreach (var imgFile in directoryPath)
+        if (directoryPath != null && directoryPath.Count > 0)
         {
-            DisplayWallpaperList.Add(imgFile);
+            foreach (var imgFile in directoryPath)
+            {
+                DisplayWallpaperList.Add(imgFile);
+            }
         }
     }
     // ===============================
+
+
+
+    // filter ...
+    private void filterExec()
+    {
+        Debug.WriteLine("filter clicked");
+    }
 
 
 
