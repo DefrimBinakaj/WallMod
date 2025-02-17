@@ -14,6 +14,7 @@ using WallMod.Views;
 using System.IO;
 using Avalonia;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace WallMod.ViewModels;
 
@@ -592,33 +593,28 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // ===============================
     // background set history
-    private void ViewHistory()
+    private async void ViewHistory()
     {
-        HistoryWallpaperList.Clear();
-
-        var history = historyHelper.LoadHistory();
-
-        foreach (var filePath in history)
+        if (IsHistoryViewVisible == false)
         {
-            if (File.Exists(filePath))
+            HistoryWallpaperList.Clear();
+
+            HistoryHelper historyHelper = new HistoryHelper();
+            var historyList = await historyHelper.GetHistoryWallpapers();
+            foreach (var item in historyList)
             {
-                var wallpaper = new Wallpaper
-                {
-                    FilePath = filePath,
-                    Name = Path.GetFileNameWithoutExtension(filePath),
-                    ImageThumbnailBitmap = ImageHelper.GetBitmapFromPath(filePath)
-                };
-                HistoryWallpaperList.Add(wallpaper);
+                HistoryWallpaperList.Add(item);
             }
         }
 
-        // switch to history view
+        // switch view
         IsHistoryViewVisible = !IsHistoryViewVisible;
         IsImageGalleryViewVisible = !IsImageGalleryViewVisible;
 
         // repeated clicks doesnt infinitely increase memory
         GC.Collect();
         GC.WaitForPendingFinalizers();
+
     }
     // ===============================
 
@@ -667,7 +663,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         HistoryWallpaperList.Clear();
 
-        var history = historyHelper.LoadHistory();
+        var history = historyHelper.LoadHistoryJson();
 
         foreach (var filePath in history)
         {
