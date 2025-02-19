@@ -34,6 +34,45 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        this.SizeChanged += OnWindowSizeChanged;
+    }
+
+
+    private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        // disable the rect
+        ResetRectangle();
+
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.LastSelMonitor = null;
+            // manipulate monitor UI
+            foreach (MonitorInfo mon in vm.MonitorList)
+            {
+                mon.FillColour = "Navy";
+            }
+            SetBackgroundButton.IsEnabled = false;
+        }
+
+
+    }
+
+    private void GridSplitterDragExec(object? sender, VectorEventArgs e)
+    {
+        // disable the rect
+        ResetRectangle();
+
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.LastSelMonitor = null;
+            // manipulate monitor UI
+            foreach (MonitorInfo mon in vm.MonitorList)
+            {
+                mon.FillColour = "Navy";
+            }
+            SetBackgroundButton.IsEnabled = false;
+        }
     }
 
 
@@ -146,26 +185,34 @@ public partial class MainWindow : Window
         double newWidth = _rectStartWidth + dx;
         double newHeight = _rectStartHeight + dy;
 
-        // keep aspect
+        // 1) Enforce aspect ratio: newHeight is derived from newWidth
         newHeight = newWidth / _aspectRatio;
 
-        // min size
+        // 2) Minimum size
         if (newWidth < 10) newWidth = 10;
         if (newHeight < 10) newHeight = 10;
 
-        // clamp to canvas
+        // 3) Clamp to canvas edges
         double maxWidth = OverlayCanvas.Bounds.Width - _rectStartX;
         double maxHeight = OverlayCanvas.Bounds.Height - _rectStartY;
 
         if (newWidth > maxWidth) newWidth = maxWidth;
         if (newHeight > maxHeight) newHeight = maxHeight;
 
-        // if we hit vertical clamp, re-calc width so ratio holds
+        // 4) If we hit the bottom edge (vertical clamp), re-calc width so aspect ratio holds
         if (newHeight == maxHeight)
         {
             newWidth = newHeight * _aspectRatio;
             if (newWidth > maxWidth)
                 newWidth = maxWidth;
+        }
+
+        // 5) If we hit the right edge (horizontal clamp), re-calc height so aspect ratio holds
+        if (newWidth == maxWidth)
+        {
+            newHeight = newWidth / _aspectRatio;
+            if (newHeight > maxHeight)
+                newHeight = maxHeight;
         }
 
         DragRect.Width = newWidth;
@@ -285,13 +332,12 @@ public partial class MainWindow : Window
         if (viewModel.StyleDropdownEnabled == true)
         {
             viewModel.SetWallpaper();
-            SetBackgroundButton.IsEnabled = true;
         }
         else
         {
             SetCroppedWallpaper();
-            SetBackgroundButton.IsEnabled = true;
         }
+        SetBackgroundButton.IsEnabled = true;
     }
 
     public void SetCroppedWallpaper()

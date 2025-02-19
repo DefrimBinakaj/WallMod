@@ -65,8 +65,8 @@ public class HistoryHelper
         ImageHelper imgHelper = new ImageHelper();
         var viewModel = new MainWindowViewModel();
 
-        ObservableCollection<Wallpaper> wpList = new ObservableCollection<Wallpaper>();
-
+        // used to preserve order
+        Wallpaper[] resultArray = new Wallpaper[historyList.Count];
 
         // same as imagehelper multiprocessing
         // hardcoded amount of processors used to retrieve all images in a directory
@@ -75,25 +75,22 @@ public class HistoryHelper
         var semaphore = new System.Threading.SemaphoreSlim(currPCProcessorCount);
         var tasks = new List<Task>();
 
-        foreach (var filePath in historyList)
+        for (int i = 0; i < historyList.Count; i++)
         {
-            await semaphore.WaitAsync();
+            string filePath = historyList[i];
+            int index = i;
 
-            var task = Task.Run(async () =>
+            await semaphore.WaitAsync();
+            var task = Task.Run(() =>
             {
                 try
                 {
                     if (File.Exists(filePath))
                     {
                         var currWp = imgHelper.getWallpaperObjectFromPath(filePath);
-                        // add wallpaper to collec on main thread
-                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            wpList.Add(currWp);
-                        });
+                        // store in correct index
+                        resultArray[index] = currWp;
                     }
-
-                    
                 }
                 catch (Exception ex)
                 {
@@ -104,11 +101,24 @@ public class HistoryHelper
                     semaphore.Release();
                 }
             });
-
             tasks.Add(task);
         }
 
         await Task.WhenAll(tasks);
+
+        // add them in orig order
+        var wpList = new ObservableCollection<Wallpaper>();
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            for (int i = 0; i < resultArray.Length; i++)
+            {
+                var w = resultArray[i];
+                if (w != null)
+                {
+                    wpList.Add(w);
+                }
+            }
+        });
 
         return wpList;
 

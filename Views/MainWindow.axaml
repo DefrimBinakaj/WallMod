@@ -214,7 +214,6 @@
 					</Grid>
 
 
-
 				</Panel>
 			</Border>
 
@@ -222,7 +221,8 @@
 			<!-- GridSplitter: Allows Resizing Between Left and Right Sections ========= -->
 			<GridSplitter Grid.Column="1" Grid.RowSpan="1" Width="5" Background="DarkTurquoise" Margin="0,25,0,25"
                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          ShowsPreview="False" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/>
+                          ShowsPreview="False" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" 
+						  DragStarted="GridSplitterDragExec" />
 
 
 			<!-- Right Section: Preview and Controls ========= -->
@@ -267,14 +267,30 @@
 									IsHitTestVisible="True"
 									Panel.ZIndex="999">
 								<Rectangle x:Name="DragRect"
-										   Fill="LightBlue"
-										   Opacity="0.4"
+										   StrokeThickness="4"
+										   Opacity="0.8"
 										   IsVisible="False"
 										   Width="100"
 										   Height="100"
 										   PointerPressed="DragRect_PointerPressed"
 										   PointerMoved="DragRect_PointerMoved"
-										   PointerReleased="DragRect_PointerReleased"/>
+										   PointerReleased="DragRect_PointerReleased">
+									<Rectangle.Fill>
+										<LinearGradientBrush StartPoint="0,0" EndPoint="200,250">
+											<GradientStop Offset="0" Color="rgba(255, 0, 227, 0.27)"/>
+											<GradientStop Offset="0.33" Color="rgba(150, 0, 255, 0.27)"/>
+											<GradientStop Offset="0.66" Color="rgba(0, 79, 255, 0.27)"/>
+											<GradientStop Offset="0.88" Color="rgba(0, 180, 255, 0.27)"/>
+											<GradientStop Offset="0.99" Color="rgba(0, 255, 245, 0.27)"/>
+										</LinearGradientBrush>
+									</Rectangle.Fill>
+									<Rectangle.Stroke>
+										<LinearGradientBrush StartPoint="0,0" EndPoint="200,200">
+											<GradientStop Offset="0.6" Color="White"/>
+											<GradientStop Offset="1" Color="Black"/>
+										</LinearGradientBrush>
+									</Rectangle.Stroke>
+								</Rectangle>
 							</Canvas>
 						</Grid>
 
