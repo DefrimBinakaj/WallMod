@@ -81,7 +81,8 @@ public class ImageHelper
             ImageHeight = imgResult.Item3,
             ImageThumbnailBitmap = imgResult.Item1,
             Category = "RandCategory",
-            Name = Path.GetFileName(imgFilePath)
+            Name = Path.GetFileName(imgFilePath),
+            Date = File.GetLastWriteTime(imgFilePath),
         };
     }
 
@@ -294,4 +295,52 @@ public class ImageHelper
         return wallpaperCollec;
 
     }
+
+
+
+    // get aspect ratio of an image with room for error
+    public string GetAspectRatio(int? width, int? height)
+    {
+        if (width == 0 || height == 0 || width == null || height == null)
+        {
+            return "none";
+        }
+
+        double aspectVal = (double)width / (double)height;
+
+        // use a different error percentage for each aspect ratio
+        if (Math.Abs(aspectVal - 4.00 / 3.00) < 0.07)
+        {
+            return "4:3";
+        }
+        else if (aspectVal <= 1.00)
+        {
+            return "Vertical";
+        }
+        else if ( Math.Abs(aspectVal - 16.00 / 9.00) < 0.075)
+        {
+            return "16:9";
+        }
+        else if (Math.Abs(aspectVal - 16.00 / 10.00) < 0.075)
+        {
+            return "16:10";
+        }
+
+        else if (Math.Abs(aspectVal - 21.00 / 9.00) < 0.25)
+        {
+            return "21:9";
+        }
+        else if (Math.Abs(aspectVal - 32.00 / 9.00) < 0.55)
+        {
+            return "32:9";
+        }
+        else
+        {
+            return "none";
+        }
+
+    }
+
+
+
 }

@@ -63,7 +63,7 @@
 
 						<Popup x:Name="FilterPopup"
 							   PlacementTarget="{Binding #FilterButton}"
-							   PlacementMode="Bottom"
+							   PlacementMode="BottomEdgeAlignedRight"
 							   IsLightDismissEnabled="True"
 							   IsOpen="{Binding IsFilterOpen}">
 
@@ -87,11 +87,9 @@
 												 Watermark="Search..."
 												 Foreground="White"
 												 Background="rgba(52, 52, 52, 1)"/>
-										<Button Content="Search"
-												Command="{Binding filterSearchCommand}"
-												CommandParameter="{Binding FilterSearchText}" />
 									</StackPanel>
 
+									<!-- Image Property -->
 									<StackPanel Orientation="Vertical" Spacing="4">
 										<RadioButton Content="Name"
 													 GroupName="FilterGroup"
@@ -107,6 +105,46 @@
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
 													 CommandParameter="Size"
+													 Foreground="White"/>
+									</StackPanel>
+									
+									<!-- Image Aspect Ratio -->
+									<StackPanel Orientation="Horizontal" Spacing="4">
+										<RadioButton Content="All"
+													 IsChecked="True"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="All"
+													 Foreground="White"/>
+										<RadioButton Content="Vertical"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="Vertical"
+													 Foreground="White"/>
+										<RadioButton Content="4:3"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="4:3"
+													 Foreground="White"/>
+										<RadioButton Content="16:9"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="16:9"
+													 Foreground="White"/>
+										<RadioButton Content="16:10"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="16:10"
+													 Foreground="White"/>
+										<RadioButton Content="21:9"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="21:9"
+													 Foreground="White"/>
+										<RadioButton Content="32:9"
+													 GroupName="AspectRatioGroup"
+													 Command="{Binding filterAspectRatioCommand}"
+													 CommandParameter="32:9"
 													 Foreground="White"/>
 									</StackPanel>
 

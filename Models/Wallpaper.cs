@@ -18,5 +18,6 @@ public class Wallpaper
     public int? ImageHeight { get; set; }
     public Bitmap? ImageThumbnailBitmap { get; set; }
     public string? Name { get; set; }
+    public DateTime? Date { get; set; }
     public string? Category { get; set; }
 }

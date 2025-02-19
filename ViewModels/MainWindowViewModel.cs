@@ -15,6 +15,7 @@ using System.IO;
 using Avalonia;
 using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace WallMod.ViewModels;
 
@@ -25,38 +26,50 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     AppStorageHelper appStorageHelper;
 
+    // img upload ==========================================================
     public IRelayCommand uploadClicked { get; }
 
     public IRelayCommand selectedDirectory { get; }
 
+
+    // filter ==============================================================
     public IRelayCommand filterClicked { get; }
 
-    public IRelayCommand<string> filterSearchCommand { get; }
+    public IRelayCommand filterSearchCommand { get; }
 
     public IRelayCommand<string> filterGroupSelectedCommand { get; set; }
 
-    public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; }
+    public IRelayCommand<string> filterAspectRatioCommand {  get; set; }
 
+
+    // wallpaper list ======================================================
+    public ObservableCollection<Wallpaper> AllWallpapers { get; set; } // all wallpapers from a directory
+    public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; } // current display of wallpapers after filtering
+
+
+    // set background ======================================================
     public IRelayCommand setWallpaperCommand { get; }
 
     public ObservableCollection<string> WallpaperStyleList { get; set; }
 
+
+    // monitors ============================================================
     public ObservableCollection<MonitorInfo> MonitorList { get; set; }
 
     public IRelayCommand detectMonitorsButton { get; }
 
-    public IRelayCommand viewHistoryButton { get; }
 
-    public ObservableCollection<Bitmap> MonitorThumbnailList { get; set; }
+    // history =============================================================
+    public IRelayCommand viewHistoryButton { get; }
 
     HistoryHelper historyHelper;
     public ObservableCollection<string> WallpaperHistoryList { get; set; }
     public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; }
 
+
+    // settings ============================================================
     public IRelayCommand settingsButton { get; }
-
     public IRelayCommand deleteHistoryButton { get; }
-
     public IRelayCommand openGithubButton { get; }
 
 
@@ -79,9 +92,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
         filterClicked = new RelayCommand(filterExec);
 
-        filterSearchCommand = new RelayCommand<string>(filterSearchExec);
+        filterSearchCommand = new RelayCommand(filterSearchExec);
 
         filterGroupSelectedCommand = new RelayCommand<string>(filterSelectExec);
+
+        filterAspectRatioCommand = new RelayCommand<string>(filterAspectRatioExec);
+
+        AllWallpapers = new ObservableCollection<Wallpaper>();
 
         DisplayWallpaperList = new ObservableCollection<Wallpaper>();
 
@@ -103,8 +120,6 @@ public partial class MainWindowViewModel : ViewModelBase
         detectMonitorsButton = new RelayCommand(DetectMonitors);
 
         viewHistoryButton = new RelayCommand(ViewHistory);
-
-        MonitorThumbnailList = new ObservableCollection<Bitmap>();
 
         historyHelper = new HistoryHelper();
         WallpaperHistoryList = new ObservableCollection<string>();
@@ -303,6 +318,9 @@ public partial class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref stayRunningInBackground, value);
     }
 
+
+    // filter stuff ===================================================
+
     private bool isFilterOpen;
     public bool IsFilterOpen
     {
@@ -314,9 +332,28 @@ public partial class MainWindowViewModel : ViewModelBase
     public string FilterSearchText
     {
         get => filterSearchText;
-        set => SetProperty(ref filterSearchText, value);
+        set
+        {
+            if (SetProperty(ref filterSearchText, value))
+            {
+                filterSearchExec(); // re-filter on every keystroke
+            }
+        }
     }
 
+    private string currentAspectRatio = "All";
+    public string CurrentAspectRatio
+    {
+        get => currentAspectRatio;
+        set => SetProperty(ref currentAspectRatio, value);
+    }
+
+    private string currentSortChoice = "None"; // or "Name"/"Date"/"Size"
+    public string CurrentSortChoice
+    {
+        get => currentSortChoice;
+        set => SetProperty(ref currentSortChoice, value);
+    }
 
     // ---------------------------------------------------
 
@@ -337,13 +374,17 @@ public partial class MainWindowViewModel : ViewModelBase
         Debug.WriteLine("button clicked");
         ImageHelper imgHelper = new ImageHelper();
         ObservableCollection<Wallpaper> newFileList = await imgHelper.chooseMultipleWallpaperUpload(window);
+
         if (newFileList != null && newFileList.Count > 0)
         {
             foreach (Wallpaper wp in newFileList)
             {
+                AllWallpapers.Add(wp);
                 DisplayWallpaperList.Add(wp);
             }
         }
+
+        applyAllFilters();
     }
     // ===============================
 
@@ -364,14 +405,24 @@ public partial class MainWindowViewModel : ViewModelBase
         Debug.WriteLine("direcbutton clicked");
         ImageHelper imgHelper = new ImageHelper();
         ObservableCollection<Wallpaper> directoryPath = await imgHelper.loadListFromDirectory(window, this);
-        DisplayWallpaperList.Clear();
+
+        AllWallpapers.Clear();
         if (directoryPath != null && directoryPath.Count > 0)
         {
             foreach (var imgFile in directoryPath)
             {
-                DisplayWallpaperList.Add(imgFile);
+                AllWallpapers.Add(imgFile);
             }
         }
+
+        DisplayWallpaperList.Clear();
+        foreach (var wp in AllWallpapers)
+        {
+            DisplayWallpaperList.Add(wp);
+        }
+
+        applyAllFilters();
+
     }
     // ===============================
 
@@ -387,45 +438,70 @@ public partial class MainWindowViewModel : ViewModelBase
         IsFilterOpen = true;
     }
 
-    private void filterSearchExec(string searchText)
+    private void filterSearchExec()
     {
-        Debug.WriteLine("searchtext = " + searchText);
+        Debug.WriteLine("searchtext = " + FilterSearchText);
+        applyAllFilters();
     }
 
     private void filterSelectExec(string selectedChoice)
     {
         Debug.WriteLine("select = " + selectedChoice);
-        if (selectedChoice == "Name")
-        {
-            var sorted = DisplayWallpaperList.OrderBy(entr => entr.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        CurrentSortChoice = selectedChoice;
+        applyAllFilters();
+    }
 
-            DisplayWallpaperList.Clear();
-            foreach (var item in sorted)
-            {
-                DisplayWallpaperList.Add(item);
-            }
+    private void filterAspectRatioExec(string selectedChoice)
+    {
+        Debug.WriteLine("aspect ratio = " + selectedChoice);
+        CurrentAspectRatio = selectedChoice;
+        applyAllFilters();
+    }
+
+    private void applyAllFilters()
+    {
+        ImageHelper imageHelper = new ImageHelper();
+        var result = AllWallpapers.AsEnumerable();
+
+        // aspect ratio filter
+        if (CurrentAspectRatio != "All")
+        {
+            result = result.Where(wp =>
+                imageHelper.GetAspectRatio(wp.ImageWidth, wp.ImageHeight) == CurrentAspectRatio
+            );
         }
-        else if (selectedChoice == "Date")
-        {
-            var sorted = DisplayWallpaperList.OrderBy(entr => entr.Category).ToList();
 
-            DisplayWallpaperList.Clear();
-            foreach (var item in sorted)
-            {
-                DisplayWallpaperList.Add(item);
-            }
+        // search filter
+        if (!string.IsNullOrEmpty(FilterSearchText))
+        {
+            result = result.Where(wp =>
+                wp.Name != null &&
+                wp.Name.StartsWith(FilterSearchText, StringComparison.OrdinalIgnoreCase)
+            );
         }
-        else if (selectedChoice == "Size")
-        {
-            var sorted = DisplayWallpaperList.OrderByDescending(entr => entr.ImageWidth * entr.ImageHeight).ToList();
 
-            DisplayWallpaperList.Clear();
-            foreach (var item in sorted)
-            {
-                DisplayWallpaperList.Add(item);
-            }
+        // name/date/size filter
+        switch (CurrentSortChoice)
+        {
+            case "Name":
+                result = result.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                break;
+            case "Date":
+                result = result.OrderByDescending(wp => wp.Date);
+                break;
+            case "Size":
+                result = result.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
+                break;
+        }
+
+        // update DisplayWallpaperList
+        DisplayWallpaperList.Clear();
+        foreach (var wp in result)
+        {
+            DisplayWallpaperList.Add(wp);
         }
     }
+
 
     // ===============================
 
@@ -599,7 +675,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             HistoryWallpaperList.Clear();
 
-            HistoryHelper historyHelper = new HistoryHelper();
             var historyList = await historyHelper.GetHistoryWallpapers();
             foreach (var item in historyList)
             {
