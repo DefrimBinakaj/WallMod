@@ -57,7 +57,7 @@
 
 						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="BlueViolet" VerticalAlignment="Top" CornerRadius="10,0"/>
 
-						<Button x:Name="FilterButton" Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
+						<Button x:Name="FilterButton" Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" Background="Black" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
 							<Image Source="avares://Wallmod/Assets/filtericon.png" Width="17" Height="17"></Image>
 						</Button>
 
@@ -68,7 +68,7 @@
 							   IsOpen="{Binding IsFilterOpen}">
 
 							<!-- The content of the popup: a border containing a search bar & checkboxes -->
-							<Border Background="DarkGray"
+							<Border Background="rgba(41, 41, 97, 0.94)"
 									CornerRadius="5"
 									Padding="10"
 									MinWidth="200">
@@ -86,7 +86,7 @@
 												 Width="180"
 												 Watermark="Search..."
 												 Foreground="White"
-												 Background="Gray"/>
+												 Background="rgba(52, 52, 52, 1)"/>
 										<Button Content="Search"
 												Command="{Binding filterSearchCommand}"
 												CommandParameter="{Binding FilterSearchText}" />
@@ -96,15 +96,18 @@
 										<RadioButton Content="Name"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Name"/>
+													 CommandParameter="Name"
+													 Foreground="White"/>
 										<RadioButton Content="Date"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Date"/>
+													 CommandParameter="Date"
+													 Foreground="White"/>
 										<RadioButton Content="Size"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Size"/>
+													 CommandParameter="Size"
+													 Foreground="White"/>
 									</StackPanel>
 
 								</StackPanel>
@@ -113,18 +116,18 @@
 						</Popup>
 						
 
-						<Button Grid.Row="1" Content="Set Directory" Command="{Binding selectedDirectory}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
+						<Button Grid.Row="1" Content="Set Directory" Command="{Binding selectedDirectory}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addfoldericon.png" Width="20" Height="20"></Image>
 						</Button>
-						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 4, 0, 0">
+						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 4, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addimgicon.png" Width="20" Height="20"></Image>
 						</Button>
 
-						<Button Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
+						<Button Grid.Row="3" Background="Black" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 
-						<TextBlock Grid.Row="1" Text="{Binding CurrentSelectedDirectory}" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0" MaxWidth="300" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+						<TextBlock Grid.Row="1" Text="{Binding CurrentSelectedDirectory}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0" MaxWidth="300" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
 
 						<Grid Grid.Row="3" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom">
 							<Grid.RowDefinitions>
@@ -133,7 +136,7 @@
 								<RowDefinition Height="Auto"/>
 							</Grid.RowDefinitions>
 							<TextBlock Grid.Row="0" Text="+"  Margin="2, 0, 8, 0" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-							<Slider Grid.Row="1" x:Name="ThumbnailZoomSlider" Orientation="Vertical" Foreground="Blue" Minimum="50" Maximum="300" Value="{Binding ThumbnailZoomLevel}" HorizontalAlignment="Left" Margin="2" Width="35" Height="100" VerticalAlignment="Center"/>
+							<Slider Grid.Row="1" x:Name="ThumbnailZoomSlider" Orientation="Vertical" Foreground="Blue" Background="Gray" Minimum="50" Maximum="300" Value="{Binding ThumbnailZoomLevel}" HorizontalAlignment="Left" Margin="2" Width="35" Height="100" VerticalAlignment="Center"/>
 							<TextBlock Grid.Row="2" Text="-" Margin="2, 0, 9, 0" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 						</Grid>
 
@@ -168,7 +171,7 @@
 							<RowDefinition Height="Auto"/>
 						</Grid.RowDefinitions>
 
-						<TextBlock Text="History" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Margin="0,16" Grid.Row="0"/>
+						<TextBlock Text="History" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Margin="0,16" Grid.Row="0"/>
 
 						<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
 							<ItemsControl ItemsSource="{Binding HistoryWallpaperList}">
@@ -189,7 +192,7 @@
 													</Grid.ColumnDefinitions>
 
 													<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
-														<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12" Margin="0,0,0,5"/>
+														<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12" Foreground="White" Margin="0,0,0,5"/>
 														<TextBlock Text="{Binding FilePath}" FontSize="10" Foreground="Gray"/>
 													</StackPanel>
 
@@ -208,7 +211,7 @@
 						</ScrollViewer>
 
 						<!-- Temp Back Button (position is good tho) -->
-						<Button Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
+						<Button Grid.Row="2" VerticalAlignment="Bottom" Background="Black" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 					</Grid>
@@ -226,7 +229,7 @@
 
 
 			<!-- Right Section: Preview and Controls ========= -->
-			<Border Grid.Column="2" Background="#707070" CornerRadius="10" Margin="8">
+			<Border Grid.Column="2" Background="rgba(97, 97, 97, 0.8)" CornerRadius="10" Margin="8">
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
 					<Grid Margin="18, 6, 18, 0">
 						<Grid.ColumnDefinitions>
@@ -246,11 +249,12 @@
 
 						<TextBlock Text="Preview" FontWeight="Bold" FontSize="16"
 								   Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-								   HorizontalAlignment="Center"/>
+								   Foreground="White" HorizontalAlignment="Center"/>
 
 						<Button Content=">" Click="EnlargePreviewImg"
 								Grid.Row="0" Grid.Column="1"
-								HorizontalAlignment="Right">
+								HorizontalAlignment="Right"
+								Background="Gray">
 							<Image Source="avares://Wallmod/Assets/enlarge-icon.png"
 								   Width="14" Height="14"/>
 						</Button>
@@ -298,7 +302,7 @@
 						<Grid Grid.Row="2" Grid.ColumnSpan="2">
 							
 							<Button Content=">" Click="OpenImageClicked"
-								Margin="2"
+								Margin="2" Background="Gray"
 								HorizontalAlignment="Left">
 								<Image Source="avares://Wallmod/Assets/open-icon.png"
 									   Width="12" Height="10"/>
@@ -316,11 +320,11 @@
 
 						<!-- Monitors List -->
 						<Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,8">
-							<TextBlock Text="Monitors:" FontSize="16"
+							<TextBlock Text="Monitors:" FontSize="16" Foreground="White"
 									   VerticalAlignment="Center" Margin="8,0,0,0"/>
 
 							<Button Content="Redetect Monitors" Command="{Binding detectMonitorsButton}"
-									HorizontalAlignment="Right" Margin="10, 0, 0, 0">
+									Background="Gray" HorizontalAlignment="Right" Margin="10, 0, 0, 0">
 								<Image Source="avares://Wallmod/Assets/refresh-icon.png"
 									   Width="14" Height="14"/>
 							</Button>
@@ -349,11 +353,12 @@
 
 						<!-- Selecting Monitor Dropdown / Handling -->
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.ColumnSpan="2" Margin="0,6,0,24">
-							<Button Content="Select All" Click="OnSelectAllClicked" Margin="4"/>
+							<Button Content="Select All" Click="OnSelectAllClicked" Background="Gray" Foreground="White" Margin="4"/>
 							<ComboBox ItemsSource="{Binding WallpaperStyleList}"
 									  SelectedItem="{Binding SelectedWallpaperStyle}"
 									  IsEnabled="{Binding StyleDropdownEnabled}"
 									  Width="100"
+									  Foreground="White"
 									  Margin="5"/>
 						</StackPanel>
 
@@ -362,6 +367,7 @@
 									Content="Set As Desktop Background"
 									Width="220" Click="OnSetWallpaperClicked"
 									Background="DarkGreen"
+									Foreground="White"
 									HorizontalAlignment="Stretch"
 									VerticalAlignment="Center"
 									HorizontalContentAlignment="Center"
@@ -372,7 +378,7 @@
 
 						<!-- Settings Button -->
 						<Button Content="Settings" Command="{Binding settingsButton}"
-								Grid.Row="7" Grid.ColumnSpan="2"
+								Grid.Row="7" Grid.ColumnSpan="2" Background="Gray"
 								VerticalAlignment="Bottom" HorizontalAlignment="Right">
 							<Image Source="avares://Wallmod/Assets/settings-icon.png"
 								   Width="18" Height="18"/>
