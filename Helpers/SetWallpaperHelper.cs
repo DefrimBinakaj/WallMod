@@ -181,7 +181,7 @@ namespace WallMod.Helpers
                 int height = info.Height;
 
                 // if image is within limit, just return the original path
-                if (width * height < 20000000)
+                if (width * height < 10000000)
                     return originalPath;
 
                 // compute a scale factor so that neither dimension exceeds the limit
