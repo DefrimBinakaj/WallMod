@@ -1,28 +1,15 @@
 ﻿using Microsoft.Win32;
 using SkiaSharp;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
-
-/*
- * Class used for performing the action of setting an image as the desktop background
- * 
- * NOTE: currently a huge mess of copied bs
- */
 
 namespace WallMod.Helpers
 {
     // =========================================================
-    // IDesktopWallpaper init
-    // https://stackoverflow.com/questions/41516979/c-sharp-how-do-you-get-an-instance-of-a-com-interface/41713718#41713718
+    // IDesktopWallpaper for Windows
     // =========================================================
-
     [ComImport]
     [Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -46,27 +33,30 @@ namespace WallMod.Helpers
         Rect GetMonitorRECT([MarshalAs(UnmanagedType.LPWStr)] string monitorID);
 
         void SetBackgroundColor([MarshalAs(UnmanagedType.U4)] uint color);
+
         [return: MarshalAs(UnmanagedType.U4)]
         uint GetBackgroundColor();
 
         void SetPosition([MarshalAs(UnmanagedType.I4)] DesktopWallpaperPosition position);
+
         [return: MarshalAs(UnmanagedType.I4)]
         DesktopWallpaperPosition GetPosition();
 
         void SetSlideshow(IntPtr items);
+
         IntPtr GetSlideshow();
+
         void SetSlideshowOptions(DesktopSlideshowDirection options, uint slideshowTick);
+
         void GetSlideshowOptions(out DesktopSlideshowDirection options, out uint slideshowTick);
+
         void AdvanceSlideshow([MarshalAs(UnmanagedType.LPWStr)] string monitorID, [MarshalAs(UnmanagedType.I4)] DesktopSlideshowDirection direction);
+
         DesktopSlideshowDirection GetStatus();
+
         bool Enable();
     }
 
-    // =========================================================
-    // Windows
-    // =========================================================
-
-    // windows-OS necessary stuff (random as hell)
     [ComImport]
     [Guid("C2CF3110-460E-4fc1-B9D0-8A1C0C9CC4BD")]
     public class DesktopWallpaper
@@ -98,7 +88,6 @@ namespace WallMod.Helpers
         public int Bottom;
     }
 
-
     public class SetWallpaperHelper
     {
         public enum WallpaperStyle
@@ -111,8 +100,10 @@ namespace WallMod.Helpers
             Span // Windows 8+ only
         }
 
-
-        // platform branching
+        /// <summary>
+        /// Sets the wallpaper on the current OS.
+        /// For Linux, the monitorId is used (if provided) to update only that monitor (e.g. in KDE).
+        /// </summary>
         public static void SetWallpaper(string imagePath, string wallpaperStyle, string monitorId)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -125,7 +116,7 @@ namespace WallMod.Helpers
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                SetWallpaperLinux(imagePath);
+                SetWallpaperLinux(imagePath, monitorId);
             }
             else
             {
@@ -133,99 +124,31 @@ namespace WallMod.Helpers
             }
         }
 
-        // gpt mess
+        #region Windows & macOS
+
         private static void SetWallpaperWindows(string imagePath, string wallpaperStyle, string monitorId)
         {
-            // 1) Validate
             if (!File.Exists(imagePath))
                 throw new FileNotFoundException($"Image file not found: {imagePath}");
 
-            // 2) Set registry style as you did before (Fill, Fit, etc.)
+            // Update registry values to set the style
             SetRegistryValues(wallpaperStyle);
 
-            // 3) Use IDesktopWallpaper
             try
             {
                 var dw = (IDesktopWallpaper)new DesktopWallpaper();
-
-                // If monitorId is empty, Windows typically applies to all. 
-                // If monitorId is something like "\\.\DISPLAY2", it sets that monitor only.
-                dw.SetWallpaper(monitorId, EnsureImageUnderLimit(imagePath));
-
+                // Potentially also ensure large images are resized
+                string finalPath = EnsureImageUnderLimit(imagePath);
+                dw.SetWallpaper(monitorId, finalPath);
                 Debug.WriteLine($"SetWallpaper successful: monitor={monitorId}, file='{imagePath}'");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("SetWallpaperWindows via DesktopWallpaper failed: " + ex.Message);
+                // fallback using SystemParametersInfo if needed:
+                // SystemParametersInfo(20, 0, finalPath, 0x01 | 0x02);
             }
         }
-
-
-
-        // func for pictures that will not set due to size
-        public static string EnsureImageUnderLimit(string originalPath, int maxWidth = 5000, int maxHeight = 5000)
-        {
-            try
-            {
-                using var inputStream = File.OpenRead(originalPath);
-                using var codec = SKCodec.Create(inputStream);
-                if (codec == null)
-                {
-                    Debug.WriteLine("Could not read image header for " + originalPath);
-                    return originalPath; // fallback
-                }
-
-                // img dimensions
-                var info = codec.Info;
-                int width = info.Width;
-                int height = info.Height;
-
-                // if image is within limit, just return the original path
-                if (width * height < 10000000)
-                    return originalPath;
-
-                // compute a scale factor so that neither dimension exceeds the limit
-                float scale = Math.Min((float)maxWidth / width, (float)maxHeight / height);
-                int newWidth = (int)(width * scale);
-                int newHeight = (int)(height * scale);
-
-                // rewind stream to decode fully
-                inputStream.Seek(0, SeekOrigin.Begin);
-                using var originalBitmap = SKBitmap.Decode(inputStream);
-                if (originalBitmap == null)
-                {
-                    Debug.WriteLine("Failed to decode " + originalPath);
-                    return originalPath;
-                }
-
-                using var resizedBitmap = originalBitmap
-                    .Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.Medium);
-
-                if (resizedBitmap == null)
-                {
-                    Debug.WriteLine("Failed to resize " + originalPath);
-                    return originalPath;
-                }
-
-                string tempPath = Path.Combine(Path.GetTempPath(), "wallmod_resized_" + Path.GetFileName(originalPath));
-                using var image = SKImage.FromBitmap(resizedBitmap);
-                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
-
-                using (var output = File.OpenWrite(tempPath))
-                {
-                    data.SaveTo(output);
-                }
-
-                Debug.WriteLine($"resized large image from {width}x{height} to {newWidth}x{newHeight}, saved at {tempPath}");
-                return tempPath;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("EnsureImageUnderLimit error: " + ex.Message);
-                return originalPath; // fallback if anything goes wrong
-            }
-        }
-
 
         private static void SetRegistryValues(string wallpaperStyle)
         {
@@ -266,61 +189,246 @@ namespace WallMod.Helpers
             }
         }
 
-        // idek if this works
-        // =========================================================
-        // Mac
-        // =========================================================
         private static void SetWallpaperMacOS(string imagePath)
         {
             var script = $"osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"{imagePath}\"'";
-            var psi = new System.Diagnostics.ProcessStartInfo("bash", $"-c \"{script}\"")
+            var psi = new ProcessStartInfo("bash", $"-c \"{script}\"")
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
-            using var proc = System.Diagnostics.Process.Start(psi);
+            using var proc = Process.Start(psi);
             proc.WaitForExit();
         }
 
-        // idek if this works
-        // =========================================================
-        // Linux
-        // =========================================================
-        private static void SetWallpaperLinux(string imagePath)
+        /// <summary>
+        /// Ensures images bigger than ~ 10 million pixels are resized to avoid Windows wallpaper API issues.
+        /// </summary>
+        private static string EnsureImageUnderLimit(string originalPath, int maxWidth = 5000, int maxHeight = 5000)
         {
-            var desktopSession = Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP")?.ToLower() ?? "";
-            if (desktopSession.Contains("gnome"))
+            try
             {
-                var script = $"gsettings set org.gnome.desktop.background picture-uri 'file://{imagePath}'";
-                RunBash(script);
+                using var inputStream = File.OpenRead(originalPath);
+                using var codec = SKCodec.Create(inputStream);
+                if (codec == null)
+                {
+                    Debug.WriteLine("Could not read image header for " + originalPath);
+                    return originalPath;
+                }
+
+                var info = codec.Info;
+                int width = info.Width;
+                int height = info.Height;
+
+                // Check size: if under ~ 10 million pixels, skip
+                if (width * height < 10_000_000)
+                    return originalPath;
+
+                float scale = Math.Min((float)maxWidth / width, (float)maxHeight / height);
+                int newWidth = (int)(width * scale);
+                int newHeight = (int)(height * scale);
+
+                inputStream.Seek(0, SeekOrigin.Begin);
+                using var originalBitmap = SKBitmap.Decode(inputStream);
+                if (originalBitmap == null)
+                {
+                    Debug.WriteLine("Failed to decode " + originalPath);
+                    return originalPath;
+                }
+
+                using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.Medium);
+                if (resizedBitmap == null)
+                {
+                    Debug.WriteLine("Failed to resize " + originalPath);
+                    return originalPath;
+                }
+
+                string tempPath = Path.Combine(Path.GetTempPath(), "wallmod_resized_" + Path.GetFileName(originalPath));
+                using var image = SKImage.FromBitmap(resizedBitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
+
+                using (var output = File.OpenWrite(tempPath))
+                {
+                    data.SaveTo(output);
+                }
+
+                Debug.WriteLine($"Resized image from {width}x{height} to {newWidth}x{newHeight}, saved at {tempPath}");
+                return tempPath;
             }
-            else if (desktopSession.Contains("kde"))
+            catch (Exception ex)
             {
-                var script = $"qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript " +
-                             $"\"var allDesktops = desktops();for (i=0;i<allDesktops.length;i++){{" +
-                             $"d = allDesktops[i];" +
-                             $"d.wallpaperPlugin = \\\"org.kde.image\\\";" +
-                             $"d.currentConfigGroup = Array(\\\"Wallpaper\\\",\\\"org.kde.image\\\",\\\"General\\\");" +
-                             $"d.writeConfig(\\\"Image\\\", \\\"file://{imagePath}\\\")}}\"";
-                RunBash(script);
+                Debug.WriteLine("EnsureImageUnderLimit error: " + ex.Message);
+                return originalPath;
             }
-            else
+        }
+
+        #endregion
+
+        #region Linux
+
+        private static void SetWallpaperLinux(string imagePath, string monitorId)
+        {
+            // Many DEs won't actually refresh if you reuse the same file path;
+            // create a fresh temporary file each time to guarantee a forced update.
+            string uniqueCopy = CreateUniqueTempCopy(imagePath);
+
+            var desktopSession = (Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ??
+                                  Environment.GetEnvironmentVariable("GDMSESSION") ??
+                                  Environment.GetEnvironmentVariable("DESKTOP_SESSION") ??
+                                  "").ToLower();
+
+            bool isWayland = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"));
+            // Create a file:// style URI for gsettings calls
+            string imageUri = "file://" + uniqueCopy;
+
+            try
             {
-                throw new NotSupportedException("Unsupported Linux desktop environment for setting wallpaper.");
+                // KDE Plasma (X11 and Wayland)
+                if (desktopSession.Contains("kde") || desktopSession.Contains("plasma"))
+                {
+                    if (isWayland)
+                    {
+                        // KDE (Wayland) - use connector names like "HDMI-A-1"
+                        // If monitorId is empty, apply to all outputs
+                        string cmd = string.IsNullOrEmpty(monitorId)
+                            ? $"plasma-apply-wallpaperimage '{uniqueCopy}'"
+                            : $"plasma-apply-wallpaperimage --output {monitorId} '{uniqueCopy}'";
+                        RunBash(cmd);
+                    }
+                    else
+                    {
+                        // KDE (X11) - use QDbus approach with a bit of JavaScript
+                        int screenIndex = ParseScreenIndex(monitorId);
+                        string script = GenerateKdeScript(screenIndex, imageUri);
+                        RunBash($"qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript \"{script}\"");
+                    }
+                }
+                // GNOME-based (GNOME, Ubuntu/Unity, Cinnamon, Budgie, etc.)
+                else if (desktopSession.Contains("gnome") || desktopSession.Contains("ubuntu") ||
+                         desktopSession.Contains("unity") || desktopSession.Contains("cinnamon") ||
+                         desktopSession.Contains("budgie"))
+                {
+                    // Force picture-uri, picture-uri-dark, and set picture-options
+                    RunBash($"gsettings set org.gnome.desktop.background picture-uri '{imageUri}'");
+                    RunBash($"gsettings set org.gnome.desktop.background picture-uri-dark '{imageUri}'");
+                    // Options: none, wall, centered, scaled, stretched, zoom, spanned
+                    RunBash("gsettings set org.gnome.desktop.background picture-options 'zoom'");
+                }
+                // MATE
+                else if (desktopSession.Contains("mate"))
+                {
+                    RunBash($"gsettings set org.mate.background picture-filename '{uniqueCopy}'");
+                }
+                // Elementary / Pantheon
+                else if (desktopSession.Contains("pantheon"))
+                {
+                    RunBash($"gsettings set org.pantheon.desktop.gala.background picture-uri '{imageUri}'");
+                }
+                // Fallback for other environments or unknown
+                else
+                {
+                    // feh sets the wallpaper immediately on X11
+                    // Add --no-fehbg if you don’t want ~/.fehbg overwritten
+                    RunBash($"feh --bg-scale '{uniqueCopy}'");
+                }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Linux wallpaper error: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Some KDE X11 flows allow passing a monitor index after "LINUX_MON_",
+        /// e.g. "LINUX_MON_1" => screenIndex=1.
+        /// If none present, returns -1 (apply to all).
+        /// </summary>
+        private static int ParseScreenIndex(string monitorId)
+        {
+            if (!string.IsNullOrEmpty(monitorId) && monitorId.StartsWith("LINUX_MON_"))
+            {
+                if (int.TryParse(monitorId.Substring("LINUX_MON_".Length), out int index))
+                    return index;
+            }
+            return -1; // Apply to all monitors
+        }
+
+        /// <summary>
+        /// For KDE’s dbus-based set wallpaper. We optionally break once we set on the desired screen
+        /// if a screen index is provided.
+        /// </summary>
+        private static string GenerateKdeScript(int screenIndex, string imageUri)
+        {
+            string targetScreen = screenIndex >= 0
+                ? $"if (d.screen === {screenIndex}) {{"
+                : "// apply to all screens";
+
+            return $@"
+                var allDesktops = desktops();
+                for (var i = 0; i < allDesktops.length; i++) {{
+                    var d = allDesktops[i];
+                    {targetScreen}
+                        d.wallpaperPlugin = 'org.kde.image';
+                        d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+                        d.writeConfig('Image', '{imageUri}');
+                        {(screenIndex >= 0 ? "break;" : "")}
+                    {(screenIndex >= 0 ? "}" : "")}
+                }}".Replace("\r", "").Replace("\n", "");
+        }
+
+        /// <summary>
+        /// Creates a unique temp copy of the provided file so that consecutive sets
+        /// with the same file are detected as actual changes by the DE.
+        /// </summary>
+        private static string CreateUniqueTempCopy(string originalPath)
+        {
+            if (!File.Exists(originalPath))
+                throw new FileNotFoundException($"Image file not found: {originalPath}");
+
+            string extension = Path.GetExtension(originalPath);
+            string fileName = "wallmod_temp_" + Guid.NewGuid().ToString("N") + extension;
+            string tempPath = Path.Combine(Path.GetTempPath(), fileName);
+
+            File.Copy(originalPath, tempPath, overwrite: true);
+            return tempPath;
         }
 
         private static void RunBash(string script)
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("bash", $"-c \"{script}\"")
+            try
             {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            using var proc = System.Diagnostics.Process.Start(psi);
-            proc.WaitForExit();
+                using var process = new Process();
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = $"-c \"{script.Replace("\"", "\\\"")}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception($"Command failed (exit={process.ExitCode}): {error}");
+                }
+
+                Debug.WriteLine($"Bash output: {output}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Bash error: {ex.Message}");
+                throw;
+            }
         }
+
+        #endregion
     }
 }

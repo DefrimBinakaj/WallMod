@@ -4,118 +4,187 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WallMod.Models;
 using System.Runtime.InteropServices;
-using System.Threading;
+using WallMod.Models;
+using Avalonia.Platform;
 
-namespace WallMod.Helpers;
-
-/**
- * Class used for handling monitor detection/info
- */
-public class MonitorHelper
+namespace WallMod.Helpers
 {
-
-    // used to get monitors on the pc and also scale them down for use in UI
-    public static IEnumerable<MonitorInfo> GetMonitors(Window mainWindow)
+    /**
+     * class used for handling monitor detection/info
+     */
+    public class MonitorHelper
     {
-        if (mainWindow == null)
+        // used to get monitors on the pc and also scale them down for use in ui
+        public static IEnumerable<MonitorInfo> GetMonitors(Window mainWindow)
         {
-            Debug.WriteLine("MainWindow is null.");
-            return new List<MonitorInfo>();
-        }
-
-        var monitors = new List<MonitorInfo>();
-
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return monitors;
-
-
-        var dw = (IDesktopWallpaper)new DesktopWallpaper();
-        uint count = dw.GetMonitorDevicePathCount();
-
-
-        var screens = mainWindow.Screens;
-
-        foreach (var screen in screens.All)
-        {
-
-            // gen current id and attach to the correct monitor object
-            string currMonId = "";
-            for (uint i = 0; i < dw.GetMonitorDevicePathCount(); i++)
+            if (mainWindow == null)
             {
-                string currMonitorId = dw.GetMonitorDevicePathAt(i);
-                Rect currMonitorRECT = dw.GetMonitorRECT(currMonitorId);
-                if (currMonitorRECT.Left == screen.Bounds.X && currMonitorRECT.Top == screen.Bounds.Y)
+                Debug.WriteLine("MainWindow is null.");
+                return new List<MonitorInfo>();
+            }
+
+            var monitors = new List<MonitorInfo>();
+
+            // if non-windows, just do fallback
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // do the linux/mac approach
+                monitors.AddRange(getAgnosticMonitors(mainWindow));
+            }
+            else
+            {
+                // do windows approach
+                try
                 {
-                    currMonId = currMonitorId;
+                    var dw = (IDesktopWallpaper)new DesktopWallpaper();
+                    uint count = dw.GetMonitorDevicePathCount();
+
+                    var screens = mainWindow.Screens;
+                    int fallbackCounter = 0;
+
+                    foreach (var screen in screens.All)
+                    {
+                        // attempt to find a real idesktopwallpaper monitor id by coordinate matching
+                        string matchedId = findWindowsMonitorId(dw, count, screen);
+
+                        // if no match found, assign a synthetic fallback id
+                        if (string.IsNullOrEmpty(matchedId))
+                        {
+                            matchedId = "WIN_MON_" + fallbackCounter;
+                            fallbackCounter++;
+                        }
+
+                        monitors.Add(new MonitorInfo
+                        {
+                            MonitorIdPath = matchedId,
+                            Bounds = screen.Bounds,
+                            WorkingArea = screen.WorkingArea,
+                            IsPrimary = screen.IsPrimary ? "main" : "",
+                            CurrWallpaper = new Wallpaper(),
+                            FillColour = "Navy",
+                            StrokeColour = screen.IsPrimary ? "Gold" : "White",
+                        });
+
+                        Debug.WriteLine("windows monitor => id=" + matchedId +
+                                        " bounds=" + screen.Bounds +
+                                        " isprimary=" + screen.IsPrimary);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // if something fails, fallback to linux/mac approach
+                    Debug.WriteLine("windows com logic failed: " + ex.Message);
+                    monitors.AddRange(getAgnosticMonitors(mainWindow));
                 }
             }
 
+            if (monitors.Count == 0)
+                return monitors;
 
-            monitors.Add(new MonitorInfo
-            {
-                MonitorIdPath = currMonId,
-                Bounds = screen.Bounds, // Bounds = [ positionX, positionY, width, height ]
-                WorkingArea = screen.WorkingArea,
-                IsPrimary = screen.IsPrimary ? "main" : "", // for main monitor, set to "main" - for others, set to empty string
-                CurrWallpaper = new Wallpaper(),
-                FillColour = "Navy",
-                StrokeColour = screen.IsPrimary ? "Gold" : "White",
-            });
-            Debug.WriteLine(
-                " -- id = " + currMonId +
-                " -- bounds = " + screen.Bounds + 
-                " -- workingarea = " + screen.WorkingArea + 
-                " -- isprimary = " + screen.IsPrimary);
+            // do the ui scaling for bounding rectangles
+            scaleUIBounds(monitors);
 
-
+            return monitors;
         }
 
-
-
-        // UIBounds manipulation code --------------------------------
-        double minX = monitors.Min(m => m.Bounds.X);
-        double minY = monitors.Min(m => m.Bounds.Y);
-        double maxX = monitors.Max(m => m.Bounds.X + m.Bounds.Width);
-        double maxY = monitors.Max(m => m.Bounds.Y + m.Bounds.Height);
-
-        double totalWidth = maxX - minX;
-        double totalHeight = maxY - minY;
-
-        // target width and height for UI (made slightly less tall than axaml)
-        double targetWidth = 240;
-        double targetHeight = 100;
-
-        double scaleX = targetWidth / totalWidth;
-        double scaleY = targetHeight / totalHeight;
-        double scaleFactor = Math.Min(scaleX, scaleY);
-
-
-        foreach (var mon in monitors)
+        // tries to match an avalonia screen to a real idesktopwallpaper monitor id
+        private static string findWindowsMonitorId(IDesktopWallpaper dw, uint count, Screen screen)
         {
-            double offsetX = mon.Bounds.X - minX;
-            double offsetY = mon.Bounds.Y - minY;
+            // coordinate tolerance
+            const int TOL = 5;
 
-            int uiX = (int)(offsetX * scaleFactor);
-            int uiY = (int)(offsetY * scaleFactor);
-            int uiW = (int)(mon.Bounds.Width * scaleFactor);
-            int uiH = (int)(mon.Bounds.Height * scaleFactor);
+            for (uint i = 0; i < count; i++)
+            {
+                string testId = dw.GetMonitorDevicePathAt(i);
 
-            // set final UIBounds
-            mon.UIBounds = new PixelRect(uiX, uiY + 5, uiW, uiH);
+                try
+                {
+                    Rect r = dw.GetMonitorRECT(testId);
 
-            Debug.WriteLine("UIBounds for " + mon.MonitorIdPath + " = " + mon.UIBounds);
+                    bool leftClose = Math.Abs(r.Left - screen.Bounds.X) <= TOL;
+                    bool topClose = Math.Abs(r.Top - screen.Bounds.Y) <= TOL;
+
+                    if (leftClose && topClose)
+                    {
+                        // found a match
+                        return testId;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("getmonitorrect failed for " + testId + ": " + ex.Message);
+                }
+            }
+
+            return "";
         }
 
+        // for non-windows systems, just assign synthetic ids like "linux_mon_0"
+        private static IEnumerable<MonitorInfo> getAgnosticMonitors(Window mainWindow)
+        {
+            var list = new List<MonitorInfo>();
+            var screens = mainWindow.Screens;
+            int index = 0;
 
-        
+            foreach (var screen in screens.All)
+            {
+                string syntheticId = "LINUX_MON_" + index;
+                index++;
 
-        return monitors;
+                var info = new MonitorInfo
+                {
+                    MonitorIdPath = syntheticId,
+                    Bounds = screen.Bounds,
+                    WorkingArea = screen.WorkingArea,
+                    IsPrimary = screen.IsPrimary ? "main" : "",
+                    CurrWallpaper = new Wallpaper(),
+                    FillColour = "Navy",
+                    StrokeColour = screen.IsPrimary ? "Gold" : "White",
+                };
+
+                list.Add(info);
+
+                Debug.WriteLine("linux/mac monitor => id=" + syntheticId +
+                                " bounds=" + screen.Bounds +
+                                " isprimary=" + screen.IsPrimary);
+            }
+
+            return list;
+        }
+
+        // scales each monitor's bounds so they fit in a small ui region (e.g. 240x100)
+        private static void scaleUIBounds(List<MonitorInfo> monitors)
+        {
+            double minX = monitors.Min(m => m.Bounds.X);
+            double minY = monitors.Min(m => m.Bounds.Y);
+            double maxX = monitors.Max(m => m.Bounds.X + m.Bounds.Width);
+            double maxY = monitors.Max(m => m.Bounds.Y + m.Bounds.Height);
+
+            double totalWidth = maxX - minX;
+            double totalHeight = maxY - minY;
+
+            double targetWidth = 240;
+            double targetHeight = 100;
+
+            double scaleX = targetWidth / totalWidth;
+            double scaleY = targetHeight / totalHeight;
+            double scaleFactor = Math.Min(scaleX, scaleY);
+
+            foreach (var mon in monitors)
+            {
+                double offsetX = mon.Bounds.X - minX;
+                double offsetY = mon.Bounds.Y - minY;
+
+                int uiX = (int)(offsetX * scaleFactor);
+                int uiY = (int)(offsetY * scaleFactor) + 5;
+                int uiW = (int)(mon.Bounds.Width * scaleFactor);
+                int uiH = (int)(mon.Bounds.Height * scaleFactor);
+
+                mon.UIBounds = new PixelRect(uiX, uiY, uiW, uiH);
+
+                Debug.WriteLine("uibounds for " + mon.MonitorIdPath + " = " + mon.UIBounds);
+            }
+        }
     }
-
-
-
 }
