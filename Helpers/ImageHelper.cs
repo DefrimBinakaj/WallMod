@@ -14,6 +14,8 @@ using System.Text;
 using System.Threading.Tasks;
 using WallMod.ViewModels;
 using WallMod.Models;
+using DataJuggler.PixelDatabase;
+using ColorThiefDotNet;
 
 namespace WallMod.Helpers;
 
@@ -73,22 +75,62 @@ public class ImageHelper
     {
         var imgResult = GetThumbNailFromPath(imgFilePath);
 
+        // perform colour classification using thumbnail
+        PixelDatabase colourDB = PixelDatabaseLoader.LoadPixelDatabase(imgResult.Item2, null);
+        var imgClass = ImageClassifier.Classify(colourDB);
+
         return new Wallpaper
         {
             FilePath = imgFilePath,
             ImageBitmap = null, // WE DO NOT NEED THIS IN ORDER TO SET BACKGROUND - uses filepath
-            ImageWidth = imgResult.Item2,
-            ImageHeight = imgResult.Item3,
+            ImageWidth = imgResult.Item3,
+            ImageHeight = imgResult.Item4,
             ImageThumbnailBitmap = imgResult.Item1,
-            Category = "RandCategory",
+            ColourCategory = RgbToHue(imgClass.AverageRed, imgClass.AverageGreen, imgClass.AverageBlue),
             Name = Path.GetFileName(imgFilePath),
             Date = File.GetLastWriteTime(imgFilePath),
         };
     }
 
+    private static double RgbToHue(double r, double g, double b)
+    {
+        double rr = r / 255.0;
+        double gg = g / 255.0;
+        double bb = b / 255.0;
+
+        double max = Math.Max(rr, Math.Max(gg, bb));
+        double min = Math.Min(rr, Math.Min(gg, bb));
+        double delta = max - min;
+
+        if (delta < 0.00001)
+            return 0.0;
+
+        double hue;
+        if (Math.Abs(max - rr) < 0.00001)
+        {
+            hue = (gg - bb) / delta;
+        }
+        else if (Math.Abs(max - gg) < 0.00001)
+        {
+            hue = 2.0 + (bb - rr) / delta;
+        }
+        else
+        {
+            hue = 4.0 + (rr - gg) / delta;
+        }
+
+        hue *= 60.0;
+        if (hue < 0) hue += 360.0;
+
+        // force any hue >= 345 down by 360 to unify the red colour region
+        if (hue >= 345)
+            hue -= 360;
+
+        return hue;
+    }
 
     // thumbnail size hardcoded in arg
-    public (Bitmap, int, int) GetThumbNailFromPath(string origImgPath, int thumbnailWidth = 350, int thumbnailHeight = 250)
+    public (Bitmap, string, int, int) GetThumbNailFromPath(string origImgPath, int thumbnailWidth = 250, int thumbnailHeight = 200)
     {
 
         using (var inputStream = File.OpenRead(origImgPath))
@@ -98,7 +140,7 @@ public class ImageHelper
                 if (skBitmap == null)
                 {
                     Debug.WriteLine("!!!!! failed to load img at " + origImgPath);
-                    return (null, 0, 0);
+                    return (null, null, 0, 0);
                 }
 
                 int width = skBitmap.Width;
@@ -116,21 +158,33 @@ public class ImageHelper
                     targetWidth = (int) (thumbnailHeight * aspectRatio);
                 }
 
-                using (var resizedBitmap = skBitmap.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.Low))
+                using (var resizedBitmap = skBitmap.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.None))
                 {
                     if (resizedBitmap == null)
                     {
                         Debug.WriteLine("!!!!! failed to resize image at " + origImgPath);
-                        return (null, 0, 0);
+                        return (null, null, 0, 0);
                     }
 
                     using (var image = SKImage.FromBitmap(resizedBitmap))
                     {
                         using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 60))
                         {
+                            byte[] bytes = data.ToArray();
+
                             using (var memStream = new MemoryStream(data.ToArray()))
                             {
-                                return (new Bitmap(memStream), width, height);
+                                var avaloniaBitmap = new Bitmap(memStream);
+
+                                // 2) also write these bytes to a temp file
+                                string tempFile = Path.Combine(
+                                    Path.GetTempPath(),
+                                    "thumb_" + Guid.NewGuid().ToString("N") + ".jpg");
+
+                                File.WriteAllBytes(tempFile, bytes);
+
+                                // return both the Avalonia Bitmap & the temp file path
+                                return (avaloniaBitmap, tempFile, width, height);
                             }
                         }
                     }

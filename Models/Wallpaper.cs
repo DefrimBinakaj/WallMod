@@ -1,4 +1,5 @@
 ﻿using Avalonia.Media.Imaging;
+using ColorThiefDotNet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,5 +20,6 @@ public class Wallpaper
     public Bitmap? ImageThumbnailBitmap { get; set; }
     public string? Name { get; set; }
     public DateTime? Date { get; set; }
-    public string? Category { get; set; }
+    public double? ColourCategory { get; set; }
+    // public QuantizedColor? ColourCategory { get; set; }
 }

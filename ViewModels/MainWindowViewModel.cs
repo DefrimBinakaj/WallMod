@@ -16,6 +16,7 @@ using Avalonia;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
+using DataJuggler.PixelDatabase;
 
 namespace WallMod.ViewModels;
 
@@ -491,6 +492,10 @@ public partial class MainWindowViewModel : ViewModelBase
                 break;
             case "Size":
                 result = result.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
+                break;
+            case "Colour":
+                // result = result.OrderBy(wp => wp.ColourCategory.Color.ToHsl().H );
+                result = result.OrderBy(wp => wp.ColourCategory);
                 break;
         }
 
