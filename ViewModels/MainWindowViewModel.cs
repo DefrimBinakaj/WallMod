@@ -64,6 +64,8 @@ public partial class MainWindowViewModel : ViewModelBase
     // history =============================================================
     public IRelayCommand viewHistoryButton { get; }
 
+    public IRelayCommand<Wallpaper> deleteHistoryEntryButton {  get; }
+
     HistoryHelper historyHelper;
     public ObservableCollection<string> WallpaperHistoryList { get; set; }
     public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; }
@@ -124,6 +126,8 @@ public partial class MainWindowViewModel : ViewModelBase
         detectMonitorsButton = new RelayCommand(DetectMonitors);
 
         viewHistoryButton = new RelayCommand(ViewHistory);
+
+        deleteHistoryEntryButton = new RelayCommand<Wallpaper>(DeleteSingleHistoryEntry);
 
         historyHelper = new HistoryHelper();
         WallpaperHistoryList = new ObservableCollection<string>();
@@ -818,6 +822,17 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
     }
+
+    public void DeleteSingleHistoryEntry(Wallpaper wallpaper)
+    {
+        if (wallpaper == null)
+        {
+            return;
+        }
+        historyHelper.RemoveHistoryEntry(wallpaper.FilePath);
+        HistoryWallpaperList.Remove(wallpaper);
+    }
+
 
     // currently unused? put in app.axaml.cs iirc
     private void MinimizeToTray()

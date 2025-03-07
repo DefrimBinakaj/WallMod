@@ -406,4 +406,19 @@ public partial class MainWindow : Window
 
         viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
     }
+
+
+
+    public void HistoryEntryDeleteClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is Wallpaper wallpaper)
+        {
+            var viewModel = DataContext as MainWindowViewModel;
+            viewModel.DeleteSingleHistoryEntry(wallpaper);
+        }
+    }
+
+
+
+
 }

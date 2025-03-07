@@ -155,7 +155,7 @@
 
 								</StackPanel>
 							</Border>
-							
+
 						</Popup>
 
 
@@ -245,6 +245,9 @@
 
 													<Image Grid.Column="1" Source="{Binding ImageThumbnailBitmap}" Width="160" VerticalAlignment="Center" Margin="20,0,0,0"
 														   PointerPressed="OnImageTapped"/>
+
+													<Button Content="🗑️" Click="HistoryEntryDeleteClicked" Grid.Column="1" Background="DarkRed" VerticalAlignment="Top" HorizontalAlignment="Right" BorderBrush="White"/>
+													
 												</Grid>
 											</Border>
 											

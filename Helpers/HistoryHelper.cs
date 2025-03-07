@@ -149,4 +149,18 @@ public class HistoryHelper
         }
 
     }
+
+
+    public void RemoveHistoryEntry(string wallpaperPath)
+    {
+        var history = LoadHistoryJson();
+
+        if (history.Remove(wallpaperPath))
+        {
+            string json = JsonSerializer.Serialize(history);
+            File.WriteAllText(appStorageHelper.appStorageFilePath, json);
+        }
+    }
+
+
 }
