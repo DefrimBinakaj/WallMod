@@ -203,9 +203,9 @@ namespace WallMod.Helpers
         }
 
         /// <summary>
-        /// Ensures images bigger than ~ 10 million pixels are resized to avoid Windows wallpaper API issues.
+        /// Ensures images bigger than ~ 9 million pixels are resized to avoid Windows wallpaper API issues.
         /// </summary>
-        private static string EnsureImageUnderLimit(string originalPath, int maxWidth = 5000, int maxHeight = 5000)
+        private static string EnsureImageUnderLimit(string originalPath, int maxWidth = 3840, int maxHeight = 3840)
         {
             try
             {
@@ -222,7 +222,7 @@ namespace WallMod.Helpers
                 int height = info.Height;
 
                 // Check size: if under ~ 10 million pixels, skip
-                if (width * height < 10_000_000)
+                if (width * height < 9000000)
                     return originalPath;
 
                 float scale = Math.Min((float)maxWidth / width, (float)maxHeight / height);
@@ -237,7 +237,7 @@ namespace WallMod.Helpers
                     return originalPath;
                 }
 
-                using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.Medium);
+                using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.High);
                 if (resizedBitmap == null)
                 {
                     Debug.WriteLine("Failed to resize " + originalPath);

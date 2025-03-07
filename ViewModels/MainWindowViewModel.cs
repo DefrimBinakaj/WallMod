@@ -32,6 +32,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IRelayCommand selectedDirectory { get; }
 
+    public IRelayCommand navigateToParentDirec {  get; }
 
     // filter ==============================================================
     public IRelayCommand filterClicked { get; }
@@ -90,6 +91,8 @@ public partial class MainWindowViewModel : ViewModelBase
         uploadClicked = new RelayCommand(execImgUpload);
 
         selectedDirectory = new RelayCommand(execSelectDirec);
+
+        navigateToParentDirec = new RelayCommand(execNavigateToParentDirec);
 
         filterClicked = new RelayCommand(filterExec);
 
@@ -224,10 +227,24 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 currentSelectedDirectory = value;
                 OnPropertyChanged(nameof(CurrentSelectedDirectory));
+                CurrentSelectedDirecName = "/" + Path.GetFileName(value); // change the display var
             }
         }
     }
 
+    private string currentSelectedDirecName = "No Directory Selected";
+    public string CurrentSelectedDirecName
+    {
+        get => currentSelectedDirecName;
+        set
+        {
+            if (currentSelectedDirecName != value)
+            {
+                currentSelectedDirecName = value;
+                OnPropertyChanged(nameof(CurrentSelectedDirecName));
+            }
+        }
+    }
 
 
     private string selectedWallpaperStyle = "Fill";
@@ -395,17 +412,29 @@ public partial class MainWindowViewModel : ViewModelBase
     // select directory
     private void execSelectDirec()
     {
-        selectDirec();
+        selectDirec(null);
     }
 
+    private void execNavigateToParentDirec()
+    {
+        Debug.WriteLine("CurrDirec = " + CurrentSelectedDirectory);
+        if (CurrentSelectedDirectory != "No Directory Selected" || !string.IsNullOrEmpty(CurrentSelectedDirectory))
+        {
+            string parentDir = Path.GetDirectoryName(CurrentSelectedDirectory);
+            if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+            {
+                selectDirec(parentDir);
+            }
+        }
+    }
 
     // erroring when it is spam-clicked
-    private async void selectDirec()
+    private async void selectDirec(string direcChoice)
     {
         Window window = new Window();
         Debug.WriteLine("direcbutton clicked");
         ImageHelper imgHelper = new ImageHelper();
-        ObservableCollection<Wallpaper> directoryPath = await imgHelper.loadListFromDirectory(window, this);
+        ObservableCollection<Wallpaper> directoryPath = await imgHelper.getWallpaperListFromDirec(window, this, direcChoice);
 
         AllWallpapers.Clear();
         if (directoryPath != null && directoryPath.Count > 0)
@@ -425,6 +454,7 @@ public partial class MainWindowViewModel : ViewModelBase
         applyAllFilters();
 
     }
+
     // ===============================
 
 
@@ -515,51 +545,86 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
+    bool imageCurrentlyClicked = false;
     // ===============================
     // image clicked in UI
     public async Task ImageTapped(Wallpaper wallpaper)
     {
-        Debug.WriteLine(wallpaper.Name + " image tapped");
-        LastSelectedWallpaper = wallpaper;
-        CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(LastSelectedWallpaper.FilePath);
-        CurrentWallpaperName = wallpaper.Name;
-        CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
-        
-        // set preview monitors to "unclicked"
-        foreach (var mon in MonitorList)
+        if (imageCurrentlyClicked == true)
         {
-            mon.FillColour = "Navy";
+            return; // do not exec function if spamming image clicks
         }
 
-        // disable set button
-        MainWindow mw = new MainWindow();
-        mw.SetBackgroundButton.IsEnabled = false;
+        imageCurrentlyClicked = true;
+        try
+        {
 
-        // disable dropdown
-        StyleDropdownEnabled = false;
+            if (wallpaper.IsDirectory == true)
+            {
+                Debug.WriteLine("folder tapped");
+            }
+            else
+            {
+                Debug.WriteLine(wallpaper.Name + " image tapped");
+                LastSelectedWallpaper = wallpaper;
+                CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(LastSelectedWallpaper.FilePath);
+                CurrentWallpaperName = wallpaper.Name;
+                CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
+
+                // set preview monitors to "unclicked"
+                foreach (var mon in MonitorList)
+                {
+                    mon.FillColour = "Navy";
+                }
+
+                // disable set button
+                MainWindow mw = new MainWindow();
+                mw.SetBackgroundButton.IsEnabled = false;
+
+                // disable dropdown
+                StyleDropdownEnabled = false;
+            }
+
+        }
+        finally
+        {
+            imageCurrentlyClicked = false;
+        }
+
     }
 
     // currently not used for a valuable functionality, but maybe will be
     public async Task ImageDoubleTapped(Wallpaper wallpaper)
     {
-        Debug.WriteLine(wallpaper.Name + " image double tapped");
 
-        if (MonitorList != null)
+        if (wallpaper.IsDirectory == true)
         {
-            for (int i = 0; i < MonitorList.Count; i++)
-            {
-                MonitorInfo monitor = MonitorList[i];
-                Debug.WriteLine("mmm" + monitor + monitor.CurrWallpaper + monitor.IsPrimary);
-                if (monitor == LastSelMonitor)
-                {
-                    Debug.WriteLine("YES!!");
-                    monitor.CurrWallpaper.ImageThumbnailBitmap = CurrentWallpaperPreview;
+            // DisplayWallpaperList.Clear();
+            selectDirec(wallpaper.FilePath);
+        }
+        else
+        {
+            Debug.WriteLine(wallpaper.Name + " image double tapped");
 
-                    // replace in collec
-                    MonitorList[i] = monitor;
+            if (MonitorList != null)
+            {
+                for (int i = 0; i < MonitorList.Count; i++)
+                {
+                    MonitorInfo monitor = MonitorList[i];
+                    Debug.WriteLine("mmm" + monitor + monitor.CurrWallpaper + monitor.IsPrimary);
+                    if (monitor == LastSelMonitor)
+                    {
+                        Debug.WriteLine("YES!!");
+                        monitor.CurrWallpaper.ImageThumbnailBitmap = CurrentWallpaperPreview;
+
+                        // replace in collec
+                        MonitorList[i] = monitor;
+                    }
                 }
             }
         }
+
+        
 
     }
     // ===============================

@@ -89,6 +89,7 @@ public class ImageHelper
             ColourCategory = RgbToHue(imgClass.AverageRed, imgClass.AverageGreen, imgClass.AverageBlue),
             Name = Path.GetFileName(imgFilePath),
             Date = File.GetLastWriteTime(imgFilePath),
+            IsDirectory = false,
         };
     }
 
@@ -204,30 +205,61 @@ public class ImageHelper
 
 
     // func for returning a list of wallpaper objects
-    public async Task<ObservableCollection<Wallpaper?>> loadListFromDirectory(Window window, MainWindowViewModel mvm)
+    public async Task<ObservableCollection<Wallpaper?>> getWallpaperListFromDirec(Window window, MainWindowViewModel mvm, string folderSpecified)
     {
 
-        List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+        List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp" };
 
         var imgCollec = new ObservableCollection<Wallpaper>();
 
-        // open folder picker
-        var folderChoice = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        string folderChoice = ""; // init
+        if (folderSpecified != null)
         {
-            Title = "Select an Image Directory",
-            AllowMultiple = false
-        });
-
-        if (folderChoice == null || !folderChoice.Any())
-        {
-            return null;
+            folderChoice = folderSpecified;
         }
+        else if (folderSpecified == null)
+        {
+            // open folder picker
+            var folderOpenPick = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select an Image Directory",
+                AllowMultiple = false
+            });
+
+            if (folderOpenPick == null || !folderOpenPick.Any())
+            {
+                return null;
+            }
+            folderChoice = folderOpenPick.Last().Path.LocalPath;
+        }
+        
 
         mvm.CurrentSelectedDirectory = "Loading...";
 
+
+        // populate directories
+        string selectedDirPath = folderChoice;
+        foreach (var subDir in Directory.GetDirectories(selectedDirPath))
+        {
+            // Create a 'Wallpaper' object for the directory
+            var folderWallpaper = new Wallpaper
+            {
+                FilePath = subDir,
+                Name = Path.GetFileName(subDir),
+                IsDirectory = true,
+                // Use your own folder icon path or resource
+                ImageThumbnailBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))),
+                Date = Directory.GetLastWriteTime(subDir)
+            };
+            imgCollec.Add(folderWallpaper);
+        }
+
+
+
+
         // use Last() since folderChoice is technically a list, but AllowMultiple restricts to one element
         // enumerate files in the folder
-        var files = Directory.EnumerateFiles(folderChoice.Last().Path.LocalPath)
+        var files = Directory.EnumerateFiles(folderChoice)
                              .Where(file => SupportedExtensions.Contains(Path.GetExtension(file).ToLower()));
 
         int totalFiles = files.Count();
@@ -273,7 +305,8 @@ public class ImageHelper
 
         await Task.WhenAll(tasks);
 
-        mvm.CurrentSelectedDirectory = "/" + Path.GetFileName(folderChoice.Last().Path.LocalPath);
+        mvm.CurrentSelectedDirectory = folderChoice;
+
 
         return imgCollec;
 

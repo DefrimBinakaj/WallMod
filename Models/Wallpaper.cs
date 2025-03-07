@@ -22,4 +22,6 @@ public class Wallpaper
     public DateTime? Date { get; set; }
     public double? ColourCategory { get; set; }
     // public QuantizedColor? ColourCategory { get; set; }
+
+    public bool? IsDirectory { get; set; }
 }

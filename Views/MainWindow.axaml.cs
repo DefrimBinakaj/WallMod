@@ -1,9 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using WallMod.Helpers;
 using WallMod.Models;
 using WallMod.ViewModels;
@@ -220,8 +223,46 @@ public partial class MainWindow : Window
     }
 
 
+    private void ResetAllItemsOpacity()
+    {
+        // 1) Find the ItemsControl
+        var itemsControl = this.FindControl<ItemsControl>("ImageViewControl");
+        if (itemsControl == null)
+            return;
+
+        // 2) Find the generated WrapPanel in the visual tree
+        var wrapPanel = itemsControl.GetVisualDescendants()
+                                    .OfType<WrapPanel>()
+                                    .FirstOrDefault();
+        if (wrapPanel == null)
+            return;
+
+        // 3) Each item is typically hosted in a ContentPresenter or direct StackPanel child
+        foreach (var child in wrapPanel.GetVisualChildren())
+        {
+            // child might be a ContentPresenter
+            if (child is ContentPresenter cp)
+            {
+                // The actual StackPanel is inside the content presenter
+                var sp = cp.GetVisualDescendants()
+                           .OfType<StackPanel>()
+                           .FirstOrDefault();
+                if (sp != null)
+                    sp.Opacity = 1.0;
+            }
+            else if (child is StackPanel sp2)
+            {
+                // If the item is a direct StackPanel
+                sp2.Opacity = 1.0;
+            }
+        }
+    }
+
+
+
     private async void OnImageTapped(object? sender, PointerPressedEventArgs e)
     {
+        ResetAllItemsOpacity();
         if (sender is Control control && control.DataContext is Wallpaper wallpaper)
         {
             // if user clicked a diff wallpaper than before, reset rect
@@ -230,6 +271,13 @@ public partial class MainWindow : Window
                 ResetRectangle();
                 SetBackgroundButton.IsEnabled = false;
             }
+
+
+            if (wallpaper.IsDirectory == true)
+            {
+                control.Opacity = 0.7;
+            }
+
 
             var viewModel = DataContext as MainWindowViewModel;
             if (viewModel != null)

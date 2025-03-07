@@ -157,12 +157,15 @@
 							</Border>
 							
 						</Popup>
-						
 
-						<Button Grid.Row="1" Content="Set Directory" Command="{Binding selectedDirectory}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
+
+						<Button Grid.Row="1" Content="Navigate Back" Command="{Binding navigateToParentDirec}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
+							<Image Source="avares://Wallmod/Assets/back-icon.png" Width="20" Height="20"></Image>
+						</Button>
+						<Button Grid.Row="2" Content="Set Directory" Command="{Binding selectedDirectory}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 2, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addfoldericon.png" Width="20" Height="20"></Image>
 						</Button>
-						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 4, 0, 0">
+						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 36, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addimgicon.png" Width="20" Height="20"></Image>
 						</Button>
 
@@ -170,7 +173,7 @@
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 
-						<TextBlock Grid.Row="1" Text="{Binding CurrentSelectedDirectory}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0" MaxWidth="300" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+						<TextBlock Grid.Row="1" Text="{Binding CurrentSelectedDirecName}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0" MaxWidth="260" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
 
 						<Grid Grid.Row="3" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom">
 							<Grid.RowDefinitions>
@@ -185,7 +188,7 @@
 
 						<ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled"
 									  VerticalAlignment="Stretch" Margin="45,12,45,15">
-							<ItemsControl ItemsSource="{Binding DisplayWallpaperList}">
+							<ItemsControl ItemsSource="{Binding DisplayWallpaperList}" x:Name="ImageViewControl">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
 										<WrapPanel Orientation="Horizontal"/>
@@ -196,6 +199,7 @@
 									<DataTemplate>
 										<StackPanel Orientation="Vertical" Margin="10" PointerPressed="OnImageTapped">
 											<Image Source="{Binding ImageThumbnailBitmap}" Width="{Binding Value, ElementName=ThumbnailZoomSlider}"/>
+											<TextBlock Text="{Binding Name}" IsVisible="{Binding IsDirectory}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
 										</StackPanel>
 									</DataTemplate>
 								</ItemsControl.ItemTemplate>
