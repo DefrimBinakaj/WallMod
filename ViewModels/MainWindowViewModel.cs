@@ -377,6 +377,23 @@ public partial class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref currentSortChoice, value);
     }
 
+
+    private bool showFolders = true;
+    public bool ShowFolders
+    {
+        get => showFolders;
+        set
+        {
+            if (showFolders != value)
+            {
+                showFolders = value;
+                OnPropertyChanged(nameof(ShowFolders));
+                applyAllFilters();
+            }
+        }
+    }
+
+
     // ---------------------------------------------------
 
 
@@ -515,23 +532,39 @@ public partial class MainWindowViewModel : ViewModelBase
             );
         }
 
+
+        // showfolder filter
+        if (ShowFolders == false)
+        {
+            result = result.Where(wp => wp.IsDirectory == false);
+        }
+
+        var folderList = result.Where(wp => wp.IsDirectory == true);
+        var imageList = result.Where(wp => wp.IsDirectory == false);
         // name/date/size filter
         switch (CurrentSortChoice)
         {
             case "Name":
-                result = result.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                imageList = imageList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                result = folderList.Concat(imageList); // combine
                 break;
             case "Date":
-                result = result.OrderByDescending(wp => wp.Date);
+                folderList = folderList.OrderByDescending(wp => wp.Date);
+                imageList = imageList.OrderByDescending(wp => wp.Date);
+                result = folderList.Concat(imageList); // combine
                 break;
             case "Size":
-                result = result.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
+                imageList = imageList.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
+                result = imageList; // only images
                 break;
             case "Colour":
                 // result = result.OrderBy(wp => wp.ColourCategory.Color.ToHsl().H );
-                result = result.OrderBy(wp => wp.ColourCategory);
+                imageList = imageList.OrderBy(wp => wp.ColourCategory);
+                result = imageList; // only images
                 break;
         }
+
 
         // update DisplayWallpaperList
         DisplayWallpaperList.Clear();

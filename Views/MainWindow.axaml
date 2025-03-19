@@ -89,6 +89,12 @@
 												 Background="rgba(52, 52, 52, 1)"/>
 									</StackPanel>
 
+									<!-- Folder Filter -->
+									<CheckBox Content="Show Folders"
+											  Foreground="White"
+											  Margin="0,8,0,0"
+											  IsChecked="{Binding ShowFolders}" />
+
 									<!-- Image Property -->
 									<StackPanel Orientation="Vertical" Spacing="4">
 										<RadioButton Content="Name"
@@ -455,29 +461,21 @@
 		<Grid Margin="38" Name="SettingsGrid" IsVisible="{Binding SettingsViewVisibility}">
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
-				<RowDefinition Height="Auto"/>
+				<!-- Title + Back -->
+				<RowDefinition Height="*"/>
+				<!-- The tabs -->
 			</Grid.RowDefinitions>
 
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-			</Grid.ColumnDefinitions>
-
-			<!-- Title + Back Button -->
-			<Grid Grid.Row="0" Margin="0,0,0,40" Grid.ColumnSpan="2">
+			<!-- Title + Back Button row=0 -->
+			<Grid Grid.Row="0" Margin="0,0,0,40">
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="Auto"/>
 				</Grid.ColumnDefinitions>
 
 				<Button Content="Back"
 						Command="{Binding settingsButton}"
-						Grid.Column="1"
+						Grid.Column="0"
 						HorizontalAlignment="Left"
 						VerticalAlignment="Center">
 				</Button>
@@ -488,53 +486,70 @@
 						   HorizontalAlignment="Center"
 						   VerticalAlignment="Center"
 						   Grid.Column="0"/>
-
-
 			</Grid>
 
-			<!-- Allow Save History -->
-			<StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10">
-				<TextBlock Text="Allow Save History:" VerticalAlignment="Center"/>
-				<ToggleSwitch IsChecked="{Binding AllowSaveHistory}"/>
-			</StackPanel>
+			<!-- The TabControl in row=1 -->
+			<TabControl Grid.Row="1">
+				<!-- Tab 1: History -->
+				<TabItem Header="History">
+					<StackPanel Margin="10">
+						<TextBlock Text="History" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-			<!-- Delete History -->
-			<StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
-				<TextBlock Text="Delete History:" VerticalAlignment="Center"/>
-				<Button Content="🗑️" Command="{Binding deleteHistoryButton}" Background="DarkRed"/>
-			</StackPanel>
+						<!-- 'Allow Save History', 'Delete History' -->
+						<StackPanel Orientation="Horizontal" Spacing="10">
+							<TextBlock Text="Allow Save History:" VerticalAlignment="Center"/>
+							<ToggleSwitch IsChecked="{Binding AllowSaveHistory}"/>
+						</StackPanel>
 
-			<!-- App Background Color Selection -->
-			<StackPanel Grid.Row="3" Orientation="Vertical" Spacing="10">
-				<TextBlock Text="App Background Color:" VerticalAlignment="Center"/>
+						<StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+							<TextBlock Text="Delete History:" VerticalAlignment="Center"/>
+							<Button Content="🗑️" Command="{Binding deleteHistoryButton}" Background="DarkRed"/>
+						</StackPanel>
+					</StackPanel>
+				</TabItem>
 
-				<Grid>
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="Auto"/>
-						<ColumnDefinition Width="*"/>
-					</Grid.ColumnDefinitions>
+				<!-- Tab 2: Theme -->
+				<TabItem Header="Theme">
+					<StackPanel Margin="10">
+						<TextBlock Text="Theme" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-					<!-- color picker here ?? -->
+						<!-- App Background Color or theme groups -->
+						<StackPanel Orientation="Vertical" Spacing="10">
+							<TextBlock Text="App Background Color:" VerticalAlignment="Center"/>
+							<TextBlock Text="Theme Group 1"/>
+							<TextBlock Text="Theme Group 2"/>
+							<TextBlock Text="Theme Group 3"/>
+						</StackPanel>
+					</StackPanel>
+				</TabItem>
 
-				</Grid>
-			</StackPanel>
+				<!-- Tab 3: System -->
+				<TabItem Header="System">
+					<StackPanel Margin="10">
+						<TextBlock Text="System" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-			<!-- Allow App Running in Background -->
-			<StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="12">
-				<TextBlock Text="Stay Running in Background:" VerticalAlignment="Center"/>
-				<ToggleSwitch IsChecked="{Binding StayRunningInBackground}"/>
-			</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Stay Running in Background:" VerticalAlignment="Center"/>
+							<ToggleSwitch IsChecked="{Binding StayRunningInBackground}"/>
+						</StackPanel>
 
-			<!-- GitHub Button -->
-			<StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="12">
-				<TextBlock Text="GitHub Repository:" VerticalAlignment="Center"/>
-				<Button Content="Open GitHub" Command="{Binding openGithubButton}"/>
-			</StackPanel>
+						<!-- CPU allocated to processing -->
+						<StackPanel Orientation="Vertical" Spacing="10" Margin="0,10,0,0">
+							<TextBlock Text="CPU allocated to processing"/>
+							<Slider Minimum="0" Maximum="100" Value="50" Width="150"/>
+						</StackPanel>
 
-			<!-- GitHub Button -->
-			<StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="12">
-				<TextBlock Text="etc.." VerticalAlignment="Center"/>
-			</StackPanel>
+						<!-- GitHub -->
+						<StackPanel Orientation="Horizontal" Spacing="12" Margin="0,10,0,0">
+							<TextBlock Text="GitHub Repository:" VerticalAlignment="Center"/>
+							<Button Content="Open GitHub" Command="{Binding openGithubButton}"/>
+						</StackPanel>
+
+						<!-- etc.. -->
+						<TextBlock Text="etc.." Margin="0,10,0,0"/>
+					</StackPanel>
+				</TabItem>
+			</TabControl>
 
 		</Grid>
 		
