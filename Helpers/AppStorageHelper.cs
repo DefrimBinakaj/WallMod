@@ -14,7 +14,9 @@ public class AppStorageHelper
 {
     public string appStorageDirectory;
 
-    public string appStorageFilePath;
+    public string appWallpaperHistoryFile;
+
+    public string appSettingsHistoryFile;
 
     public void InitAppStorage()
     {
@@ -25,8 +27,10 @@ public class AppStorageHelper
         );
         Directory.CreateDirectory(appStorageDirectory);
 
-        // dir:
-        // AppData/WallMod/wallpaperHistory.json
-        appStorageFilePath = Path.Combine(appStorageDirectory, "WallModStorageSheet.json");
+        // AppData/WallMod/WallModWallpaperHistory.json
+        appWallpaperHistoryFile = Path.Combine(appStorageDirectory, "WallModWallpaperHistory.json");
+
+        // AppData/WallMod/WallModSettingsHistory.json
+        appSettingsHistoryFile = Path.Combine(appStorageDirectory, "WallModSettingsHistory.json");
     }
 }

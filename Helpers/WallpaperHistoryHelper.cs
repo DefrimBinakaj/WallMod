@@ -17,14 +17,24 @@ namespace WallMod.Helpers;
 /**
  * Class for loading/viewing/adding image history
  */
-public class HistoryHelper
+public class WallpaperHistoryHelper
 {
     AppStorageHelper appStorageHelper;
 
-    public HistoryHelper()
+    public WallpaperHistoryHelper()
     {
         appStorageHelper = new AppStorageHelper();
         appStorageHelper.InitAppStorage();
+    }
+
+    public List<string> LoadHistoryJson()
+    {
+        if (!File.Exists(appStorageHelper.appWallpaperHistoryFile))
+            return new List<string>();
+
+        // read + deserialize JSON to string list
+        string json = File.ReadAllText(appStorageHelper.appWallpaperHistoryFile);
+        return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
     }
 
 
@@ -45,18 +55,8 @@ public class HistoryHelper
 
         // save updated history
         string json = JsonSerializer.Serialize(history);
-        File.WriteAllText(appStorageHelper.appStorageFilePath, json);
+        File.WriteAllText(appStorageHelper.appWallpaperHistoryFile, json);
 
-    }
-
-    public List<string> LoadHistoryJson()
-    {
-        if (!File.Exists(appStorageHelper.appStorageFilePath))
-            return new List<string>();
-
-        // read + deserialize JSON to string list
-        string json = File.ReadAllText(appStorageHelper.appStorageFilePath);
-        return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
     }
 
     public async Task<ObservableCollection<Wallpaper>> GetHistoryWallpapers()
@@ -70,9 +70,10 @@ public class HistoryHelper
 
         // same as imagehelper multiprocessing
         // hardcoded amount of processors used to retrieve all images in a directory
-        var currPCProcessorCount = Environment.ProcessorCount;
-        Debug.WriteLine("processors used: " + currPCProcessorCount);
-        var semaphore = new System.Threading.SemaphoreSlim(currPCProcessorCount);
+        MainWindowViewModel mvm = new MainWindowViewModel();
+        int allocCPUThreads = mvm.CPUThreadsAllocated;
+        Debug.WriteLine("processors used: " + allocCPUThreads);
+        var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
         var tasks = new List<Task>();
 
         for (int i = 0; i < historyList.Count; i++)
@@ -158,7 +159,7 @@ public class HistoryHelper
         if (history.Remove(wallpaperPath))
         {
             string json = JsonSerializer.Serialize(history);
-            File.WriteAllText(appStorageHelper.appStorageFilePath, json);
+            File.WriteAllText(appStorageHelper.appWallpaperHistoryFile, json);
         }
     }
 

@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:converters="using:WallMod.Converters"
              x:Class="WallMod.App"
              xmlns:local="using:WallMod"
              RequestedThemeVariant="Default">
@@ -11,6 +12,13 @@
   
     <Application.Styles>
         <FluentTheme />
+		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 		<StyleInclude Source="Resources/AppStyles.axaml" />
     </Application.Styles>
+
+	<Application.Resources>
+		<converters:BoolToStrConverter x:Key="BoolToStrConverter"/>		
+	</Application.Resources>
+
+
 </Application>

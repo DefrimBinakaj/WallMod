@@ -234,7 +234,7 @@ public class ImageHelper
         }
         
 
-        mvm.CurrentSelectedDirectory = "Loading...";
+        mvm.CurrentSelectedDirectory = " Loading...";
 
 
         // populate directories
@@ -267,9 +267,9 @@ public class ImageHelper
 
         // IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // hardcoded amount of processors used to retrieve all images in a directory
-        var currPCProcessorCount = Environment.ProcessorCount;
-        Debug.WriteLine("processors used: " + currPCProcessorCount);
-        var semaphore = new System.Threading.SemaphoreSlim(currPCProcessorCount);
+        int allocCPUThreads = mvm.CPUThreadsAllocated;
+        Debug.WriteLine("processors used: " + allocCPUThreads);
+        var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
         var tasks = new List<Task>();
 
         foreach (var filePath in files)

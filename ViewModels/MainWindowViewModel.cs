@@ -66,9 +66,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IRelayCommand<Wallpaper> deleteHistoryEntryButton {  get; }
 
-    HistoryHelper historyHelper;
+    WallpaperHistoryHelper wallpaperHistoryHelper;
     public ObservableCollection<string> WallpaperHistoryList { get; set; }
     public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; }
+
+    SettingsHistoryHelper settingsHistoryHelper;
 
 
     // settings ============================================================
@@ -81,14 +83,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         appStorageHelper = new AppStorageHelper();
         appStorageHelper.InitAppStorage();
-
-        // set default img and values
-        CurrentWallpaperPreview = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/placeholder-icon.png")));
-        CurrentWallpaperName = "Name";
-        currentWallpaperSize = "Resolution";
-
-        AllowSaveHistory = true;
-        StayRunningInBackground = false;
 
         uploadClicked = new RelayCommand(execImgUpload);
 
@@ -129,15 +123,39 @@ public partial class MainWindowViewModel : ViewModelBase
 
         deleteHistoryEntryButton = new RelayCommand<Wallpaper>(DeleteSingleHistoryEntry);
 
-        historyHelper = new HistoryHelper();
+        wallpaperHistoryHelper = new WallpaperHistoryHelper();
         WallpaperHistoryList = new ObservableCollection<string>();
         HistoryWallpaperList = new ObservableCollection<Wallpaper>();
+
+        settingsHistoryHelper = new SettingsHistoryHelper();
 
         settingsButton = new RelayCommand(navToSettings);
 
         deleteHistoryButton = new RelayCommand(DeleteHistory);
 
         openGithubButton = new RelayCommand(OpenGithub);
+
+
+        // set default img and values
+        CurrentWallpaperPreview = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/placeholder-icon.png")));
+        CurrentWallpaperName = "Name";
+        currentWallpaperSize = "Resolution";
+
+        AllowSaveHistory = SavedAllowSaveHistory();
+        StayRunningInBackground = SavedStayRunningInBackground();
+        AutoOpenLastDirectory = SavedAutoOpenLastDirectory();
+        RememberFilters = SavedRememberFilters();
+        CPUThreadsAllocated = SavedCPUThreadsAllocated();
+
+        if (AutoOpenLastDirectory == true)
+        {
+            execAutoOpenLastDir();
+        }
+
+        if (RememberFilters == true)
+        {
+            execRememberFilters();
+        }
 
     }
 
@@ -232,6 +250,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 currentSelectedDirectory = value;
                 OnPropertyChanged(nameof(CurrentSelectedDirectory));
                 CurrentSelectedDirecName = "/" + Path.GetFileName(value); // change the display var
+                updateLastChosenDir();
             }
         }
     }
@@ -283,6 +302,9 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
+
+    // views ===================================================
+
     private bool isHistoryViewVisible = false;
     public bool IsHistoryViewVisible
     {
@@ -313,32 +335,6 @@ public partial class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref settingsViewVisibility, value);
     }
 
-    //private bool showCpuMemoryUsage;
-    //public bool ShowCpuMemoryUsage
-    //{
-    //    get => showCpuMemoryUsage;
-    //    set
-    //    {
-    //        if (SetProperty(ref showCpuMemoryUsage, value))
-    //        {
-    //            // idk what im gonna do with this
-    //        }
-    //    }
-    //}
-
-    private bool allowSaveHistory;
-    public bool AllowSaveHistory
-    {
-        get => allowSaveHistory;
-        set => SetProperty(ref allowSaveHistory, value);
-    }
-
-    private bool stayRunningInBackground;
-    public bool StayRunningInBackground
-    {
-        get => stayRunningInBackground;
-        set => SetProperty(ref stayRunningInBackground, value);
-    }
 
 
     // filter stuff ===================================================
@@ -359,24 +355,10 @@ public partial class MainWindowViewModel : ViewModelBase
             if (SetProperty(ref filterSearchText, value))
             {
                 filterSearchExec(); // re-filter on every keystroke
+                updateRememberFilterValue("SearchFilter", FilterSearchText);
             }
         }
     }
-
-    private string currentAspectRatio = "All";
-    public string CurrentAspectRatio
-    {
-        get => currentAspectRatio;
-        set => SetProperty(ref currentAspectRatio, value);
-    }
-
-    private string currentSortChoice = "None"; // or "Name"/"Date"/"Size"
-    public string CurrentSortChoice
-    {
-        get => currentSortChoice;
-        set => SetProperty(ref currentSortChoice, value);
-    }
-
 
     private bool showFolders = true;
     public bool ShowFolders
@@ -389,10 +371,135 @@ public partial class MainWindowViewModel : ViewModelBase
                 showFolders = value;
                 OnPropertyChanged(nameof(ShowFolders));
                 applyAllFilters();
+                updateRememberFilterValue("ShowFoldersFilter", ShowFolders.ToString());
             }
         }
     }
 
+    private string currentSortChoice = "Name";
+    public string CurrentSortChoice
+    {
+        get => currentSortChoice;
+        set
+        {
+            if (SetProperty(ref currentSortChoice, value))
+            {
+                updateRememberFilterValue("ImgPropertySort", CurrentSortChoice);
+            }
+        }
+    }
+
+    private string currentAspectRatio = "All";
+    public string CurrentAspectRatio
+    {
+        get => currentAspectRatio;
+        set
+        {
+            if (SetProperty(ref currentAspectRatio, value))
+            {
+                updateRememberFilterValue("AspectRatioFilter", CurrentAspectRatio);
+            }
+        }
+    }
+
+
+
+    // settings ===================================================
+
+    private bool allowSaveHistory;
+    public bool AllowSaveHistory
+    {
+        get => allowSaveHistory;
+        set
+        {
+            if (SetProperty(ref allowSaveHistory, value))
+            {
+                UpdateAllowSaveHistory(AllowSaveHistory); // save to json file
+            }
+        }
+    }
+
+    private bool stayRunningInBackground;
+    public bool StayRunningInBackground
+    {
+        get => stayRunningInBackground;
+        set
+        {
+            if (SetProperty(ref stayRunningInBackground, value))
+            {
+                UpdateStayRunningInBackground(StayRunningInBackground); // save to json file
+            }
+        }
+    }
+
+    private bool autoOpenLastDirectory;
+    public bool AutoOpenLastDirectory
+    {
+        get => autoOpenLastDirectory;
+        set
+        {
+            if (SetProperty(ref autoOpenLastDirectory, value))
+            {
+                UpdateAutoOpenLastDirectory(AutoOpenLastDirectory); // save to json file
+            }
+        }
+    }
+
+    private bool rememberFilters;
+    public bool RememberFilters
+    {
+        get => rememberFilters;
+        set
+        {
+            if (SetProperty(ref rememberFilters, value))
+            {
+                UpdateRememberFilters(RememberFilters); // save to json file
+            }
+        }
+    }
+
+    private int cpuThreadsAllocated;
+    public int CPUThreadsAllocated
+    {
+        get => cpuThreadsAllocated;
+        set
+        {
+            if (cpuThreadsAllocated != value)
+            {
+                cpuThreadsAllocated = value;
+                OnPropertyChanged();
+                UpdateCPUThreadsAllocated(CPUThreadsAllocated); // save to json file
+            }
+        }
+    }
+    public int MaxCPUThreads { get; } = Environment.ProcessorCount;
+
+
+    // doesnt actually work like argb since it is being modified - decr rgb values in order to incr opacity
+    private Color selectedBackgroundColour = Color.FromArgb(110, 50, 0, 190);
+    public Color SelectedBackgroundColour
+    {
+        get => selectedBackgroundColour;
+        set
+        {
+            // gpt code
+            const double minAlpha = 50;   // least tint opacity
+            const double maxAlpha = 255;  // most tint opacity
+            double factor = 1 - (value.A / 255.0); // invert the chosen alpha (0 -> 1, 255 -> 0) to account for transparency conflict
+            byte newAlpha = (byte)(minAlpha + (maxAlpha - minAlpha) * factor); // formula used to adapt colorpicker to alphacolour UI
+            var newColor = Color.FromArgb(newAlpha, value.R, value.G, value.B);
+            SetProperty(ref selectedBackgroundColour, newColor);
+        }
+    }
+
+
+    // version ===================================================
+    private string appNameVersion = "v1.0.9";
+    public string AppNameVersion
+    {
+        get => appNameVersion;
+        set => SetProperty(ref appNameVersion, value);
+    }
 
     // ---------------------------------------------------
 
@@ -433,7 +540,7 @@ public partial class MainWindowViewModel : ViewModelBase
     // select directory
     private void execSelectDirec()
     {
-        selectDirec(null);
+        selectDirec(null); // execute it without any folder name in particular
     }
 
     private void execNavigateToParentDirec()
@@ -684,7 +791,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             if (allowSaveHistory)
             {
-                historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
+                wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
         }
         else
@@ -696,7 +803,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             if (allowSaveHistory)
             {
-                historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
+                wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
         }
     }
@@ -735,7 +842,7 @@ public partial class MainWindowViewModel : ViewModelBase
             // save
             if (allowSaveHistory)
             {
-                historyHelper.AddToHistory(LastSelectedWallpaper.FilePath);
+                wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
         }
         catch (Exception ex)
@@ -782,7 +889,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             HistoryWallpaperList.Clear();
 
-            var historyList = await historyHelper.GetHistoryWallpapers();
+            var historyList = await wallpaperHistoryHelper.GetHistoryWallpapers();
             foreach (var item in historyList)
             {
                 HistoryWallpaperList.Add(item);
@@ -797,6 +904,16 @@ public partial class MainWindowViewModel : ViewModelBase
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
+    }
+
+    public void DeleteSingleHistoryEntry(Wallpaper wallpaper)
+    {
+        if (wallpaper == null)
+        {
+            return;
+        }
+        wallpaperHistoryHelper.RemoveHistoryEntry(wallpaper.FilePath);
+        HistoryWallpaperList.Remove(wallpaper);
     }
     // ===============================
 
@@ -841,11 +958,21 @@ public partial class MainWindowViewModel : ViewModelBase
         MainGridVisibility = !MainGridVisibility;
     }
 
+    public bool SavedAllowSaveHistory()
+    {
+        string allowSaveHistoryStatus = settingsHistoryHelper.GetSettingEntry("AllowSaveHistory");
+        return bool.Parse(allowSaveHistoryStatus);
+    }
+    public void UpdateAllowSaveHistory(bool allowsavehistbool)
+    {
+        settingsHistoryHelper.UpdateSetting("AllowSaveHistory", allowsavehistbool.ToString());
+    }
+
     public void DeleteHistory()
     {
         HistoryWallpaperList.Clear();
 
-        var history = historyHelper.LoadHistoryJson();
+        var history = wallpaperHistoryHelper.LoadHistoryJson();
 
         foreach (var filePath in history)
         {
@@ -856,37 +983,83 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public void DeleteSingleHistoryEntry(Wallpaper wallpaper)
+
+    public bool SavedStayRunningInBackground()
     {
-        if (wallpaper == null)
-        {
-            return;
-        }
-        historyHelper.RemoveHistoryEntry(wallpaper.FilePath);
-        HistoryWallpaperList.Remove(wallpaper);
+        string allowSaveHistoryStatus = settingsHistoryHelper.GetSettingEntry("StayRunningInBackground");
+        return bool.Parse(allowSaveHistoryStatus);
+    }
+    public void UpdateStayRunningInBackground(bool stayrunninginbg)
+    {
+        settingsHistoryHelper.UpdateSetting("StayRunningInBackground", stayrunninginbg.ToString());
     }
 
 
-    // currently unused? put in app.axaml.cs iirc
-    private void MinimizeToTray()
+
+    public bool SavedAutoOpenLastDirectory()
     {
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
+        string autoOpenLastDirectoryStatus = settingsHistoryHelper.GetSettingEntry("AutoOpenLastChosenDirectoryOnAppStart");
+        return bool.Parse(autoOpenLastDirectoryStatus);
+    }
+    public void UpdateAutoOpenLastDirectory(bool autoopenlastdir)
+    {
+        settingsHistoryHelper.UpdateSetting("AutoOpenLastChosenDirectoryOnAppStart", autoopenlastdir.ToString());
+    }
+    public void execAutoOpenLastDir()
+    {
+        string previousDir = settingsHistoryHelper.GetSettingEntry("LastChosenDirectory");
+        if (!string.IsNullOrEmpty(previousDir) && Directory.Exists(previousDir))
         {
-            if (StayRunningInBackground)
-            {
-                desktopLifetime.MainWindow.Hide();
-                Debug.WriteLine("App minimized to tray.");
-            }
-            else
-            {
-                desktopLifetime.Shutdown();
-            }
+            selectDirec(previousDir);
         }
     }
+    public void updateLastChosenDir()
+    {
+        settingsHistoryHelper.UpdateSetting("LastChosenDirectory", CurrentSelectedDirectory);
+    }
+
+
+
+    public bool SavedRememberFilters()
+    {
+        string rememberFiltersStatus = settingsHistoryHelper.GetSettingEntry("RememberFilterSettings");
+        return bool.Parse(rememberFiltersStatus);
+    }
+    public void UpdateRememberFilters(bool rememfilters)
+    {
+        settingsHistoryHelper.UpdateSetting("RememberFilterSettings", rememfilters.ToString());
+    }
+    public void updateRememberFilterValue(string filterType, string filterVal)
+    {
+        settingsHistoryHelper.UpdateSetting(filterType, filterVal);
+    }
+    public void execRememberFilters()
+    {
+        FilterSearchText = settingsHistoryHelper.GetSettingEntry("SearchFilter");
+        ShowFolders = bool.Parse(settingsHistoryHelper.GetSettingEntry("ShowFoldersFilter"));
+        CurrentSortChoice = settingsHistoryHelper.GetSettingEntry("ImgPropertySort");
+        CurrentAspectRatio = settingsHistoryHelper.GetSettingEntry("AspectRatioFilter");
+
+        applyAllFilters();
+    }
+
+
+
+    public int SavedCPUThreadsAllocated()
+    {
+        string cpuThreadsAllocatedStatus = settingsHistoryHelper.GetSettingEntry("CPUThreadsAllocated");
+        return int.Parse(cpuThreadsAllocatedStatus);
+    }
+    public void UpdateCPUThreadsAllocated(int cputhreadsalloc)
+    {
+        settingsHistoryHelper.UpdateSetting("CPUThreadsAllocated", cputhreadsalloc.ToString());
+    }
+
+
 
     public void OpenGithub()
     {
-        string url = "https://github.com/DefrimBinakaj";
+        string url = "https://github.com/DefrimBinakaj/WallMod";
         try
         {
             Process.Start(new ProcessStartInfo
@@ -899,6 +1072,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Debug.WriteLine($"Failed to open GitHub repository: {ex.Message}");
         }
+
     }
     // ===============================
 

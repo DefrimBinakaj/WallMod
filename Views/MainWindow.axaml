@@ -13,7 +13,6 @@
         Title="WallMod"
 		Name="MainWindowAxaml"
         TransparencyLevelHint="AcrylicBlur"
-        Background="Transparent"
         ExtendClientAreaToDecorationsHint="True">
 
 	<Design.DataContext>
@@ -25,9 +24,9 @@
 			<ExperimentalAcrylicBorder.Material>
 				<ExperimentalAcrylicMaterial
                     BackgroundSource="Digger"
-                    TintColor="Navy"
-                    TintOpacity="1"
-                    MaterialOpacity="0.25" />
+                    TintColor="{Binding SelectedBackgroundColour}"
+                    TintOpacity="0.4"
+                    MaterialOpacity="0.3" />
 			</ExperimentalAcrylicBorder.Material>
 		</ExperimentalAcrylicBorder>
 
@@ -101,58 +100,68 @@
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
 													 CommandParameter="Name"
+													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Name}"
 													 Foreground="White"/>
 										<RadioButton Content="Date"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
 													 CommandParameter="Date"
+													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Date}"
 													 Foreground="White"/>
 										<RadioButton Content="Size"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
 													 CommandParameter="Size"
+													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Size}"
 													 Foreground="White"/>
 										<RadioButton Content="Colour"
 													 GroupName="FilterGroup"
 													 Command="{Binding filterGroupSelectedCommand}"
 													 CommandParameter="Colour"
+													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Colour}"
 													 Foreground="White"/>
 									</StackPanel>
 									
 									<!-- Image Aspect Ratio -->
 									<StackPanel Orientation="Horizontal" Spacing="4">
 										<RadioButton Content="All"
-													 IsChecked="True"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="All"
 													 Foreground="White"/>
 										<RadioButton Content="Vertical"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Vertical}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="Vertical"
 													 Foreground="White"/>
 										<RadioButton Content="4:3"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=4:3}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="4:3"
 													 Foreground="White"/>
 										<RadioButton Content="16:9"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:9}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="16:9"
 													 Foreground="White"/>
 										<RadioButton Content="16:10"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:10}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="16:10"
 													 Foreground="White"/>
 										<RadioButton Content="21:9"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=21:9}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="21:9"
 													 Foreground="White"/>
 										<RadioButton Content="32:9"
+													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=32:9}"
 													 GroupName="AspectRatioGroup"
 													 Command="{Binding filterAspectRatioCommand}"
 													 CommandParameter="32:9"
@@ -459,6 +468,7 @@
 
 		<!-- Settings (temp currently put into same vm) -->
 		<Grid Margin="38" Name="SettingsGrid" IsVisible="{Binding SettingsViewVisibility}">
+			
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto"/>
 				<!-- Title + Back -->
@@ -487,69 +497,283 @@
 						   VerticalAlignment="Center"
 						   Grid.Column="0"/>
 			</Grid>
+			
 
-			<!-- The TabControl in row=1 -->
+			<!-- tabs -->
 			<TabControl Grid.Row="1">
-				<!-- Tab 1: History -->
+				
+				<!-- TAB 1: HISTORY -->
 				<TabItem Header="History">
-					<StackPanel Margin="10">
-						<TextBlock Text="History" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-						<!-- 'Allow Save History', 'Delete History' -->
-						<StackPanel Orientation="Horizontal" Spacing="10">
-							<TextBlock Text="Allow Save History:" VerticalAlignment="Center"/>
-							<ToggleSwitch IsChecked="{Binding AllowSaveHistory}"/>
-						</StackPanel>
+					<Grid HorizontalAlignment="Stretch">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="0.15*"/>
+							<ColumnDefinition Width="0.7*"/>
+							<ColumnDefinition Width="0.15*"/>
+						</Grid.ColumnDefinitions>
+						
+						<StackPanel Grid.Column="1" Margin="0,30,0,20">
+							
+							<!-- GROUP 1: History Settings -->
+							<TextBlock Text="Wallpaper History"
+									   Foreground="LightGray"
+									   FontSize="16"
+									   FontWeight="Bold"
+									   Margin="0,32,0,8"/>
+							<Border CornerRadius="12"
+									Background="rgba(20, 20, 20, 200)"
+									Padding="16">
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+									<Grid.RowDefinitions>
+										<RowDefinition Height="40"/>
+										<RowDefinition Height="8"/>
+										<RowDefinition Height="40"/>
+									</Grid.RowDefinitions>
+									<!-- Allow Save History -->
+									<TextBlock Grid.Row="0" Grid.Column="0"
+											   Text="Allow saving wallpapers to history:"
+											   VerticalAlignment="Center"
+											   Margin="12,0,0,0"
+											   Foreground="White"/>
+									<ToggleSwitch Grid.Row="0" Grid.Column="1"
+												  IsChecked="{Binding AllowSaveHistory}"
+												  HorizontalAlignment="Right"
+												  VerticalAlignment="Center"/>
+									<!-- Delete Entire History -->
+									<TextBlock Grid.Row="2" Grid.Column="0"
+											   Text="Delete entire wallpaper history:"
+											   VerticalAlignment="Center"
+											   Margin="12,0,0,0"
+											   Foreground="White"/>
+									<Button Grid.Row="2" Grid.Column="1"
+											Content="🗑️"
+											Command="{Binding deleteHistoryButton}"
+											Background="DarkRed"
+											HorizontalAlignment="Right"
+											VerticalAlignment="Center"/>
+								</Grid>
+							</Border>
 
-						<StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-							<TextBlock Text="Delete History:" VerticalAlignment="Center"/>
-							<Button Content="🗑️" Command="{Binding deleteHistoryButton}" Background="DarkRed"/>
+							<!-- GROUP 2: Startup Behavior -->
+							<TextBlock Text="Startup"
+									   Foreground="LightGray"
+									   FontSize="16"
+									   FontWeight="Bold"
+									   Margin="0,32,0,8"/>
+							<Border CornerRadius="12"
+									Background="rgba(20, 20, 20, 200)"
+									Padding="16">
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+									<Grid.RowDefinitions>
+										<RowDefinition Height="40"/>
+										<RowDefinition Height="8"/>
+										<RowDefinition Height="40"/>
+									</Grid.RowDefinitions>
+									<!-- Auto Open Last Directory -->
+									<TextBlock Grid.Row="0" Grid.Column="0"
+											   Text="Automatically open last directory on startup:"
+											   VerticalAlignment="Center"
+											   Margin="12,0,0,0"
+											   Foreground="White"/>
+									<ToggleSwitch Grid.Row="0" Grid.Column="1"
+												  IsChecked="{Binding AutoOpenLastDirectory}"
+												  HorizontalAlignment="Right"/>
+									<!-- Remember Filters -->
+									<TextBlock Grid.Row="2" Grid.Column="0"
+											   Text="Remember filters on startup:"
+											   VerticalAlignment="Center"
+											   Margin="12,0,0,0"
+											   Foreground="White"/>
+									<ToggleSwitch Grid.Row="2" Grid.Column="1"
+												  IsChecked="{Binding RememberFilters}"
+												  HorizontalAlignment="Right"/>
+								</Grid>
+								
+							</Border>
 						</StackPanel>
-					</StackPanel>
+						
+					</Grid>
 				</TabItem>
 
-				<!-- Tab 2: Theme -->
+				<!-- TAB 2: THEME -->
 				<TabItem Header="Theme">
-					<StackPanel Margin="10">
-						<TextBlock Text="Theme" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+					
+					<Grid HorizontalAlignment="Stretch">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="0.15*"/>
+							<ColumnDefinition Width="0.7*"/>
+							<ColumnDefinition Width="0.15*"/>
+						</Grid.ColumnDefinitions>
+						
+						<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="16">
+							<TextBlock Text="Colour / Theme"
+									   Foreground="LightGray"
+									   FontSize="16"
+									   FontWeight="Bold"
+									   Margin="0,32,0,8"/>
+							<Border CornerRadius="12"
+									Background="rgba(20, 20, 20, 200)"
+									Padding="16">
 
-						<!-- App Background Color or theme groups -->
-						<StackPanel Orientation="Vertical" Spacing="10">
-							<TextBlock Text="App Background Color:" VerticalAlignment="Center"/>
-							<TextBlock Text="Theme Group 1"/>
-							<TextBlock Text="Theme Group 2"/>
-							<TextBlock Text="Theme Group 3"/>
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+									<Grid.RowDefinitions>
+										<!-- Each row will auto-size -->
+										<RowDefinition Height="Auto"/>
+										<RowDefinition Height="8"/>
+										<RowDefinition Height="Auto"/>
+										<RowDefinition Height="8"/>
+										<RowDefinition Height="Auto"/>
+									</Grid.RowDefinitions>
+
+									<!-- Row 1: Background colour -->
+									<TextBlock Grid.Row="0" Grid.Column="0"
+											   Text="Background"
+											   Foreground="White"
+											   Margin="12,0,0,0"
+											   VerticalAlignment="Center"/>
+									<ColorPicker Grid.Row="0" Grid.Column="1"
+												 Width="100" Height="40"
+												 Color="{Binding SelectedBackgroundColour, Mode=TwoWay}"
+												 IsAccentColorsVisible="True"
+												 IsAlphaVisible="True"
+												 IsAlphaEnabled="True"
+												 VerticalAlignment="Center"/>
+
+									<!-- Row 2: Primary accent colour -->
+									<TextBlock Grid.Row="2" Grid.Column="0"
+											   Text="Primary Accent"
+											   Foreground="White"
+											   Margin="12,0,0,0"
+											   VerticalAlignment="Center"/>
+									<ColorPicker Grid.Row="2" Grid.Column="1"
+												 Width="100" Height="40"
+												 Color="{}"
+												 IsAccentColorsVisible="True"
+												 IsAlphaVisible="True"
+												 IsAlphaEnabled="True"
+												 VerticalAlignment="Center"/>
+
+									<!-- Row 3: Secondary accent colour -->
+									<TextBlock Grid.Row="4" Grid.Column="0"
+											   Text="Secondary Accent"
+											   Foreground="White"
+											   Margin="12,0,0,0"
+											   VerticalAlignment="Center"/>
+									<ColorPicker Grid.Row="4" Grid.Column="1"
+												 Width="100" Height="40"
+												 Color="{}"
+												 IsAccentColorsVisible="True"
+												 IsAlphaVisible="True"
+												 IsAlphaEnabled="True"
+												 VerticalAlignment="Center"/>
+								</Grid>
+								
+							</Border>
 						</StackPanel>
-					</StackPanel>
+					</Grid>
 				</TabItem>
 
-				<!-- Tab 3: System -->
+				<!-- TAB 3: SYSTEM -->
 				<TabItem Header="System">
-					<StackPanel Margin="10">
-						<TextBlock Text="System" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+					<Grid HorizontalAlignment="Stretch">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="0.15*"/>
+							<ColumnDefinition Width="0.7*"/>
+							<ColumnDefinition Width="0.15*"/>
+						</Grid.ColumnDefinitions>
+						
+						<StackPanel Grid.Column="1" Margin="0,30,0,20">
+							
+							<!-- AppName, Version & GitHub Row -->
+							<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,30,0,0">
+								<Image Source="avares://WallMod/Assets/wallmodicon.ico"
+									   Width="35" Height="35"/>
+								<TextBlock Text="WallMod  |"
+										   Foreground="White"
+										   FontWeight="Bold"
+										   FontSize="28"
+										   VerticalAlignment="Center"/>
+								<TextBlock Text="{Binding AppNameVersion}"
+										   Foreground="LightGray"
+										   FontWeight="Bold"
+										   FontSize="22"
+										   VerticalAlignment="Center"
+										   Margin="0,2,0,0"/>
+								<Button Command="{Binding openGithubButton}"
+										Background="Transparent"
+										BorderThickness="0"
+										Margin="0,0,0,0">
+									<Image Source="avares://WallMod/Assets/github-logo.png"
+										   Width="30" Height="35"/>
+								</Button>
+							</StackPanel>
 
-						<StackPanel Orientation="Horizontal" Spacing="12">
-							<TextBlock Text="Stay Running in Background:" VerticalAlignment="Center"/>
-							<ToggleSwitch IsChecked="{Binding StayRunningInBackground}"/>
+							<!-- GROUP: System Settings -->
+							<TextBlock Text="System Settings"
+									   Foreground="LightGray"
+									   FontSize="16"
+									   FontWeight="Bold"
+									   Margin="0,32,0,8"/>
+							<Border CornerRadius="12"
+									Background="rgba(20, 20, 20, 200)"
+									Padding="16">
+								<StackPanel>
+									<!-- Stay Running in Background -->
+									<StackPanel Orientation="Horizontal" Spacing="8" Margin="12,0,0,12">
+										<TextBlock Text="Stay Running in Background:"
+												   VerticalAlignment="Center"
+												   Foreground="White"
+												   FontSize="14"/>
+										<ToggleSwitch IsChecked="{Binding StayRunningInBackground}"
+													  HorizontalAlignment="Right"/>
+									</StackPanel>
+									<!-- CPU Threads allocated -->
+									<TextBlock Text="CPU Threads allocated"
+											   Foreground="White"
+											   FontSize="14"
+											   Margin="12,12,0,0"/>
+									<TextBlock Text="used only for image processing ( >85% recommended)"
+											   Foreground="Gray"
+											   FontSize="12"
+											   Margin="12,12,0,4"/>
+									<StackPanel Orientation="Horizontal" Spacing="16" Margin="12,0,0,12">
+										<Slider Minimum="1"
+												Maximum="{Binding MaxCPUThreads}"
+												TickFrequency="1"
+												IsSnapToTickEnabled="True"
+												Value="{Binding CPUThreadsAllocated}"
+												Background="Gray"
+												Foreground="Blue"
+												Width="300"/>
+										<TextBlock Text="{Binding CPUThreadsAllocated}"
+												   VerticalAlignment="Center"
+												   FontSize="18"
+												   Foreground="White"/>
+									</StackPanel>
+									<!-- Additional System Settings -->
+									<TextBlock Text="etc.."
+											   Foreground="White"
+											   Margin="12,0,0,0"/>
+								</StackPanel>
+							</Border>
 						</StackPanel>
-
-						<!-- CPU allocated to processing -->
-						<StackPanel Orientation="Vertical" Spacing="10" Margin="0,10,0,0">
-							<TextBlock Text="CPU allocated to processing"/>
-							<Slider Minimum="0" Maximum="100" Value="50" Width="150"/>
-						</StackPanel>
-
-						<!-- GitHub -->
-						<StackPanel Orientation="Horizontal" Spacing="12" Margin="0,10,0,0">
-							<TextBlock Text="GitHub Repository:" VerticalAlignment="Center"/>
-							<Button Content="Open GitHub" Command="{Binding openGithubButton}"/>
-						</StackPanel>
-
-						<!-- etc.. -->
-						<TextBlock Text="etc.." Margin="0,10,0,0"/>
-					</StackPanel>
+					</Grid>
 				</TabItem>
 			</TabControl>
+
+
 
 		</Grid>
 		
