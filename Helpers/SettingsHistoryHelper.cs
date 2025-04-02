@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Avalonia.Media;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -39,6 +40,11 @@ public class SettingsHistoryHelper
             { "ShowFoldersFilter", "True" },
             { "ImgPropertySort", "Name" },
             { "AspectRatioFilter", "All" },
+            // colours
+            { "SelectedBackgroundColour", Color.FromArgb(110, 50, 0, 190).ToString() },
+            { "SelectedPrimaryAccentColour", Color.FromArgb(255, 64, 224, 208).ToString() },
+            { "SelectedWallpaperCollectionColour", Color.FromArgb(255, 0, 0, 0).ToString() },
+            { "SelectedPreviewBackgroundColour", Color.FromArgb(200, 97, 97, 97).ToString() },
         };
 
         Dictionary<string, string> currSettings;

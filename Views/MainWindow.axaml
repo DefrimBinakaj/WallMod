@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:WallMod.ViewModels"
+		xmlns:convs="using:WallMod.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		Width="1500"
@@ -18,6 +19,10 @@
 	<Design.DataContext>
 		<vm:MainWindowViewModel/>
 	</Design.DataContext>
+
+	<Window.Resources>
+		<convs:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+	</Window.Resources>
 
 	<Panel>
 		<ExperimentalAcrylicBorder IsHitTestVisible="False">
@@ -42,7 +47,7 @@
 			</Grid.RowDefinitions>
 
 			<!-- Left Pane: Image Gallery and Controls & History ========= -->
-			<Border Grid.Column="0" Background="Black" CornerRadius="10" Margin="8">
+			<Border Grid.Column="0" Background="{Binding SelectedWallpaperCollectionColour, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="10" Margin="8">
 				<Panel>
 
 
@@ -54,9 +59,9 @@
 							<RowDefinition Height="*" />
 						</Grid.RowDefinitions>
 
-						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="BlueViolet" VerticalAlignment="Top" CornerRadius="10,0"/>
+						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" VerticalAlignment="Top" CornerRadius="10,0"/>
 
-						<Button x:Name="FilterButton" Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" Background="Black" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
+						<Button x:Name="FilterButton" Grid.Row="1" Content="Filter" Command="{Binding filterClicked}" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0">
 							<Image Source="avares://Wallmod/Assets/filtericon.png" Width="17" Height="17"></Image>
 						</Button>
 
@@ -66,8 +71,8 @@
 							   IsLightDismissEnabled="True"
 							   IsOpen="{Binding IsFilterOpen}">
 
-							<!-- The content of the popup: a border containing a search bar & checkboxes -->
-							<Border Background="rgba(41, 41, 97, 0.94)"
+							<!-- Filter Popup -->
+							<Border Background="rgba(20, 20, 20, 20)"
 									CornerRadius="5"
 									Padding="10"
 									MinWidth="200">
@@ -92,7 +97,7 @@
 									<CheckBox Content="Show Folders"
 											  Foreground="White"
 											  Margin="0,8,0,0"
-											  IsChecked="{Binding ShowFolders}" />
+											  IsChecked="{Binding ShowFolders}"/>
 
 									<!-- Image Property -->
 									<StackPanel Orientation="Vertical" Spacing="4">
@@ -174,17 +179,17 @@
 						</Popup>
 
 
-						<Button Grid.Row="1" Content="Navigate Back" Command="{Binding navigateToParentDirec}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
+						<Button Grid.Row="1" Content="Navigate Back" Command="{Binding navigateToParentDirec}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0">
 							<Image Source="avares://Wallmod/Assets/back-icon.png" Width="20" Height="20"></Image>
 						</Button>
-						<Button Grid.Row="2" Content="Set Directory" Command="{Binding selectedDirectory}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 2, 0, 0">
+						<Button Grid.Row="2" Content="Set Directory" Command="{Binding selectedDirectory}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 2, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addfoldericon.png" Width="20" Height="20"></Image>
 						</Button>
-						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" Background="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 36, 0, 0">
+						<Button Grid.Row="2" Content="Upload" Command="{Binding uploadClicked}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 36, 0, 0">
 							<Image Source="avares://Wallmod/Assets/addimgicon.png" Width="20" Height="20"></Image>
 						</Button>
 
-						<Button Grid.Row="3" Background="Black" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
+						<Button Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 
@@ -197,7 +202,17 @@
 								<RowDefinition Height="Auto"/>
 							</Grid.RowDefinitions>
 							<TextBlock Grid.Row="0" Text="+"  Margin="2, 0, 8, 0" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-							<Slider Grid.Row="1" x:Name="ThumbnailZoomSlider" Orientation="Vertical" Foreground="Blue" Background="Gray" Minimum="50" Maximum="300" Value="{Binding ThumbnailZoomLevel}" HorizontalAlignment="Left" Margin="2" Width="35" Height="100" VerticalAlignment="Center"/>
+							<Slider Grid.Row="1" x:Name="ThumbnailZoomSlider" 
+									Orientation="Vertical" 
+									Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" 
+									Background="Gray" 
+									Minimum="50" 
+									Maximum="300" 
+									Value="{Binding ThumbnailZoomLevel}" 
+									HorizontalAlignment="Left" 
+									Margin="2" 
+									Width="35" Height="100" 
+									VerticalAlignment="Center"/>
 							<TextBlock Grid.Row="2" Text="-" Margin="2, 0, 9, 0" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 						</Grid>
 
@@ -226,7 +241,7 @@
 
 
 					<!-- History Section -->
-					<Grid IsVisible="{Binding IsHistoryViewVisible}">
+					<Grid IsVisible="{Binding IsHistoryViewVisible}" Background="Transparent">
 						<Grid.RowDefinitions>
 							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="*" />
@@ -276,9 +291,10 @@
 						</ScrollViewer>
 
 						<!-- Temp Back Button (position is good tho) -->
-						<Button Grid.Row="2" VerticalAlignment="Bottom" Background="Black" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
+						<Button Grid.Row="2" VerticalAlignment="Bottom" Background="Transparent" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
+						
 					</Grid>
 
 
@@ -287,14 +303,14 @@
 
 
 			<!-- GridSplitter: Allows Resizing Between Left and Right Sections ========= -->
-			<GridSplitter Grid.Column="1" Grid.RowSpan="1" Width="5" Background="DarkTurquoise" Margin="0,25,0,25"
+			<GridSplitter Grid.Column="1" Grid.RowSpan="1" Width="5" Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" Margin="0,25,0,25"
                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                           ShowsPreview="False" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" 
 						  DragStarted="GridSplitterDragExec" />
 
 
 			<!-- Right Section: Preview and Controls ========= -->
-			<Border Grid.Column="2" Background="rgba(97, 97, 97, 0.8)" CornerRadius="10" Margin="8">
+			<Border Grid.Column="2" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="10" Margin="8">
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
 					<Grid Margin="18, 6, 18, 0">
 						<Grid.ColumnDefinitions>
@@ -374,12 +390,12 @@
 							</Button>
 							<TextBlock Text="{Binding CurrentWallpaperName}"
 									   HorizontalAlignment="Left" FontSize="15"
-									   Foreground="#FFD82E" FontWeight="Bold" Margin="35, 4, 0, 0"
+									   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="35, 4, 0, 0"
 									   MaxWidth="180" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
 
 							<TextBlock Text="{Binding CurrentWallpaperSize}"
 									   HorizontalAlignment="Right" FontSize="15"
-									   Foreground="#FF7C00" FontWeight="Bold" Margin="4"/>
+									   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="4"/>
 						</Grid>
 
 
@@ -395,7 +411,7 @@
 							</Button>
 						</Grid>
 
-						<Border Grid.Row="4" Grid.ColumnSpan="2" CornerRadius="20" BorderBrush="DarkTurquoise" BorderThickness="2">
+						<Border Grid.Row="4" Grid.ColumnSpan="2" CornerRadius="20" BorderBrush="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" BorderThickness="2">
 							<ItemsControl ItemsSource="{Binding MonitorList}">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
@@ -635,6 +651,8 @@
 										<RowDefinition Height="Auto"/>
 										<RowDefinition Height="8"/>
 										<RowDefinition Height="Auto"/>
+										<RowDefinition Height="8"/>
+										<RowDefinition Height="Auto"/>
 									</Grid.RowDefinitions>
 
 									<!-- Row 1: Background colour -->
@@ -659,25 +677,42 @@
 											   VerticalAlignment="Center"/>
 									<ColorPicker Grid.Row="2" Grid.Column="1"
 												 Width="100" Height="40"
-												 Color="{}"
+												 Color="{Binding SelectedPrimaryAccentColour, Mode=TwoWay}"
 												 IsAccentColorsVisible="True"
 												 IsAlphaVisible="True"
 												 IsAlphaEnabled="True"
 												 VerticalAlignment="Center"/>
 
-									<!-- Row 3: Secondary accent colour -->
+									<!-- Row 3: Wallpaper Collection colour -->
 									<TextBlock Grid.Row="4" Grid.Column="0"
-											   Text="Secondary Accent"
+											   Text="Wallpaper Collection Background"
 											   Foreground="White"
 											   Margin="12,0,0,0"
 											   VerticalAlignment="Center"/>
 									<ColorPicker Grid.Row="4" Grid.Column="1"
 												 Width="100" Height="40"
-												 Color="{}"
+												 Color="{Binding SelectedWallpaperCollectionColour, Mode=TwoWay}"
 												 IsAccentColorsVisible="True"
 												 IsAlphaVisible="True"
 												 IsAlphaEnabled="True"
 												 VerticalAlignment="Center"/>
+									
+									<!-- Row 3: Preview Background colour -->
+									<TextBlock Grid.Row="6" Grid.Column="0"
+											   Text="Preview Background"
+											   Foreground="White"
+											   Margin="12,0,0,0"
+											   VerticalAlignment="Center"/>
+									<ColorPicker Grid.Row="6" Grid.Column="1"
+												 Width="100" Height="40"
+												 Color="{Binding SelectedPreviewBackgroundColour, Mode=TwoWay}"
+												 IsAccentColorsVisible="True"
+												 IsAlphaVisible="True"
+												 IsAlphaEnabled="True"
+												 VerticalAlignment="Center"/>
+
+
+									
 								</Grid>
 								
 							</Border>
@@ -755,7 +790,7 @@
 												IsSnapToTickEnabled="True"
 												Value="{Binding CPUThreadsAllocated}"
 												Background="Gray"
-												Foreground="Blue"
+												Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 												Width="300"/>
 										<TextBlock Text="{Binding CPUThreadsAllocated}"
 												   VerticalAlignment="Center"

@@ -17,6 +17,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using DataJuggler.PixelDatabase;
+using Avalonia.Themes.Fluent;
+using Avalonia.Styling;
 
 namespace WallMod.ViewModels;
 
@@ -156,6 +158,12 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             execRememberFilters();
         }
+
+        SelectedBackgroundColour = SavedSelectedBackgroundColour();
+        SelectedPrimaryAccentColour = SavedSelectedPrimaryAccentColour();
+        SelectedWallpaperCollectionColour = SavedSelectedWallpaperCollectionColour();
+        SelectedPreviewBackgroundColour = SavedSelectedPreviewBackgroundColour();
+        changeFluentColour();
 
     }
 
@@ -476,22 +484,88 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
     // doesnt actually work like argb since it is being modified - decr rgb values in order to incr opacity
-    private Color selectedBackgroundColour = Color.FromArgb(110, 50, 0, 190);
+    private Color selectedBackgroundColour;
     public Color SelectedBackgroundColour
     {
         get => selectedBackgroundColour;
         set
         {
-            // gpt code
-            const double minAlpha = 50;   // least tint opacity
-            const double maxAlpha = 255;  // most tint opacity
-            double factor = 1 - (value.A / 255.0); // invert the chosen alpha (0 -> 1, 255 -> 0) to account for transparency conflict
-            byte newAlpha = (byte)(minAlpha + (maxAlpha - minAlpha) * factor); // formula used to adapt colorpicker to alphacolour UI
-            var newColor = Color.FromArgb(newAlpha, value.R, value.G, value.B);
-            SetProperty(ref selectedBackgroundColour, newColor);
+            UpdateSelectedBackgroundColour(value); // update it before processing
+            SetProperty(ref selectedBackgroundColour, convertBackgroundColour(value));
         }
     }
 
+    // func to convert colour for avalonia alpha and tint
+    public Color convertBackgroundColour(Color inputColour)
+    {
+        // gpt code
+        const double minAlpha = 50;   // least tint opacity
+        const double maxAlpha = 255;  // most tint opacity
+        double factor = 1 - (inputColour.A / 255.0); // invert the chosen alpha (0 -> 1, 255 -> 0) to account for transparency conflict
+        byte newAlpha = (byte)(minAlpha + (maxAlpha - minAlpha) * factor); // formula used to adapt colorpicker to alphacolour UI
+        var newColor = Color.FromArgb(newAlpha, inputColour.R, inputColour.G, inputColour.B);
+        return newColor;
+    }
+
+    // func to convert colour for binding to UI buttons and grid etc
+    private Color convertUIColour(Color inputColour)
+    {
+        // gpt code
+        const byte minAlpha = 50;   // minimum opacity
+        const byte maxAlpha = 255;  // maximum opacity
+                                    // Clamp the alpha value between minAlpha and maxAlpha
+        byte newAlpha = (byte)Math.Clamp(inputColour.A, minAlpha, maxAlpha);
+        var newColor = Color.FromArgb(newAlpha, inputColour.R, inputColour.G, inputColour.B);
+        return newColor;
+    }
+
+
+    private Color selectedPrimaryAccentColour;
+    public Color SelectedPrimaryAccentColour
+    {
+        get => selectedPrimaryAccentColour;
+        set
+        {
+            UpdateSelectedPrimaryAccentColour(value);
+            SetProperty(ref selectedPrimaryAccentColour, convertUIColour(value));
+            changeFluentColour();
+        }
+    }
+    // function to change fluent-based UI colours (eg. sliders / tabs / etc )
+    // https://github.com/AvaloniaUI/Avalonia/discussions/12042
+    public void changeFluentColour()
+    {
+        App currApp = (App)Application.Current;
+
+        var newTheme = new FluentTheme();
+        newTheme.Palettes[ThemeVariant.Light] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
+        newTheme.Palettes[ThemeVariant.Dark] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
+        currApp.Styles.Add(newTheme);
+    }
+
+
+
+    private Color selectedWallpaperCollectionColour;
+    public Color SelectedWallpaperCollectionColour
+    {
+        get => selectedWallpaperCollectionColour;
+        set
+        {
+            UpdateSelectedWallpaperCollectionColour(value);
+            SetProperty(ref selectedWallpaperCollectionColour, convertUIColour(value));
+        }
+    }
+
+    private Color selectedPreviewBackgroundColour;
+    public Color SelectedPreviewBackgroundColour
+    {
+        get => selectedPreviewBackgroundColour;
+        set
+        {
+            UpdateSelectedPreviewBackgroundColour(value);
+            SetProperty(ref selectedPreviewBackgroundColour, convertUIColour(value));
+        }
+    }
 
     // version ===================================================
     private string appNameVersion = "v1.0.9";
@@ -1057,6 +1131,47 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
+
+    public Color SavedSelectedBackgroundColour()
+    {
+        string savedSelectedBackgroundStatus = settingsHistoryHelper.GetSettingEntry("SelectedBackgroundColour");
+        return Color.Parse(savedSelectedBackgroundStatus);
+    }
+    public void UpdateSelectedBackgroundColour(Color newBgColour)
+    {
+        settingsHistoryHelper.UpdateSetting("SelectedBackgroundColour", newBgColour.ToString());
+    }
+
+    public Color SavedSelectedPrimaryAccentColour()
+    {
+        string savedPrimAccentColStatus = settingsHistoryHelper.GetSettingEntry("SelectedPrimaryAccentColour");
+        return Color.Parse(savedPrimAccentColStatus);
+    }
+    public void UpdateSelectedPrimaryAccentColour(Color newPrimAccentColour)
+    {
+        settingsHistoryHelper.UpdateSetting("SelectedPrimaryAccentColour", newPrimAccentColour.ToString());
+    }
+
+    public Color SavedSelectedWallpaperCollectionColour()
+    {
+        string savedWpCollecColStatus = settingsHistoryHelper.GetSettingEntry("SelectedWallpaperCollectionColour");
+        return Color.Parse(savedWpCollecColStatus);
+    }
+    public void UpdateSelectedWallpaperCollectionColour(Color newWallpaperCollecColour)
+    {
+        settingsHistoryHelper.UpdateSetting("SelectedWallpaperCollectionColour", newWallpaperCollecColour.ToString());
+    }
+
+    public Color SavedSelectedPreviewBackgroundColour()
+    {
+        string savedPreviewBgColStatus = settingsHistoryHelper.GetSettingEntry("SelectedPreviewBackgroundColour");
+        return Color.Parse(savedPreviewBgColStatus);
+    }
+    public void UpdateSelectedPreviewBackgroundColour(Color newPrevBgColour)
+    {
+        settingsHistoryHelper.UpdateSetting("SelectedPreviewBackgroundColour", newPrevBgColour.ToString());
+    }
+
     public void OpenGithub()
     {
         string url = "https://github.com/DefrimBinakaj/WallMod";
@@ -1075,6 +1190,5 @@ public partial class MainWindowViewModel : ViewModelBase
 
     }
     // ===============================
-
 
 }

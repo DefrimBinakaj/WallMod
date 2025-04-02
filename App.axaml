@@ -3,6 +3,7 @@
 			 xmlns:converters="using:WallMod.Converters"
              x:Class="WallMod.App"
              xmlns:local="using:WallMod"
+			 xmlns:vm="using:WallMod.ViewModels"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
@@ -11,13 +12,20 @@
     </Application.DataTemplates>
   
     <Application.Styles>
-        <FluentTheme />
+		<FluentTheme>
+			<FluentTheme.Palettes>
+				<!-- 
+				<ColorPaletteResources x:Key="Light" Accent="Pink" RegionColor="White" ErrorText="Red" />
+				<ColorPaletteResources x:Key="Dark" Accent="Pink" RegionColor="White" ErrorText="Red" />
+				-->
+			</FluentTheme.Palettes>
+		</FluentTheme>
 		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 		<StyleInclude Source="Resources/AppStyles.axaml" />
     </Application.Styles>
 
 	<Application.Resources>
-		<converters:BoolToStrConverter x:Key="BoolToStrConverter"/>		
+		<converters:BoolToStrConverter x:Key="BoolToStrConverter"/>
 	</Application.Resources>
 
 
