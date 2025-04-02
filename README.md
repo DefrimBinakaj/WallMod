@@ -22,7 +22,9 @@ Currently being developed - in proficient state
 
 ## Preview of features
 <br>
-- Loads directories and/or selected images `(png/jpg/jpeg/bmp)` from your file explorer with layout resizability
+- Loads directories and/or selected images <code>(png/jpg/jpeg/bmp)</code> from your file explorer with layout resizability
+
+
 <div align="center">
   <img src="./Assets/readmeassets/WallModGifLoadNResize.gif" style="width:80%;" />
 </div>
