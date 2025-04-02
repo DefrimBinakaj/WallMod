@@ -568,7 +568,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     // version ===================================================
-    private string appNameVersion = "v1.0.9";
+    private string appNameVersion = "v1.0.10";
     public string AppNameVersion
     {
         get => appNameVersion;
