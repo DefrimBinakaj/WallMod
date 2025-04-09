@@ -229,7 +229,13 @@
 									<DataTemplate>
 										<StackPanel Orientation="Vertical" Margin="10" PointerPressed="OnImageTapped">
 											<Image Source="{Binding ImageThumbnailBitmap}" Width="{Binding Value, ElementName=ThumbnailZoomSlider}"/>
-											<TextBlock Text="{Binding Name}" IsVisible="{Binding IsDirectory}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
+											<TextBlock 
+												Text="{Binding Name}" 
+												TextWrapping="Wrap"
+												MaxWidth="100"
+												IsVisible="{Binding IsDirectory}" 
+												HorizontalAlignment="Center" VerticalAlignment="Center" 
+												Foreground="White" />
 										</StackPanel>
 									</DataTemplate>
 								</ItemsControl.ItemTemplate>
@@ -764,6 +770,7 @@
 							<Border CornerRadius="12"
 									Background="rgba(20, 20, 20, 200)"
 									Padding="16">
+								
 								<StackPanel>
 									<!-- Stay Running in Background -->
 									<StackPanel Orientation="Horizontal" Spacing="8" Margin="12,0,0,12">
@@ -797,6 +804,9 @@
 												   FontSize="18"
 												   Foreground="White"/>
 									</StackPanel>
+									<Button Content="Browse Crash Logs and System Storage Files" Margin="12,0,0,12"
+											Background="rgba(106, 0, 0, 1)" 
+											Command="{Binding OpenStorageFiles}"/>
 								</StackPanel>
 							</Border>
 						</StackPanel>

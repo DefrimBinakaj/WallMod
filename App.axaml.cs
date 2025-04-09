@@ -7,6 +7,8 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using WallMod.Helpers;
 using WallMod.ViewModels;
 using WallMod.Views;
 
@@ -20,6 +22,7 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        SetupGlobalExceptionHandling();
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -96,5 +99,23 @@ public partial class App : Application
         trayIcon.Menu = menu;
     }
 
+
+
+    private void SetupGlobalExceptionHandling()
+    {
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                AppStorageHelper.LogCrash(ex);
+            }
+        };
+
+        TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            AppStorageHelper.LogCrash(e.Exception);
+            e.SetObserved();
+        };
+    }
 
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -34,7 +35,7 @@ public class FileExporerHelper
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                Process.Start("xdg-open", System.IO.Path.GetDirectoryName(filePath) ?? ".");
+                Process.Start("xdg-open", Path.GetDirectoryName(filePath) ?? ".");
             }
         }
         catch (Exception ex)
@@ -43,4 +44,33 @@ public class FileExporerHelper
         }
     }
 
+    public void OpenFolderInExplorer(string folderPath)
+    {
+        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath))
+        {
+            Debug.WriteLine("Folder not found: " + folderPath);
+            return;
+        }
+
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Process.Start("explorer", $"\"{folderPath}\"");
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", $"\"{folderPath}\"");
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", folderPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("Error opening folder: " + ex.Message);
+        }
+    }
 }
+

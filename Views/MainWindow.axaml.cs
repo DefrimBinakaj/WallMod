@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -259,10 +260,8 @@ public partial class MainWindow : Window
     }
 
 
-
     private async void OnImageTapped(object? sender, PointerPressedEventArgs e)
     {
-        ResetAllItemsOpacity();
         if (sender is Control control && control.DataContext is Wallpaper wallpaper)
         {
             // if user clicked a diff wallpaper than before, reset rect
@@ -275,6 +274,7 @@ public partial class MainWindow : Window
 
             if (wallpaper.IsDirectory == true)
             {
+                ResetAllItemsOpacity();
                 control.Opacity = 0.7;
             }
 
@@ -419,6 +419,12 @@ public partial class MainWindow : Window
     }
 
 
+    // window used in program.cs to enforce single-instance mechanism - this will be used to bring up window
+    public void BringWindowToFront()
+    {
+        // ***** put code to bring up window here
+        Debug.WriteLine("bring up window!");
+    }
 
 
 }

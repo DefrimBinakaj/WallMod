@@ -19,6 +19,7 @@ using System.Globalization;
 using DataJuggler.PixelDatabase;
 using Avalonia.Themes.Fluent;
 using Avalonia.Styling;
+using System.Threading;
 
 namespace WallMod.ViewModels;
 
@@ -568,7 +569,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     // version ===================================================
-    private string appNameVersion = "v0.0.10";
+    private string appNameVersion = "v0.0.11";
     public string AppNameVersion
     {
         get => appNameVersion;
@@ -699,9 +700,12 @@ public partial class MainWindowViewModel : ViewModelBase
         // aspect ratio filter
         if (CurrentAspectRatio != "All")
         {
+            //  ensure folders are included nonetheless
             result = result.Where(wp =>
+                (wp.IsDirectory ?? false) || 
                 imageHelper.GetAspectRatio(wp.ImageWidth, wp.ImageHeight) == CurrentAspectRatio
             );
+
         }
 
         // search filter
@@ -736,13 +740,15 @@ public partial class MainWindowViewModel : ViewModelBase
                 result = folderList.Concat(imageList); // combine
                 break;
             case "Size":
+                folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
                 imageList = imageList.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
-                result = imageList; // only images
+                result = folderList.Concat(imageList); // combine
                 break;
             case "Colour":
-                // result = result.OrderBy(wp => wp.ColourCategory.Color.ToHsl().H );
+                folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                // imageList = imageList.OrderBy(wp => wp.ColourCategory.Color.ToHsl().H );
                 imageList = imageList.OrderBy(wp => wp.ColourCategory);
-                result = imageList; // only images
+                result = folderList.Concat(imageList); // combine
                 break;
         }
 
@@ -763,17 +769,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
-    bool imageCurrentlyClicked = false;
+    private readonly SemaphoreSlim imageTappedSemaphore = new SemaphoreSlim(1, 1);
     // ===============================
     // image clicked in UI
     public async Task ImageTapped(Wallpaper wallpaper)
     {
-        if (imageCurrentlyClicked == true)
-        {
-            return; // do not exec function if spamming image clicks
-        }
+        await imageTappedSemaphore.WaitAsync();
 
-        imageCurrentlyClicked = true;
         try
         {
 
@@ -783,11 +785,20 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else
             {
+                if (string.IsNullOrWhiteSpace(wallpaper.FilePath))
+                {
+                    Debug.WriteLine("ERROR - img FilePath does not exist");
+                    return;
+                }
                 Debug.WriteLine(wallpaper.Name + " image tapped");
                 LastSelectedWallpaper = wallpaper;
                 CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(LastSelectedWallpaper.FilePath);
                 CurrentWallpaperName = wallpaper.Name;
-                CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
+                if (CurrentWallpaperPreview != null)
+                {
+                    CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
+                }
+                
 
                 // set preview monitors to "unclicked"
                 foreach (var mon in MonitorList)
@@ -801,12 +812,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 // disable dropdown
                 StyleDropdownEnabled = false;
+
             }
 
         }
         finally
         {
-            imageCurrentlyClicked = false;
+            imageTappedSemaphore.Release();
         }
 
     }
@@ -1189,6 +1201,15 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
     }
+
+    // open AppData/WallMod
+    public void OpenStorageFiles()
+    {
+        FileExporerHelper fileExporerHelper = new FileExporerHelper();
+        fileExporerHelper.OpenFolderInExplorer(appStorageHelper.appStorageDirectory);
+    }
+
+
     // ===============================
 
 }
