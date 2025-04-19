@@ -237,21 +237,29 @@ public class ImageHelper
         mvm.CurrentSelectedDirectory = " Loading...";
 
 
-        // populate directories
-        string selectedDirPath = folderChoice;
-        foreach (var subDir in Directory.GetDirectories(selectedDirPath))
+        // populate directories (if no access to folder, quit func)
+        try
         {
-            // Create a 'Wallpaper' object for the directory
-            var folderWallpaper = new Wallpaper
+            string selectedDirPath = folderChoice;
+            foreach (var subDir in Directory.GetDirectories(selectedDirPath))
             {
-                FilePath = subDir,
-                Name = Path.GetFileName(subDir),
-                IsDirectory = true,
-                // Use your own folder icon path or resource
-                ImageThumbnailBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))),
-                Date = Directory.GetLastWriteTime(subDir)
-            };
-            imgCollec.Add(folderWallpaper);
+                // Create a 'Wallpaper' object for the directory
+                var folderWallpaper = new Wallpaper
+                {
+                    FilePath = subDir,
+                    Name = Path.GetFileName(subDir),
+                    IsDirectory = true,
+                    // Use your own folder icon path or resource
+                    ImageThumbnailBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))),
+                    Date = Directory.GetLastWriteTime(subDir)
+                };
+                imgCollec.Add(folderWallpaper);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Debug.WriteLine($"!!!  Access denied to {folderChoice} - Skipping loading func");
+            return null;
         }
 
 
