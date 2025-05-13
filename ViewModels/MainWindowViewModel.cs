@@ -796,7 +796,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 CurrentWallpaperName = wallpaper.Name;
                 if (CurrentWallpaperPreview != null)
                 {
-                    CurrentWallpaperSize = currentWallpaperPreview.Size.Width.ToString() + " x " + currentWallpaperPreview.Size.Height.ToString();
+                    CurrentWallpaperSize = CurrentWallpaperPreview.Size.Width.ToString() + " x " + CurrentWallpaperPreview.Size.Height.ToString();
                 }
                 
 
