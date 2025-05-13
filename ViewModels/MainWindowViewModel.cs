@@ -28,84 +28,62 @@ namespace WallMod.ViewModels;
  */
 public partial class MainWindowViewModel : ViewModelBase
 {
-    AppStorageHelper appStorageHelper;
+    AppStorageHelper appStorageHelper = new AppStorageHelper();
 
     // img upload ==========================================================
-    public IRelayCommand uploadClicked { get; }
-
-    public IRelayCommand selectedDirectory { get; }
-
-    public IRelayCommand navigateToParentDirec {  get; }
+    [RelayCommand] public void uploadClicked() => execImgUpload();
+    [RelayCommand] public void selectedDirectory() => execSelectDirec();
+    [RelayCommand] public void navigateToParentDirec() => execNavigateToParentDirec();
 
     // filter ==============================================================
-    public IRelayCommand filterClicked { get; }
-
-    public IRelayCommand filterSearchCommand { get; }
-
-    public IRelayCommand<string> filterGroupSelectedCommand { get; set; }
-
-    public IRelayCommand<string> filterAspectRatioCommand {  get; set; }
+    [RelayCommand] public void filterClicked() => filterExec();
+    [RelayCommand] public void filterSearchCommand() => filterSearchExec();
+    [RelayCommand] public void filterGroupSelectedCommand(string choice) => filterSelectExec(choice);
+    [RelayCommand] public void filterAspectRatioCommand(string choice) => filterAspectRatioExec(choice);
 
 
     // wallpaper list ======================================================
-    public ObservableCollection<Wallpaper> AllWallpapers { get; set; } // all wallpapers from a directory
-    public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; } // current display of wallpapers after filtering
+    
+    // all wallpapers from a directory
+    public ObservableCollection<Wallpaper> AllWallpapers { get; set; } = new ObservableCollection<Wallpaper>();
+
+    // current display of wallpapers after filtering
+    public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; } = new ObservableCollection<Wallpaper>();
 
 
     // set background ======================================================
-    public IRelayCommand setWallpaperCommand { get; }
+    [RelayCommand] public void setWallpaperCommand() => SetWallpaper();
 
     public ObservableCollection<string> WallpaperStyleList { get; set; }
 
 
     // monitors ============================================================
-    public ObservableCollection<MonitorInfo> MonitorList { get; set; }
+    public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
 
-    public IRelayCommand detectMonitorsButton { get; }
+    [RelayCommand] public void detectMonitorsButton() => DetectMonitors();
 
 
     // history =============================================================
-    public IRelayCommand viewHistoryButton { get; }
+    [RelayCommand] public void viewHistoryButton() => ViewHistory();
 
-    public IRelayCommand<Wallpaper> deleteHistoryEntryButton {  get; }
+    [RelayCommand] public void deleteHistoryEntryButton(Wallpaper wallpaper) => DeleteSingleHistoryEntry(wallpaper);
+    
+    WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
+    public ObservableCollection<string> WallpaperHistoryList { get; set; } = new ObservableCollection<string>();
+    public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; } = new ObservableCollection<Wallpaper>();
 
-    WallpaperHistoryHelper wallpaperHistoryHelper;
-    public ObservableCollection<string> WallpaperHistoryList { get; set; }
-    public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; }
-
-    SettingsHistoryHelper settingsHistoryHelper;
+    SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
 
     // settings ============================================================
-    public IRelayCommand settingsButton { get; }
-    public IRelayCommand deleteHistoryButton { get; }
-    public IRelayCommand openGithubButton { get; }
+    [RelayCommand] public void settingsButton() => navToSettings();
+    [RelayCommand] public void deleteHistoryButton() => DeleteHistory();
+    [RelayCommand] public void openGithubButton() => OpenGithub();
 
 
     public MainWindowViewModel()
     {
-        appStorageHelper = new AppStorageHelper();
         appStorageHelper.InitAppStorage();
-
-        uploadClicked = new RelayCommand(execImgUpload);
-
-        selectedDirectory = new RelayCommand(execSelectDirec);
-
-        navigateToParentDirec = new RelayCommand(execNavigateToParentDirec);
-
-        filterClicked = new RelayCommand(filterExec);
-
-        filterSearchCommand = new RelayCommand(filterSearchExec);
-
-        filterGroupSelectedCommand = new RelayCommand<string>(filterSelectExec);
-
-        filterAspectRatioCommand = new RelayCommand<string>(filterAspectRatioExec);
-
-        AllWallpapers = new ObservableCollection<Wallpaper>();
-
-        DisplayWallpaperList = new ObservableCollection<Wallpaper>();
-
-        setWallpaperCommand = new RelayCommand(SetWallpaper);
 
         WallpaperStyleList = new ObservableCollection<string>
         {
@@ -118,26 +96,7 @@ public partial class MainWindowViewModel : ViewModelBase
         };
         SelectedWallpaperStyle = WallpaperStyleList[0];
 
-        MonitorList = new ObservableCollection<MonitorInfo>();
         DetectMonitors();
-        detectMonitorsButton = new RelayCommand(DetectMonitors);
-
-        viewHistoryButton = new RelayCommand(ViewHistory);
-
-        deleteHistoryEntryButton = new RelayCommand<Wallpaper>(DeleteSingleHistoryEntry);
-
-        wallpaperHistoryHelper = new WallpaperHistoryHelper();
-        WallpaperHistoryList = new ObservableCollection<string>();
-        HistoryWallpaperList = new ObservableCollection<Wallpaper>();
-
-        settingsHistoryHelper = new SettingsHistoryHelper();
-
-        settingsButton = new RelayCommand(navToSettings);
-
-        deleteHistoryButton = new RelayCommand(DeleteHistory);
-
-        openGithubButton = new RelayCommand(OpenGithub);
-
 
         // set default img and values
         CurrentWallpaperPreview = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/placeholder-icon.png")));
@@ -823,7 +782,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     }
 
-    // currently not used for a valuable functionality, but maybe will be
+
     public async Task ImageDoubleTapped(Wallpaper wallpaper)
     {
 
