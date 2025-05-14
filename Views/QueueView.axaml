@@ -7,95 +7,119 @@
 		xmlns:vm="using:WallMod.ViewModels"
 		x:DataType="vm:QueueViewModel">
 
-	<StackPanel Spacing="16" Margin="20">
+	<StackPanel Spacing="20" Margin="20">
 
-		<!-- ─────────── INTERVAL ────────────────────────────────────────── -->
-		<Border CornerRadius="8" Background="#222" Padding="12" Width="600">
-			<StackPanel Spacing="8">
-				<TextBlock Text="Choose the interval"
-							FontWeight="Bold" Foreground="White"/>
+		<TextBlock Text="Autoset Wallpapers" FontWeight="Bold" FontSize="16" Foreground="White"/>
 
-				<Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto,*"
-						RowDefinitions="Auto">
-					<TextBlock Grid.Column="0" Text="Months"  Foreground="White" VerticalAlignment="Center"/>
-					<TextBox Grid.Column="1" x:Name="MonthsInput" Text="{Binding MonthsInput}"
-							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+		<!-- ─────────────  INTERVAL (spans full width)  ───────────── -->
+		<Border Background="#222" CornerRadius="8" Padding="16">
+			<Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  ColumnDefinitions="Auto,*"
+                  RowSpacing="6"
+                  ColumnSpacing="6">
 
-					<TextBlock Grid.Column="2" Text="Weeks"   Foreground="White" VerticalAlignment="Center"/>
-					<TextBox Grid.Column="3" x:Name="WeeksInput" Text="{Binding WeeksInput}"
-							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+				<TextBlock Text="Interval" FontWeight="Bold" Foreground="White" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"/>
 
-					<TextBlock Grid.Column="4" Text="Days"    Foreground="White" VerticalAlignment="Center"/>
-					<TextBox Grid.Column="5" x:Name="DaysInput" Text="{Binding DaysInput}"
-							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+				<TextBlock Text="Months"  Foreground="White" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
+				<NumericUpDown Value="{Binding MonthsInput}"  Minimum="0" Width="115" FormatString="0"
+                               Grid.Row="1" Grid.Column="1"/>
 
-					<TextBlock Grid.Column="6" Text="Hours"   Foreground="White" VerticalAlignment="Center"/>
-					<TextBox Grid.Column="7" x:Name="HoursInput" Text="{Binding HoursInput}"
-							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+				<TextBlock Text="Weeks"   Foreground="White" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
+				<NumericUpDown Value="{Binding WeeksInput}"   Minimum="0" Width="115"
+                               Grid.Row="2" Grid.Column="1"/>
 
-					<TextBlock Grid.Column="8" Text="Minutes" Foreground="White" VerticalAlignment="Center"/>
-					<TextBox Grid.Column="9" x:Name="MinutesInput" Text="{Binding MinutesInput}"
-							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
-				</Grid>
+				<TextBlock Text="Days"    Foreground="White" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"/>
+				<NumericUpDown Value="{Binding DaysInput}"    Minimum="0" Width="115" FormatString="0"
+                               Grid.Row="3" Grid.Column="1"/>
+
+				<TextBlock Text="Hours"   Foreground="White" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center"/>
+				<NumericUpDown Value="{Binding HoursInput}"   Minimum="0" Width="115" FormatString="0"
+                               Grid.Row="4" Grid.Column="1"/>
+
+				<TextBlock Text="Minutes" Foreground="White" Grid.Row="5" Grid.Column="0" VerticalAlignment="Center"/>
+				<NumericUpDown Value="{Binding MinutesInput}" Minimum="0" Width="115" FormatString="0"
+                               Grid.Row="5" Grid.Column="1"/>
+			</Grid>
+		</Border>
+
+		<!-- ─────────────  MODE SELECTOR (side-by-side) ───────────── -->
+		<Border Background="#222" CornerRadius="8" Padding="16">
+			<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="32">
+				<RadioButton Content="Custom"
+                             GroupName="QueueChoice"
+                             Command="{Binding queueChoiceCommand}"
+                             CommandParameter="Custom"
+                             IsChecked="{Binding CustomQueueViewVisible, Mode=TwoWay}"
+                             Foreground="White"/>
+
+				<RadioButton Content="Random"
+                             GroupName="QueueChoice"
+                             Command="{Binding queueChoiceCommand}"
+                             CommandParameter="Random"
+                             IsChecked="{Binding RandomQueueViewVisible, Mode=TwoWay}"
+                             Foreground="White"/>
 			</StackPanel>
 		</Border>
 
-		<!-- ─────────── MODE SELECTOR ───────────────────────────────────── -->
-		<StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
-			<RadioButton Content="Custom"
-							GroupName="Mode"
-							FontSize="14" Foreground="White"/>
-			<RadioButton Content="Random"
-							GroupName="Mode"
-							FontSize="14" Foreground="White"/>
-		</StackPanel>
-
-		<!-- ─────────── CUSTOM QUEUE UI ─────────────────────────────────── -->
-		<Border CornerRadius="8" Background="DarkGray" Padding="10">
+		<!-- ─────────────  CUSTOM QUEUE PANEL  ───────────── -->
+		<Border Background="#202020" CornerRadius="8" Padding="10"
+                IsVisible="{Binding CustomQueueViewVisible}">
 			<StackPanel Spacing="8">
-				<TextBlock Text="Wallpaper queue (drag up / down)"
-							Foreground="White" FontWeight="Bold"/>
+				<TextBlock Text="Custom Wallpaper Queue"
+                           Foreground="White"
+                           FontWeight="Bold"/>
 
 				<ItemsControl ItemsSource="{Binding WallpaperQueue}">
 					<ItemsControl.ItemTemplate>
 						<DataTemplate>
-							<Border Margin="0,2" Padding="6" Background="#303030" CornerRadius="6">
-								<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
-									<Image Source="" Width="50" Height="50"/>
+							<Border Background="#303030" CornerRadius="6"
+                                    Margin="0,2" Padding="6">
+								<Grid ColumnDefinitions="Auto,* ,Auto" VerticalAlignment="Center">
+									<Image Source="{Binding ImageThumbnailBitmap}"
+                                           Width="50" Height="50"/>
 
 									<TextBlock Grid.Column="1" Text="{Binding Name}"
-												VerticalAlignment="Center" Foreground="Red"/>
+                                               Foreground="White" Margin="8,0"
+                                               VerticalAlignment="Center"/>
 
-									<!-- Up / Down buttons -->
-									<Button Grid.Column="2" Content="▲" Padding="2"
-											Command=""
-											CommandParameter="{Binding}" Margin="2"/>
-									<Button Grid.Column="3" Content="▼" Padding="2"
-											Command=""
-											CommandParameter="{Binding}" Margin="2"/>
+									<StackPanel Grid.Column="2" Orientation="Vertical">
+										<Button Content="▲" Width="60" Margin="0,0,0,2"
+                                                Background="#2D8258"
+                                                Click="MoveWallpaperUpClicked"/>
+										<Button Content="▼" Width="60"
+                                                Background="#2D3982"
+                                                Click="MoveWallpaperDownClicked"/>
+									</StackPanel>
 								</Grid>
 							</Border>
 						</DataTemplate>
 					</ItemsControl.ItemTemplate>
 				</ItemsControl>
 
-				<Button Content="Clear queue" Command="{Binding ClearQueueCommand}"
-						HorizontalAlignment="Right" Margin="0,4,0,0"/>
+				<Button Content="Clear queue"
+                        HorizontalAlignment="Right"
+                        Click="ClearWallpaperQueue"/>
 			</StackPanel>
 		</Border>
 
-		<!-- RANDOM DIRECTORY UI -->
-		<Border CornerRadius="8" Background="#202020" Padding="10">
+		<!-- ─────────────  RANDOM DIRECTORY PANEL  ───────────── -->
+		<Border Background="#202020" CornerRadius="8" Padding="10"
+                IsVisible="{Binding RandomQueueViewVisible}">
 			<StackPanel Spacing="8">
-				<TextBlock Text="Choose a directory to pick random wallpapers from"
-							Foreground="White" FontWeight="Bold"/>
-				<Button Content="Browse…" Command=""
-						Width="120" HorizontalAlignment="Left"/>
+				<TextBlock Text="Directory of Random Wallpapers"
+                           Foreground="White"
+                           FontWeight="Bold"/>
 
-				<TextBlock Text="randdir" Foreground="LightGray"
-							TextWrapping="Wrap" Margin="4,4,0,0"/>
+				<!-- hook up your Browse-command here when ready -->
+				<Button Content="Browse…" Width="120"/>
+
+				<TextBlock Text="randdir"
+                           Foreground="LightGray"
+                           TextWrapping="Wrap"
+                           Margin="4,4,0,0"/>
 			</StackPanel>
 		</Border>
+
 	</StackPanel>
   
 </UserControl>

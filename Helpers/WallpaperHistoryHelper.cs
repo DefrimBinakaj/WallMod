@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using WallMod.Models;
+using WallMod.State;
 using WallMod.ViewModels;
 
 namespace WallMod.Helpers;
@@ -63,14 +65,14 @@ public class WallpaperHistoryHelper
     {
         List<string> historyList = LoadHistoryJson();
         ImageHelper imgHelper = new ImageHelper();
-        var viewModel = new MainWindowViewModel();
 
         // used to preserve order
         Wallpaper[] resultArray = new Wallpaper[historyList.Count];
 
         // same as imagehelper multiprocessing
         // hardcoded amount of processors used to retrieve all images in a directory
-        MainWindowViewModel mvm = new MainWindowViewModel();
+        UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+        MainWindowViewModel mvm = new MainWindowViewModel(uniVM);
         int allocCPUThreads = mvm.CPUThreadsAllocated;
         Debug.WriteLine("processors used: " + allocCPUThreads);
         var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);

@@ -1,4 +1,6 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,61 +9,68 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WallMod.Models;
+using WallMod.State;
 
 namespace WallMod.ViewModels;
 
-public partial class QueueViewModel : ViewModelBase
+public partial class QueueViewModel : ObservableObject
 {
-    public ObservableCollection<Wallpaper> WallpaperQueue { get; set; } = new ObservableCollection<Wallpaper>();
+    
+    private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+
+    // create WallpaperQueue replica which is the same as universal value
+    public ObservableCollection<Wallpaper> WallpaperQueue => uniVM.WallpaperQueue;
 
 
-
-    public QueueViewModel()
+    public QueueViewModel(UniversalAppStore universalVM)
     {
-        WallpaperQueue.Add(new Wallpaper { FilePath = "oy1", Name = "wp1" } );
-        WallpaperQueue.Add(new Wallpaper { FilePath = "oy2", Name = "wp2" });
-        WallpaperQueue.Add(new Wallpaper { FilePath = "oy3", Name = "wp3" });
+        uniVM = universalVM;
     }
 
 
-    private string minutesInput = "1";
-    public string MinutesInput { get => minutesInput; set => SetProperty(ref minutesInput, value); }
+    private int? minutesInput = 1;
+    public int? MinutesInput { get => minutesInput; set => SetProperty(ref minutesInput, value); }
 
-    private string hoursInput = "0";
-    public string HoursInput { get => hoursInput; set => SetProperty(ref hoursInput, value); }
+    private int? hoursInput = 0;
+    public int? HoursInput { get => hoursInput; set => SetProperty(ref hoursInput, value); }
 
-    private string daysInput = "0";
-    public string DaysInput { get => daysInput; set => SetProperty(ref daysInput, value); }
+    private int? daysInput = 0;
+    public int? DaysInput { get => daysInput; set => SetProperty(ref daysInput, value); }
 
-    private string weeksInput = "0";
-    public string WeeksInput { get => weeksInput; set => SetProperty(ref weeksInput, value); }
+    private int? weeksInput = 0;
+    public int? WeeksInput { get => weeksInput; set => SetProperty(ref weeksInput, value); }
 
-    private string monthsInput = "0";
-    public string MonthsInput { get => monthsInput; set => SetProperty(ref monthsInput, value); }
+    private int? monthsInput = 0;
+    public int? MonthsInput { get => monthsInput; set => SetProperty(ref monthsInput, value); }
 
-    public int TotalSeconds => 
-        (((((int.Parse(MonthsInput) * 30 + int.Parse(WeeksInput) * 7) + 
-        int.Parse(DaysInput)) * 24 + int.Parse(hoursInput)) * 60) + int.Parse(minutesInput)) * 60;
+    // must change this to account for potential null vals
+    public int? TotalSeconds => 
+        (((((MonthsInput * 30 + WeeksInput * 7) + DaysInput) * 24 + hoursInput) * 60) + minutesInput) * 60;
 
 
-    [RelayCommand]
-    public void MoveWallpaperUp(Wallpaper wp)
+
+    // queue layout switching 
+
+    private bool customQueueViewVisible;
+    public bool CustomQueueViewVisible { get => customQueueViewVisible; set => SetProperty(ref customQueueViewVisible, value); }
+
+    private bool randomQueueViewVisible;
+    public bool RandomQueueViewVisible { get => randomQueueViewVisible; set => SetProperty(ref randomQueueViewVisible, value); }
+
+    [RelayCommand] public void queueChoiceCommand(string choice) => queueChoiceExec(choice);
+
+    private void queueChoiceExec(string selectedChoice)
     {
-        var i = WallpaperQueue.IndexOf(wp);
-        if (i > 0) WallpaperQueue.Move(i, i - 1);
-    }
-
-    [RelayCommand]
-    public void MoveWallpaperDown(Wallpaper wp)
-    {
-        var i = WallpaperQueue.IndexOf(wp);
-        if (i >= 0 && i < WallpaperQueue.Count - 1) WallpaperQueue.Move(i, i + 1);
-    }
-
-    [RelayCommand]
-    public void ClearQueue()
-    {
-        WallpaperQueue.Clear();
+        if (selectedChoice == "Custom")
+        {
+            CustomQueueViewVisible = true;
+            RandomQueueViewVisible = false;
+        }
+        else if (selectedChoice == "Random")
+        {
+            CustomQueueViewVisible = false;
+            RandomQueueViewVisible = true;
+        }
     }
 
 }

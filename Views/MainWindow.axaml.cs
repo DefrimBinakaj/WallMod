@@ -35,9 +35,11 @@ public partial class MainWindow : Window
     private int DoubleTapThreshold = 500;
     private Wallpaper lastTapImage = new();
 
-    public MainWindow()
+    public MainWindow(MainWindowViewModel vm)
     {
         InitializeComponent();
+
+        DataContext = vm;
 
         this.SizeChanged += OnWindowSizeChanged;
     }

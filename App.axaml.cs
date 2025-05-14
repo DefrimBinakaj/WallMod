@@ -5,6 +5,7 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -25,32 +26,29 @@ public partial class App : Application
         SetupGlobalExceptionHandling();
     }
 
+    public static IServiceProvider Services { get; set; } = default!;
+
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desk)
         {
-            // Line below is needed to remove Avalonia data validation.
-            // Without this line you will get duplicate validations from both Avalonia and CT
+            // Prevent double data-validation (Avalonia + CommunityToolkit)
             BindingPlugins.DataValidators.RemoveAt(0);
 
-            var mainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel()
-            };
+            // -------- MainWindow resolved through DI ---------------------------
+            var mainWindow = Services.GetRequiredService<MainWindow>();
+            desk.MainWindow = mainWindow;
 
-            desktop.MainWindow = mainWindow;
-
-            // init system tray icon
             InitializeTrayIcon(mainWindow);
 
-            // minimize to tray if desired
-            mainWindow.Closing += (s, e) =>
+            // minimise to tray (existing logic)
+            mainWindow.Closing += (_, e) =>
             {
-                if (((MainWindowViewModel)mainWindow.DataContext).StayRunningInBackground)
+                if (((MainWindowViewModel)mainWindow.DataContext!).StayRunningInBackground)
                 {
-                    e.Cancel = true; // prevent actual closing
-                    mainWindow.Hide(); // minimize to system tray
-                    Debug.WriteLine("app minimized to tray");
+                    e.Cancel = true;
+                    mainWindow.Hide();
+                    Debug.WriteLine("App minimised to tray");
                 }
             };
         }

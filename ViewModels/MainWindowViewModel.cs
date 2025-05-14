@@ -20,6 +20,8 @@ using DataJuggler.PixelDatabase;
 using Avalonia.Themes.Fluent;
 using Avalonia.Styling;
 using System.Threading;
+using WallMod.State;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WallMod.ViewModels;
 
@@ -28,6 +30,9 @@ namespace WallMod.ViewModels;
  */
 public partial class MainWindowViewModel : ViewModelBase
 {
+
+    private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+
     AppStorageHelper appStorageHelper = new AppStorageHelper();
 
     // img upload ==========================================================
@@ -59,6 +64,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // autoset background
     [RelayCommand] public void autoSetWallpaperCommand() => AutoSetWallpaper();
+    [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
 
 
     // monitors ============================================================
@@ -85,8 +91,11 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand] public void openGithubButton() => OpenGithub();
 
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(UniversalAppStore universalVM)
     {
+
+        uniVM = universalVM;
+
         appStorageHelper.InitAppStorage();
 
         WallpaperStyleList = new ObservableCollection<string>
@@ -278,34 +287,24 @@ public partial class MainWindowViewModel : ViewModelBase
     // views ===================================================
 
     private bool isHistoryViewVisible = false;
-    public bool IsHistoryViewVisible
-    {
-        get => isHistoryViewVisible;
-        set => SetProperty(ref isHistoryViewVisible, value);
-    }
+    public bool IsHistoryViewVisible { get => isHistoryViewVisible; set => SetProperty(ref isHistoryViewVisible, value); }
 
     private bool isImageGalleryViewVisible = true;
-    public bool IsImageGalleryViewVisible
-    {
-        get => isImageGalleryViewVisible;
-        set => SetProperty(ref isImageGalleryViewVisible, value);
-    }
+    public bool IsImageGalleryViewVisible { get => isImageGalleryViewVisible; set => SetProperty(ref isImageGalleryViewVisible, value); }
+
+
+    private bool isPreviewVisible = true;
+    public bool IsPreviewVisible { get => isPreviewVisible; set => SetProperty(ref isPreviewVisible, value); }
+
+    private bool isAutoSetVisible = false;
+    public bool IsAutoSetVisible { get => isAutoSetVisible; set => SetProperty(ref isAutoSetVisible, value); }
+
 
     private bool mainGridVisibility = true;
-
-    public bool MainGridVisibility
-    {
-        get => mainGridVisibility;
-        set => SetProperty(ref mainGridVisibility, value);
-    }
+    public bool MainGridVisibility { get => mainGridVisibility; set => SetProperty(ref mainGridVisibility, value); }
 
     private bool settingsViewVisibility = false;
-
-    public bool SettingsViewVisibility
-    {
-        get => settingsViewVisibility;
-        set => SetProperty(ref settingsViewVisibility, value);
-    }
+    public bool SettingsViewVisibility { get => settingsViewVisibility; set => SetProperty(ref settingsViewVisibility, value); }
 
 
 
@@ -765,7 +764,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
 
                 // disable set button
-                MainWindow mw = new MainWindow();
+                MainWindow mw = new MainWindow(this);
                 mw.SetBackgroundButton.IsEnabled = false;
 
                 // disable dropdown
@@ -902,9 +901,25 @@ public partial class MainWindowViewModel : ViewModelBase
     // auto set wallpaper / "Wallpaper Queue"
     public void AutoSetWallpaper()
     {
-
+        Debug.WriteLine("AUTOSET");
+        // TEMP: should i prevent the same wallpaper from being queued again?
+        if (LastSelectedWallpaper != null)
+        {
+            uniVM.WallpaperQueue.Add(LastSelectedWallpaper);
+            Debug.WriteLine("added " + lastSelectedWallpaper.Name);
+        }
     }
 
+    public void AutoSetMenuNav()
+    {
+        // switch preview for autoset
+        IsPreviewVisible = !IsPreviewVisible;
+        IsAutoSetVisible = !IsAutoSetVisible;
+
+        // repeated clicks doesnt infinitely increase memory
+        // GC.Collect();
+        // GC.WaitForPendingFinalizers();
+    }
 
 
     // ===============================
@@ -982,7 +997,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         StyleDropdownEnabled = false;
 
-        MainWindow mw = new MainWindow();
+        MainWindow mw = new MainWindow(this);
         mw.SetBackgroundButton.IsEnabled = true;
     }
 

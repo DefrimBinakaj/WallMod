@@ -2,6 +2,10 @@
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using WallMod.State;
+using WallMod.ViewModels;
 using WallMod.Views;
 
 namespace WallMod
@@ -19,18 +23,30 @@ namespace WallMod
         public static void Main(string[] args)
         {
             // logic required for single-instance mechanism mutexing
-            bool createdNew;
-            using (Mutex mutex = new Mutex(true, mutexName, out createdNew))
-            {
-                if (!createdNew)
-                {
-                    MainWindow mw = new MainWindow();
-                    mw.BringWindowToFront(); //NOT IMPLM YET: bring window up when pinned taskbar logo is clicked, NOT tray icon
-                    Console.WriteLine("Another instance is already running. Exiting.");
-                    return;
-                }
-                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            }
+            using var mutex = new Mutex(true, mutexName, out bool isFirst);
+            if (!isFirst) return;                 // second instance ─> exit
+
+            // ---------- IoC container -------------------------------------------------
+            var host = Host.CreateDefaultBuilder(args)
+                           .ConfigureServices(services =>
+                           {
+                               // shared state
+                               services.AddSingleton<UniversalAppStore>();
+
+                               // view-models
+                               services.AddTransient<MainWindowViewModel>();
+                               services.AddTransient<QueueViewModel>();
+
+                               // views / windows
+                               services.AddTransient<MainWindow>();
+                               services.AddTransient<QueueView>();
+                           })
+                           .Build();
+
+            App.Services = host.Services; // expose globally for App.xaml.cs
+
+            // ---------- start Avalonia -----------------------------------------------
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 
         // Avalonia configuration, don't remove; also used by visual designer.

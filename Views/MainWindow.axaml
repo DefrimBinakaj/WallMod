@@ -316,173 +316,194 @@
 						  DragStarted="GridSplitterDragExec" />
 
 
-			<!-- Right Section: Preview and Controls ========= -->
+			<!-- Right Section: Preview and Controls ============================================================ -->
 			<Border Grid.Column="2" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="10" Margin="8">
-				<ScrollViewer VerticalScrollBarVisibility="Auto">
-					<Grid Margin="18, 6, 18, 0">
-						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="*" />
-							<ColumnDefinition Width="Auto" />
-						</Grid.ColumnDefinitions>
 
-						<Grid.RowDefinitions>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="Auto"/>
-						</Grid.RowDefinitions>
+				<Panel>
+					<!--PREVIEW SECTION =========-->
+					<ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsPreviewVisible}">
+						<Grid Margin="18, 6, 18, 0">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
 
-						<TextBlock Text="Preview" FontWeight="Bold" FontSize="16"
-								   Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-								   Foreground="White" HorizontalAlignment="Center"/>
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+								<RowDefinition Height="Auto"/>
+							</Grid.RowDefinitions>
 
-						<Button Content=">" Click="EnlargePreviewImg"
-								Grid.Row="0" Grid.Column="1"
-								HorizontalAlignment="Right"
-								Background="Gray">
-							<Image Source="avares://Wallmod/Assets/enlarge-icon.png"
-								   Width="14" Height="14"/>
-						</Button>
+							<TextBlock Text="Preview" FontWeight="Bold" FontSize="16"
+									   Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+									   Foreground="White" HorizontalAlignment="Center"/>
 
-						<!-- Monitor Preview -->
-						<Grid Grid.Row="1" Grid.ColumnSpan="2">
-							<Image x:Name="PreviewImage"
-								   Source="{Binding CurrentWallpaperPreview}"
-								   Stretch="Uniform"
-								   IsVisible="True"/>
-
-							<!-- Draggable Rect -->
-							<Canvas x:Name="OverlayCanvas"
-									IsHitTestVisible="True"
-									Panel.ZIndex="999">
-								<Rectangle x:Name="DragRect"
-										   StrokeThickness="4"
-										   Opacity="0.8"
-										   IsVisible="False"
-										   Width="100"
-										   Height="100"
-										   PointerPressed="DragRect_PointerPressed"
-										   PointerMoved="DragRect_PointerMoved"
-										   PointerReleased="DragRect_PointerReleased">
-									<Rectangle.Fill>
-										<LinearGradientBrush StartPoint="0,0" EndPoint="200,250">
-											<GradientStop Offset="0" Color="rgba(255, 0, 227, 0.27)"/>
-											<GradientStop Offset="0.33" Color="rgba(150, 0, 255, 0.27)"/>
-											<GradientStop Offset="0.66" Color="rgba(0, 79, 255, 0.27)"/>
-											<GradientStop Offset="0.88" Color="rgba(0, 180, 255, 0.27)"/>
-											<GradientStop Offset="0.99" Color="rgba(0, 255, 245, 0.27)"/>
-										</LinearGradientBrush>
-									</Rectangle.Fill>
-									<Rectangle.Stroke>
-										<LinearGradientBrush StartPoint="0,0" EndPoint="200,200">
-											<GradientStop Offset="0.6" Color="White"/>
-											<GradientStop Offset="1" Color="Black"/>
-										</LinearGradientBrush>
-									</Rectangle.Stroke>
-								</Rectangle>
-							</Canvas>
-						</Grid>
-
-						<!-- Wallpaper Info -->
-						<Grid Grid.Row="2" Grid.ColumnSpan="2">
-							
-							<Button Content=">" Click="OpenImageClicked"
-								Margin="2" Background="Gray"
-								HorizontalAlignment="Left">
-								<Image Source="avares://Wallmod/Assets/open-icon.png"
-									   Width="12" Height="10"/>
-							</Button>
-							<TextBlock Text="{Binding CurrentWallpaperName}"
-									   HorizontalAlignment="Left" FontSize="15"
-									   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="35, 4, 0, 0"
-									   MaxWidth="180" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-
-							<TextBlock Text="{Binding CurrentWallpaperSize}"
-									   HorizontalAlignment="Right" FontSize="15"
-									   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="4"/>
-						</Grid>
-
-
-						<!-- Monitors List -->
-						<Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,8">
-							<TextBlock Text="Monitors:" FontSize="16" Foreground="White"
-									   VerticalAlignment="Center" Margin="8,0,0,0"/>
-
-							<Button Content="Redetect Monitors" Command="{Binding detectMonitorsButton}"
-									Background="Gray" HorizontalAlignment="Right" Margin="10, 0, 0, 0">
-								<Image Source="avares://Wallmod/Assets/refresh-icon.png"
+							<Button Content=">" Click="EnlargePreviewImg"
+									Grid.Row="0" Grid.Column="1"
+									HorizontalAlignment="Right"
+									Background="Gray">
+								<Image Source="avares://Wallmod/Assets/enlarge-icon.png"
 									   Width="14" Height="14"/>
 							</Button>
-						</Grid>
 
-						<Border Grid.Row="4" Grid.ColumnSpan="2" CornerRadius="20" BorderBrush="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" BorderThickness="2">
-							<ItemsControl ItemsSource="{Binding MonitorList}">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<StackPanel Background="Transparent" Width="240" Height="110"/>
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
+							<!-- Monitor Preview -->
+							<Grid Grid.Row="1" Grid.ColumnSpan="2">
+								<Image x:Name="PreviewImage"
+									   Source="{Binding CurrentWallpaperPreview}"
+									   Stretch="Uniform"
+									   IsVisible="True"/>
 
-								<ItemsControl.ItemTemplate>
-									<DataTemplate>
-										<Canvas>
-											<Rectangle Fill="{Binding FillColour}" Width="{Binding UIBounds.Width}" Height="{Binding UIBounds.Height}" 
-													   Stroke="{Binding StrokeColour}" StrokeThickness="3" Opacity="0.5"
-													   Canvas.Left="{Binding UIBounds.X}" Canvas.Top="{Binding UIBounds.Y}" 
-													   PointerPressed="OnPreviewMonitorTapped"/>
-										</Canvas>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-						</Border>
+								<!-- Draggable Rect -->
+								<Canvas x:Name="OverlayCanvas"
+										IsHitTestVisible="True"
+										Panel.ZIndex="999">
+									<Rectangle x:Name="DragRect"
+											   StrokeThickness="4"
+											   Opacity="0.8"
+											   IsVisible="False"
+											   Width="100"
+											   Height="100"
+											   PointerPressed="DragRect_PointerPressed"
+											   PointerMoved="DragRect_PointerMoved"
+											   PointerReleased="DragRect_PointerReleased">
+										<Rectangle.Fill>
+											<LinearGradientBrush StartPoint="0,0" EndPoint="200,250">
+												<GradientStop Offset="0" Color="rgba(255, 0, 227, 0.27)"/>
+												<GradientStop Offset="0.33" Color="rgba(150, 0, 255, 0.27)"/>
+												<GradientStop Offset="0.66" Color="rgba(0, 79, 255, 0.27)"/>
+												<GradientStop Offset="0.88" Color="rgba(0, 180, 255, 0.27)"/>
+												<GradientStop Offset="0.99" Color="rgba(0, 255, 245, 0.27)"/>
+											</LinearGradientBrush>
+										</Rectangle.Fill>
+										<Rectangle.Stroke>
+											<LinearGradientBrush StartPoint="0,0" EndPoint="200,200">
+												<GradientStop Offset="0.6" Color="White"/>
+												<GradientStop Offset="1" Color="Black"/>
+											</LinearGradientBrush>
+										</Rectangle.Stroke>
+									</Rectangle>
+								</Canvas>
+							</Grid>
 
-						<!-- Selecting Monitor Dropdown / Handling -->
-						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.ColumnSpan="2" Margin="0,6,0,24">
-							<Button Content="Select All" Click="OnSelectAllClicked" Background="Gray" Foreground="White" Margin="4"/>
-							<ComboBox ItemsSource="{Binding WallpaperStyleList}"
-									  SelectedItem="{Binding SelectedWallpaperStyle}"
-									  IsEnabled="{Binding StyleDropdownEnabled}"
-									  Width="100"
-									  Foreground="White"
-									  Margin="5"/>
-						</StackPanel>
+							<!-- Wallpaper Info -->
+							<Grid Grid.Row="2" Grid.ColumnSpan="2">
 
-						<!-- autosetting wallpaper view button -->
-						<Button Content="Autoset Menu" Command=""
-								Grid.Row="6" Grid.ColumnSpan="1" Background="rgba(10, 55, 33, 0.8)"
-								VerticalAlignment="Bottom" HorizontalAlignment="Center" 
-								Margin="0,0,235,0">
-							<Image Source="avares://Wallmod/Assets/settings-icon.png"
-								   Width="28" Height="17"/>
+								<Button Content=">" Click="OpenImageClicked"
+									Margin="2" Background="Gray"
+									HorizontalAlignment="Left">
+									<Image Source="avares://Wallmod/Assets/open-icon.png"
+										   Width="12" Height="10"/>
+								</Button>
+								<TextBlock Text="{Binding CurrentWallpaperName}"
+										   HorizontalAlignment="Left" FontSize="15"
+										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="35, 4, 0, 0"
+										   MaxWidth="180" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+
+								<TextBlock Text="{Binding CurrentWallpaperSize}"
+										   HorizontalAlignment="Right" FontSize="15"
+										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="4"/>
+							</Grid>
+
+
+							<!-- Monitors List -->
+							<Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,16,0,8">
+								<TextBlock Text="Monitors:" FontSize="16" Foreground="White"
+										   VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+								<Button Content="Redetect Monitors" Command="{Binding detectMonitorsButton}"
+										Background="Gray" HorizontalAlignment="Right" Margin="10, 0, 0, 0">
+									<Image Source="avares://Wallmod/Assets/refresh-icon.png"
+										   Width="14" Height="14"/>
+								</Button>
+							</Grid>
+
+							<Border Grid.Row="4" Grid.ColumnSpan="2" CornerRadius="20" BorderBrush="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" BorderThickness="2">
+								<ItemsControl ItemsSource="{Binding MonitorList}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Background="Transparent" Width="240" Height="110"/>
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<Canvas>
+												<Rectangle Fill="{Binding FillColour}" Width="{Binding UIBounds.Width}" Height="{Binding UIBounds.Height}"
+														   Stroke="{Binding StrokeColour}" StrokeThickness="3" Opacity="0.5"
+														   Canvas.Left="{Binding UIBounds.X}" Canvas.Top="{Binding UIBounds.Y}"
+														   PointerPressed="OnPreviewMonitorTapped"/>
+											</Canvas>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</Border>
+
+							<!-- Selecting Monitor Dropdown / Handling -->
+							<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.ColumnSpan="2" Margin="0,6,0,24">
+								<Button Content="Select All" Click="OnSelectAllClicked" Background="Gray" Foreground="White" Margin="4"/>
+								<ComboBox ItemsSource="{Binding WallpaperStyleList}"
+										  SelectedItem="{Binding SelectedWallpaperStyle}"
+										  IsEnabled="{Binding StyleDropdownEnabled}"
+										  Width="100"
+										  Foreground="White"
+										  Margin="5"/>
+							</StackPanel>
+
+							<!-- autoset view navigation button -->
+							<Button Content="Autoset Menu" Command="{Binding autoSetWallpaperCommand}"
+									Grid.Row="6" Grid.ColumnSpan="1" Background="rgba(10, 55, 33, 0.8)"
+									VerticalAlignment="Bottom" HorizontalAlignment="Center"
+									Margin="0,0,235,0">
+								<Image Source="avares://Wallmod/Assets/settings-icon.png"
+									   Width="18" Height="14"/>
 							</Button>
-						
-						<!-- Set Wallpaper Button -->
-						<Button Name="SetBackgroundButton"
-									Content="Set As Desktop Background"
-									Width="220" Click="OnSetWallpaperClicked"
-									Background="DarkGreen"
-									Foreground="White"
-									HorizontalAlignment="Stretch"
-									VerticalAlignment="Center"
-									HorizontalContentAlignment="Center"
-									Margin="0,10,0,0"
-									Grid.Row="6" Grid.ColumnSpan="2"
-									IsEnabled="False"/>
+
+							<!-- add wallpaper to autoset -->
+							<Button Content="Add Wallpaper to Autoset" Command="{Binding autoSetNavCommand}"
+									Grid.Row="6" Grid.ColumnSpan="1" Background="rgba(121, 218, 172, 0.8)"
+									VerticalAlignment="Bottom" HorizontalAlignment="Center"
+									Margin="0,0,275,0">
+								<Image Source="avares://Wallmod/Assets/settings-icon.png"
+									   Width="18" Height="14"/>
+							</Button>
+
+							<!-- Set Wallpaper Button -->
+							<Button Name="SetBackgroundButton"
+										Content="Set As Desktop Background"
+										Width="220" Click="OnSetWallpaperClicked"
+										Background="DarkGreen"
+										Foreground="White"
+										HorizontalAlignment="Stretch"
+										VerticalAlignment="Center"
+										HorizontalContentAlignment="Center"
+										Margin="0,10,0,0"
+										Grid.Row="6" Grid.ColumnSpan="2"
+										IsEnabled="False"/>
 
 
-						<!-- Settings Button -->
-						<Button Content="Settings" Command="{Binding settingsButton}"
-								Grid.Row="6" Grid.ColumnSpan="2" Background="Gray"
-								VerticalAlignment="Bottom" HorizontalAlignment="Right">
-							<Image Source="avares://Wallmod/Assets/settings-icon.png"
-								   Width="18" Height="17"/>
-						</Button>
+							<!-- Settings Button -->
+							<Button Content="Settings" Command="{Binding settingsButton}"
+									Grid.Row="6" Grid.ColumnSpan="2" Background="Gray"
+									VerticalAlignment="Bottom" HorizontalAlignment="Right">
+								<Image Source="avares://Wallmod/Assets/settings-icon.png"
+									   Width="18" Height="17"/>
+							</Button>
 
+						</Grid>
+					</ScrollViewer>
+
+					<!--QUEUE SECTION =========-->
+					<Grid IsVisible="{Binding IsAutoSetVisible}">
+						<views:QueueView/>
 					</Grid>
-				</ScrollViewer>
+
+				</Panel>
+				
+				
 			</Border>
 
 
@@ -821,11 +842,6 @@
 							</Border>
 						</StackPanel>
 					</Grid>
-				</TabItem>
-
-				<!-- TEMPORARY LOCATION FOR QUEUE, ACTUAL LOCATION IS TO REPLACE PREVIEW -->
-				<TabItem Header="Queue">
-					<views:QueueView />
 				</TabItem>
 				
 			</TabControl>
