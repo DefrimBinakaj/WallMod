@@ -590,7 +590,6 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    // erroring when it is spam-clicked
     private async void selectDirec(string direcChoice)
     {
         Window window = new Window();
@@ -626,27 +625,23 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void filterExec()
     {
-        Debug.WriteLine("filter clicked");
         IsFilterOpen = false;
         IsFilterOpen = true;
     }
 
     private void filterSearchExec()
     {
-        Debug.WriteLine("searchtext = " + FilterSearchText);
         applyAllFilters();
     }
 
     private void filterSelectExec(string selectedChoice)
     {
-        Debug.WriteLine("select = " + selectedChoice);
         CurrentSortChoice = selectedChoice;
         applyAllFilters();
     }
 
     private void filterAspectRatioExec(string selectedChoice)
     {
-        Debug.WriteLine("aspect ratio = " + selectedChoice);
         CurrentAspectRatio = selectedChoice;
         applyAllFilters();
     }
