@@ -4,6 +4,7 @@
 		xmlns:convs="using:WallMod.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:views="using:WallMod.Views"
 		Width="1500"
 		Height="750"
         MinWidth="700"
@@ -449,6 +450,15 @@
 									  Margin="5"/>
 						</StackPanel>
 
+						<!-- autosetting wallpaper view button -->
+						<Button Content="Autoset Menu" Command=""
+								Grid.Row="6" Grid.ColumnSpan="1" Background="rgba(10, 55, 33, 0.8)"
+								VerticalAlignment="Bottom" HorizontalAlignment="Center" 
+								Margin="0,0,235,0">
+							<Image Source="avares://Wallmod/Assets/settings-icon.png"
+								   Width="28" Height="17"/>
+							</Button>
+						
 						<!-- Set Wallpaper Button -->
 						<Button Name="SetBackgroundButton"
 									Content="Set As Desktop Background"
@@ -465,10 +475,10 @@
 
 						<!-- Settings Button -->
 						<Button Content="Settings" Command="{Binding settingsButton}"
-								Grid.Row="7" Grid.ColumnSpan="2" Background="Gray"
+								Grid.Row="6" Grid.ColumnSpan="2" Background="Gray"
 								VerticalAlignment="Bottom" HorizontalAlignment="Right">
 							<Image Source="avares://Wallmod/Assets/settings-icon.png"
-								   Width="18" Height="18"/>
+								   Width="18" Height="17"/>
 						</Button>
 
 					</Grid>
@@ -812,6 +822,12 @@
 						</StackPanel>
 					</Grid>
 				</TabItem>
+
+				<!-- TEMPORARY LOCATION FOR QUEUE, ACTUAL LOCATION IS TO REPLACE PREVIEW -->
+				<TabItem Header="Queue">
+					<views:QueueView />
+				</TabItem>
+				
 			</TabControl>
 
 

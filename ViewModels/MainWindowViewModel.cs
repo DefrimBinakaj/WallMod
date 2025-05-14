@@ -57,6 +57,10 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<string> WallpaperStyleList { get; set; }
 
 
+    // autoset background
+    [RelayCommand] public void autoSetWallpaperCommand() => AutoSetWallpaper();
+
+
     // monitors ============================================================
     public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
 
@@ -894,7 +898,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
+    // ===============================
+    // auto set wallpaper / "Wallpaper Queue"
+    public void AutoSetWallpaper()
+    {
 
+    }
 
 
 

@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="WallMod.Views.QueueView"
+		xmlns:vm="using:WallMod.ViewModels"
+		x:DataType="vm:QueueViewModel">
+
+	<StackPanel Spacing="16" Margin="20">
+
+		<!-- ─────────── INTERVAL ────────────────────────────────────────── -->
+		<Border CornerRadius="8" Background="#222" Padding="12" Width="600">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Choose the interval"
+							FontWeight="Bold" Foreground="White"/>
+
+				<Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto,*"
+						RowDefinitions="Auto">
+					<TextBlock Grid.Column="0" Text="Months"  Foreground="White" VerticalAlignment="Center"/>
+					<TextBox Grid.Column="1" x:Name="MonthsInput" Text="{Binding MonthsInput}"
+							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+
+					<TextBlock Grid.Column="2" Text="Weeks"   Foreground="White" VerticalAlignment="Center"/>
+					<TextBox Grid.Column="3" x:Name="WeeksInput" Text="{Binding WeeksInput}"
+							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+
+					<TextBlock Grid.Column="4" Text="Days"    Foreground="White" VerticalAlignment="Center"/>
+					<TextBox Grid.Column="5" x:Name="DaysInput" Text="{Binding DaysInput}"
+							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+
+					<TextBlock Grid.Column="6" Text="Hours"   Foreground="White" VerticalAlignment="Center"/>
+					<TextBox Grid.Column="7" x:Name="HoursInput" Text="{Binding HoursInput}"
+							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+
+					<TextBlock Grid.Column="8" Text="Minutes" Foreground="White" VerticalAlignment="Center"/>
+					<TextBox Grid.Column="9" x:Name="MinutesInput" Text="{Binding MinutesInput}"
+							 Width="40" Watermark="int" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
+				</Grid>
+			</StackPanel>
+		</Border>
+
+		<!-- ─────────── MODE SELECTOR ───────────────────────────────────── -->
+		<StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+			<RadioButton Content="Custom"
+							GroupName="Mode"
+							FontSize="14" Foreground="White"/>
+			<RadioButton Content="Random"
+							GroupName="Mode"
+							FontSize="14" Foreground="White"/>
+		</StackPanel>
+
+		<!-- ─────────── CUSTOM QUEUE UI ─────────────────────────────────── -->
+		<Border CornerRadius="8" Background="DarkGray" Padding="10">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Wallpaper queue (drag up / down)"
+							Foreground="White" FontWeight="Bold"/>
+
+				<ItemsControl ItemsSource="{Binding WallpaperQueue}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<Border Margin="0,2" Padding="6" Background="#303030" CornerRadius="6">
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
+									<Image Source="" Width="50" Height="50"/>
+
+									<TextBlock Grid.Column="1" Text="{Binding Name}"
+												VerticalAlignment="Center" Foreground="Red"/>
+
+									<!-- Up / Down buttons -->
+									<Button Grid.Column="2" Content="▲" Padding="2"
+											Command=""
+											CommandParameter="{Binding}" Margin="2"/>
+									<Button Grid.Column="3" Content="▼" Padding="2"
+											Command=""
+											CommandParameter="{Binding}" Margin="2"/>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+
+				<Button Content="Clear queue" Command="{Binding ClearQueueCommand}"
+						HorizontalAlignment="Right" Margin="0,4,0,0"/>
+			</StackPanel>
+		</Border>
+
+		<!-- RANDOM DIRECTORY UI -->
+		<Border CornerRadius="8" Background="#202020" Padding="10">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Choose a directory to pick random wallpapers from"
+							Foreground="White" FontWeight="Bold"/>
+				<Button Content="Browse…" Command=""
+						Width="120" HorizontalAlignment="Left"/>
+
+				<TextBlock Text="randdir" Foreground="LightGray"
+							TextWrapping="Wrap" Margin="4,4,0,0"/>
+			</StackPanel>
+		</Border>
+	</StackPanel>
+  
+</UserControl>
