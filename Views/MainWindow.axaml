@@ -249,59 +249,7 @@
 
 					<!-- History Section -->
 					<Grid IsVisible="{Binding IsHistoryViewVisible}" Background="Transparent">
-						<Grid.RowDefinitions>
-							<RowDefinition Height="Auto"/>
-							<RowDefinition Height="*" />
-							<RowDefinition Height="Auto"/>
-						</Grid.RowDefinitions>
-
-						<TextBlock Text="History" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Margin="0,16" Grid.Row="0"/>
-
-						<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-							<ItemsControl ItemsSource="{Binding HistoryWallpaperList}">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<StackPanel Orientation="Vertical"/>
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
-								<ItemsControl.ItemTemplate>
-									
-									<DataTemplate>
-										<StackPanel Orientation="Vertical">
-											<Border Margin="50,0,50,10">
-												<Grid>
-													<Grid.ColumnDefinitions>
-														<ColumnDefinition Width="*"/>
-														<ColumnDefinition Width="Auto"/>
-													</Grid.ColumnDefinitions>
-
-													<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
-														<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12" Foreground="White" Margin="0,0,0,5"/>
-														<TextBlock Text="{Binding FilePath}" FontSize="10" Foreground="Gray"/>
-													</StackPanel>
-
-													<Image Grid.Column="1" Source="{Binding ImageThumbnailBitmap}" Width="160" VerticalAlignment="Center" Margin="20,0,0,0"
-														   PointerPressed="OnImageTapped"/>
-
-													<Button Content="🗑️" Click="HistoryEntryDeleteClicked" Grid.Column="1" Background="DarkRed" VerticalAlignment="Top" HorizontalAlignment="Right" BorderBrush="White"/>
-													
-												</Grid>
-											</Border>
-											
-											<Border Height="1" Background="Gray" Margin="40,0,40,10"/>
-											
-										</StackPanel>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-							
-						</ScrollViewer>
-
-						<!-- Temp Back Button (position is good tho) -->
-						<Button Grid.Row="2" VerticalAlignment="Bottom" Background="Transparent" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}">
-							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
-						</Button>
-						
+						<views:HistoryView />
 					</Grid>
 
 

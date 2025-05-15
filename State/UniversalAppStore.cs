@@ -6,17 +6,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WallMod.Models;
+using WallMod.ViewModels;
 
 namespace WallMod.State;
 
-public class UniversalAppStore
+public class UniversalAppStore : ViewModelBase
 {
 
     // =======================================================
-    // SELECTION
+    // GALLERY
+    private bool isImageGalleryViewVisible = true;
+    public bool IsImageGalleryViewVisible { get => isImageGalleryViewVisible; set => SetProperty(ref isImageGalleryViewVisible, value); }
+
+    // =======================================================
 
 
     // =======================================================
+    // HISTORY
+    public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; } = new ObservableCollection<Wallpaper>();
+
+    private bool isHistoryViewVisible = false;
+    public bool IsHistoryViewVisible { get => isHistoryViewVisible; set => SetProperty(ref isHistoryViewVisible, value); }
+
+    // =======================================================
+
 
     // =======================================================
     // QUEUE

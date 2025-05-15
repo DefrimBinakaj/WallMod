@@ -75,12 +75,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // history =============================================================
     [RelayCommand] public void viewHistoryButton() => ViewHistory();
-
-    [RelayCommand] public void deleteHistoryEntryButton(Wallpaper wallpaper) => DeleteSingleHistoryEntry(wallpaper);
     
     WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
-    public ObservableCollection<string> WallpaperHistoryList { get; set; } = new ObservableCollection<string>();
-    public ObservableCollection<Wallpaper> HistoryWallpaperList { get; set; } = new ObservableCollection<Wallpaper>();
+    public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
 
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
@@ -110,6 +107,17 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedWallpaperStyle = WallpaperStyleList[0];
 
         DetectMonitors();
+
+
+        // BANDAID FIX for gallery / history visibility bug
+        uniVM.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(UniversalAppStore.IsHistoryViewVisible))
+                OnPropertyChanged(nameof(IsHistoryViewVisible));
+            if (e.PropertyName == nameof(UniversalAppStore.IsImageGalleryViewVisible))
+                OnPropertyChanged(nameof(IsImageGalleryViewVisible));
+        };
+
 
         // set default img and values
         CurrentWallpaperPreview = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/placeholder-icon.png")));
@@ -285,12 +293,31 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
     // views ===================================================
+    public bool IsHistoryViewVisible
+    {
+        get => uniVM.IsHistoryViewVisible;
+        set
+        {
+            if (uniVM.IsHistoryViewVisible != value)
+            {
+                uniVM.IsHistoryViewVisible = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
-    private bool isHistoryViewVisible = false;
-    public bool IsHistoryViewVisible { get => isHistoryViewVisible; set => SetProperty(ref isHistoryViewVisible, value); }
-
-    private bool isImageGalleryViewVisible = true;
-    public bool IsImageGalleryViewVisible { get => isImageGalleryViewVisible; set => SetProperty(ref isImageGalleryViewVisible, value); }
+    public bool IsImageGalleryViewVisible
+    {
+        get => uniVM.IsImageGalleryViewVisible;
+        set
+        {
+            if (uniVM.IsImageGalleryViewVisible != value)
+            {
+                uniVM.IsImageGalleryViewVisible = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
 
     private bool isPreviewVisible = true;
@@ -970,15 +997,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     }
 
-    public void DeleteSingleHistoryEntry(Wallpaper wallpaper)
-    {
-        if (wallpaper == null)
-        {
-            return;
-        }
-        wallpaperHistoryHelper.RemoveHistoryEntry(wallpaper.FilePath);
-        HistoryWallpaperList.Remove(wallpaper);
-    }
     // ===============================
 
 

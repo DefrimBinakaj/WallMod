@@ -33,7 +33,7 @@ public partial class MainWindow : Window
 
     private DateTime lastTapTime = DateTime.MinValue;
     private int DoubleTapThreshold = 500;
-    private Wallpaper lastTapImage = new();
+    public Wallpaper lastTapImage = new();
 
     public MainWindow(MainWindowViewModel vm)
     {
@@ -226,7 +226,7 @@ public partial class MainWindow : Window
     }
 
 
-    private void ResetAllItemsOpacity()
+    public void ResetAllItemsOpacity()
     {
         // 1) Find the ItemsControl
         var itemsControl = this.FindControl<ItemsControl>("ImageViewControl");
@@ -409,16 +409,6 @@ public partial class MainWindow : Window
         viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
     }
 
-
-
-    public void HistoryEntryDeleteClicked(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.DataContext is Wallpaper wallpaper)
-        {
-            var viewModel = DataContext as MainWindowViewModel;
-            viewModel.DeleteSingleHistoryEntry(wallpaper);
-        }
-    }
 
 
     // window used in program.cs to enforce single-instance mechanism - this will be used to bring up window
