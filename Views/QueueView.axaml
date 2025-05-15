@@ -9,7 +9,7 @@
 
 	<StackPanel Spacing="20" Margin="20">
 
-		<TextBlock Text="Autoset Wallpapers" FontWeight="Bold" FontSize="16" Foreground="White"/>
+		<TextBlock Text="Autoset Wallpapers" HorizontalAlignment="Center" FontWeight="Bold" FontSize="15" Foreground="White"/>
 
 		<!-- ─────────────  INTERVAL (spans full width)  ───────────── -->
 		<Border Background="#222" CornerRadius="8" Padding="16">
@@ -25,7 +25,7 @@
                                Grid.Row="1" Grid.Column="1"/>
 
 				<TextBlock Text="Weeks"   Foreground="White" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
-				<NumericUpDown Value="{Binding WeeksInput}"   Minimum="0" Width="115"
+				<NumericUpDown Value="{Binding WeeksInput}"   Minimum="0" Width="115" FormatString="0"
                                Grid.Row="2" Grid.Column="1"/>
 
 				<TextBlock Text="Days"    Foreground="White" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"/>
