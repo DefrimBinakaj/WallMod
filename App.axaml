@@ -26,6 +26,7 @@
 
 	<Application.Resources>
 		<converters:BoolToStrConverter x:Key="BoolToStrConverter"/>
+		<converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
 	</Application.Resources>
 
 

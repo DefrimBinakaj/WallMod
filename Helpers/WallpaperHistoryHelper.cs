@@ -21,6 +21,9 @@ namespace WallMod.Helpers;
  */
 public class WallpaperHistoryHelper
 {
+
+    private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+
     AppStorageHelper appStorageHelper;
 
     public WallpaperHistoryHelper()
@@ -71,9 +74,7 @@ public class WallpaperHistoryHelper
 
         // same as imagehelper multiprocessing
         // hardcoded amount of processors used to retrieve all images in a directory
-        UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
-        MainWindowViewModel mvm = new MainWindowViewModel(uniVM);
-        int allocCPUThreads = mvm.CPUThreadsAllocated;
+        int allocCPUThreads = uniVM.CPUThreadsAllocated;
         Debug.WriteLine("processors used: " + allocCPUThreads);
         var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
         var tasks = new List<Task>();

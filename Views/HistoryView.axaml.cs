@@ -32,7 +32,7 @@ public partial class HistoryView : UserControl
     {
         if (sender is Control control && control.DataContext is Wallpaper wallpaper)
         {
-            // get actually window that owns this view
+            // get actual window that owns this view
             var mainWindow = this.GetVisualRoot() as MainWindow;
             if (mainWindow?.DataContext is not MainWindowViewModel mainVM) return;
 

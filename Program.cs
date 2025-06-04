@@ -37,11 +37,13 @@ namespace WallMod
                                services.AddTransient<MainWindowViewModel>();
                                services.AddTransient<QueueViewModel>();
                                services.AddTransient<HistoryViewModel>();
+                               services.AddTransient<SettingsViewModel>();
 
                                // views / windows
                                services.AddTransient<MainWindow>();
                                services.AddTransient<QueueView>();
                                services.AddTransient<HistoryView>();
+                               services.AddTransient<SettingsView>();
                            })
                            .Build();
 

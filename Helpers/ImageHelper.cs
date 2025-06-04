@@ -16,6 +16,8 @@ using WallMod.ViewModels;
 using WallMod.Models;
 using DataJuggler.PixelDatabase;
 using ColorThiefDotNet;
+using Microsoft.Extensions.DependencyInjection;
+using WallMod.State;
 
 namespace WallMod.Helpers;
 
@@ -24,6 +26,9 @@ namespace WallMod.Helpers;
  */
 public class ImageHelper
 {
+
+    private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+
     // -----------------------------------------------------------------------------------------------
     // funcs for converting resizedSkiaImg to bitmap
 
@@ -234,7 +239,7 @@ public class ImageHelper
         }
         
 
-        mvm.CurrentSelectedDirectory = " Loading...";
+        uniVM.CurrentSelectedDirectory = " Loading...";
 
 
         // populate directories (if no access to folder, quit func)
@@ -275,7 +280,7 @@ public class ImageHelper
 
         // IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // hardcoded amount of processors used to retrieve all images in a directory
-        int allocCPUThreads = mvm.CPUThreadsAllocated;
+        int allocCPUThreads = uniVM.CPUThreadsAllocated;
         Debug.WriteLine("processors used: " + allocCPUThreads);
         var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
         var tasks = new List<Task>();
@@ -295,6 +300,7 @@ public class ImageHelper
                     {
                         imgCollec.Add(wallpaper);
                         processedFiles++;
+                        // currently using mvm instead of uniVM since its only used in mvm
                         mvm.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
                     });
                 }
@@ -313,7 +319,7 @@ public class ImageHelper
 
         await Task.WhenAll(tasks);
 
-        mvm.CurrentSelectedDirectory = folderChoice;
+        uniVM.CurrentSelectedDirectory = folderChoice;
 
 
         return imgCollec;

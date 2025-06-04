@@ -84,14 +84,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // settings ============================================================
     [RelayCommand] public void settingsButton() => navToSettings();
-    [RelayCommand] public void deleteHistoryButton() => DeleteHistory();
-    [RelayCommand] public void openGithubButton() => OpenGithub();
+
 
 
     public MainWindowViewModel(UniversalAppStore universalVM)
     {
 
         uniVM = universalVM;
+
+        // in order to instantly refresh theme changes in settings
+        uniVM.PropertyChanged += (_, e) => OnPropertyChanged(e.PropertyName);
 
         appStorageHelper.InitAppStorage();
 
@@ -124,27 +126,37 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentWallpaperName = "Name";
         currentWallpaperSize = "Resolution";
 
-        AllowSaveHistory = SavedAllowSaveHistory();
-        StayRunningInBackground = SavedStayRunningInBackground();
-        AutoOpenLastDirectory = SavedAutoOpenLastDirectory();
-        RememberFilters = SavedRememberFilters();
-        CPUThreadsAllocated = SavedCPUThreadsAllocated();
 
-        if (AutoOpenLastDirectory == true)
+        uniVM.AllowSaveHistory = bool.Parse(settingsHistoryHelper.GetSettingEntry("AllowSaveHistory"));
+        uniVM.StayRunningInBackground = bool.Parse(settingsHistoryHelper.GetSettingEntry("StayRunningInBackground"));
+        uniVM.AutoOpenLastDirectory = bool.Parse(settingsHistoryHelper.GetSettingEntry("AutoOpenLastChosenDirectoryOnAppStart"));
+        uniVM.RememberFilters = bool.Parse(settingsHistoryHelper.GetSettingEntry("RememberFilterSettings"));
+        uniVM.CPUThreadsAllocated = int.Parse(settingsHistoryHelper.GetSettingEntry("CPUThreadsAllocated"));
+
+        if (uniVM.AutoOpenLastDirectory == true)
         {
-            execAutoOpenLastDir();
+            string previousDir = settingsHistoryHelper.GetSettingEntry("LastChosenDirectory");
+            if (!string.IsNullOrEmpty(previousDir) && Directory.Exists(previousDir))
+            {
+                selectDirec(previousDir);
+            }
         }
 
-        if (RememberFilters == true)
+        if (uniVM.RememberFilters == true)
         {
-            execRememberFilters();
+            uniVM.FilterSearchText = settingsHistoryHelper.GetSettingEntry("SearchFilter");
+            uniVM.ShowFolders = bool.Parse(settingsHistoryHelper.GetSettingEntry("ShowFoldersFilter"));
+            uniVM.CurrentSortChoice = settingsHistoryHelper.GetSettingEntry("ImgPropertySort");
+            uniVM.CurrentAspectRatio = settingsHistoryHelper.GetSettingEntry("AspectRatioFilter");
+            applyAllFilters();
         }
 
-        SelectedBackgroundColour = SavedSelectedBackgroundColour();
-        SelectedPrimaryAccentColour = SavedSelectedPrimaryAccentColour();
-        SelectedWallpaperCollectionColour = SavedSelectedWallpaperCollectionColour();
-        SelectedPreviewBackgroundColour = SavedSelectedPreviewBackgroundColour();
-        changeFluentColour();
+        uniVM.SelectedBackgroundColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedBackgroundColour"));
+        uniVM.SelectedPrimaryAccentColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedPrimaryAccentColour"));
+        uniVM.SelectedWallpaperCollectionColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedWallpaperCollectionColour"));
+        uniVM.SelectedPreviewBackgroundColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedPreviewBackgroundColour"));
+        uniVM.changeFluentColour();
+
 
     }
 
@@ -228,32 +240,29 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private string currentSelectedDirectory = "No Directory Selected";
+    // private string currentSelectedDirectory = "No Directory Selected";
     public string CurrentSelectedDirectory
     {
-        get => currentSelectedDirectory;
+        get => uniVM.CurrentSelectedDirectory;
         set
         {
-            if (currentSelectedDirectory != value)
+            if (uniVM.CurrentSelectedDirectory != value)
             {
-                currentSelectedDirectory = value;
-                OnPropertyChanged(nameof(CurrentSelectedDirectory));
-                CurrentSelectedDirecName = "/" + Path.GetFileName(value); // change the display var
-                updateLastChosenDir();
+                uniVM.CurrentSelectedDirectory = value;
+                OnPropertyChanged(nameof(uniVM.CurrentSelectedDirectory));
             }
         }
     }
 
-    private string currentSelectedDirecName = "No Directory Selected";
     public string CurrentSelectedDirecName
     {
-        get => currentSelectedDirecName;
+        get => uniVM.CurrentSelectedDirecName;
         set
         {
-            if (currentSelectedDirecName != value)
+            if (uniVM.CurrentSelectedDirecName != value)
             {
-                currentSelectedDirecName = value;
-                OnPropertyChanged(nameof(CurrentSelectedDirecName));
+                uniVM.CurrentSelectedDirecName = value;
+                OnPropertyChanged(nameof(uniVM.CurrentSelectedDirecName));
             }
         }
     }
@@ -327,11 +336,32 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsAutoSetVisible { get => isAutoSetVisible; set => SetProperty(ref isAutoSetVisible, value); }
 
 
-    private bool mainGridVisibility = true;
-    public bool MainGridVisibility { get => mainGridVisibility; set => SetProperty(ref mainGridVisibility, value); }
+    public bool MainGridVisibility 
+    { 
+        get => uniVM.MainGridVisibility;
+        set
+        {
+            if (uniVM.MainGridVisibility != value)
+            {
+                uniVM.MainGridVisibility = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
-    private bool settingsViewVisibility = false;
-    public bool SettingsViewVisibility { get => settingsViewVisibility; set => SetProperty(ref settingsViewVisibility, value); }
+    public bool SettingsViewVisibility 
+    { 
+        get => uniVM.SettingsViewVisibility;
+        set
+        {
+            if (uniVM.SettingsViewVisibility != value)
+            {
+                uniVM.SettingsViewVisibility = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
 
 
 
@@ -344,229 +374,190 @@ public partial class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref isFilterOpen, value);
     }
 
-    private string filterSearchText = "";
     public string FilterSearchText
     {
-        get => filterSearchText;
+        get => uniVM.FilterSearchText;
         set
         {
-            if (SetProperty(ref filterSearchText, value))
+            if (uniVM.FilterSearchText != value)
             {
-                filterSearchExec(); // re-filter on every keystroke
-                updateRememberFilterValue("SearchFilter", FilterSearchText);
+                uniVM.FilterSearchText = value;
+                OnPropertyChanged();
+                applyAllFilters(); // re-filter on every keystroke
             }
         }
     }
-
-    private bool showFolders = true;
     public bool ShowFolders
     {
-        get => showFolders;
+        get => uniVM.ShowFolders;
         set
         {
-            if (showFolders != value)
+            if (uniVM.ShowFolders != value)
             {
-                showFolders = value;
-                OnPropertyChanged(nameof(ShowFolders));
+                uniVM.ShowFolders = value;
+                OnPropertyChanged();
                 applyAllFilters();
-                updateRememberFilterValue("ShowFoldersFilter", ShowFolders.ToString());
             }
         }
     }
-
-    private string currentSortChoice = "Name";
     public string CurrentSortChoice
     {
-        get => currentSortChoice;
+        get => uniVM.CurrentSortChoice;
         set
         {
-            if (SetProperty(ref currentSortChoice, value))
+            if (uniVM.CurrentSortChoice != value)
             {
-                updateRememberFilterValue("ImgPropertySort", CurrentSortChoice);
+                uniVM.CurrentSortChoice = value;
+                OnPropertyChanged();
+                applyAllFilters();
             }
         }
     }
-
-    private string currentAspectRatio = "All";
     public string CurrentAspectRatio
     {
-        get => currentAspectRatio;
+        get => uniVM.CurrentAspectRatio;
         set
         {
-            if (SetProperty(ref currentAspectRatio, value))
+            if (uniVM.CurrentAspectRatio != value)
             {
-                updateRememberFilterValue("AspectRatioFilter", CurrentAspectRatio);
+                uniVM.CurrentAspectRatio = value;
+                OnPropertyChanged();
+                applyAllFilters();
             }
         }
     }
 
 
-
-    // settings ===================================================
-
-    private bool allowSaveHistory;
     public bool AllowSaveHistory
     {
-        get => allowSaveHistory;
+        get => uniVM.AllowSaveHistory;
         set
         {
-            if (SetProperty(ref allowSaveHistory, value))
+            if (uniVM.AllowSaveHistory != value)
             {
-                UpdateAllowSaveHistory(AllowSaveHistory); // save to json file
+                uniVM.AllowSaveHistory = value;
+                OnPropertyChanged();
             }
         }
     }
 
-    private bool stayRunningInBackground;
     public bool StayRunningInBackground
     {
-        get => stayRunningInBackground;
+        get => uniVM.StayRunningInBackground;
         set
         {
-            if (SetProperty(ref stayRunningInBackground, value))
+            if (uniVM.StayRunningInBackground != value)
             {
-                UpdateStayRunningInBackground(StayRunningInBackground); // save to json file
+                uniVM.StayRunningInBackground = value;
+                OnPropertyChanged();
             }
         }
     }
 
-    private bool autoOpenLastDirectory;
     public bool AutoOpenLastDirectory
     {
-        get => autoOpenLastDirectory;
+        get => uniVM.AutoOpenLastDirectory;
         set
         {
-            if (SetProperty(ref autoOpenLastDirectory, value))
+            if (uniVM.AutoOpenLastDirectory != value)
             {
-                UpdateAutoOpenLastDirectory(AutoOpenLastDirectory); // save to json file
+                uniVM.AutoOpenLastDirectory = value;
+                OnPropertyChanged();
             }
         }
     }
 
-    private bool rememberFilters;
     public bool RememberFilters
     {
-        get => rememberFilters;
+        get => uniVM.RememberFilters;
         set
         {
-            if (SetProperty(ref rememberFilters, value))
+            if (uniVM.RememberFilters != value)
             {
-                UpdateRememberFilters(RememberFilters); // save to json file
+                uniVM.RememberFilters = value;
+                OnPropertyChanged();
             }
         }
     }
 
-    private int cpuThreadsAllocated;
     public int CPUThreadsAllocated
     {
-        get => cpuThreadsAllocated;
+        get => uniVM.CPUThreadsAllocated;
         set
         {
-            if (cpuThreadsAllocated != value)
+            if (uniVM.CPUThreadsAllocated != value)
             {
-                cpuThreadsAllocated = value;
+                uniVM.CPUThreadsAllocated = value;
                 OnPropertyChanged();
-                UpdateCPUThreadsAllocated(CPUThreadsAllocated); // save to json file
             }
         }
     }
     public int MaxCPUThreads { get; } = Environment.ProcessorCount;
 
-
-    // doesnt actually work like argb since it is being modified - decr rgb values in order to incr opacity
-    private Color selectedBackgroundColour;
     public Color SelectedBackgroundColour
     {
-        get => selectedBackgroundColour;
+        get => uniVM.SelectedBackgroundColour;
         set
         {
-            UpdateSelectedBackgroundColour(value); // update it before processing
-            SetProperty(ref selectedBackgroundColour, convertBackgroundColour(value));
+            if (uniVM.SelectedBackgroundColour != value)
+            {
+                uniVM.SelectedBackgroundColour = value;
+                OnPropertyChanged();
+            }
         }
     }
 
-    // func to convert colour for avalonia alpha and tint
-    public Color convertBackgroundColour(Color inputColour)
-    {
-        // gpt code
-        const double minAlpha = 50;   // least tint opacity
-        const double maxAlpha = 255;  // most tint opacity
-        double factor = 1 - (inputColour.A / 255.0); // invert the chosen alpha (0 -> 1, 255 -> 0) to account for transparency conflict
-        byte newAlpha = (byte)(minAlpha + (maxAlpha - minAlpha) * factor); // formula used to adapt colorpicker to alphacolour UI
-        var newColor = Color.FromArgb(newAlpha, inputColour.R, inputColour.G, inputColour.B);
-        return newColor;
-    }
-
-    // func to convert colour for binding to UI buttons and grid etc
-    private Color convertUIColour(Color inputColour)
-    {
-        // gpt code
-        const byte minAlpha = 50;   // minimum opacity
-        const byte maxAlpha = 255;  // maximum opacity
-                                    // Clamp the alpha value between minAlpha and maxAlpha
-        byte newAlpha = (byte)Math.Clamp(inputColour.A, minAlpha, maxAlpha);
-        var newColor = Color.FromArgb(newAlpha, inputColour.R, inputColour.G, inputColour.B);
-        return newColor;
-    }
-
-
-    private Color selectedPrimaryAccentColour;
     public Color SelectedPrimaryAccentColour
     {
-        get => selectedPrimaryAccentColour;
+        get => uniVM.SelectedPrimaryAccentColour;
         set
         {
-            UpdateSelectedPrimaryAccentColour(value);
-            SetProperty(ref selectedPrimaryAccentColour, convertUIColour(value));
-            changeFluentColour();
+            if (uniVM.SelectedPrimaryAccentColour != value)
+            {
+                uniVM.SelectedPrimaryAccentColour = value;
+                OnPropertyChanged();
+            }
         }
     }
-    // function to change fluent-based UI colours (eg. sliders / tabs / etc )
-    // https://github.com/AvaloniaUI/Avalonia/discussions/12042
-    public void changeFluentColour()
-    {
-        App currApp = (App)Application.Current;
 
-        var newTheme = new FluentTheme();
-        newTheme.Palettes[ThemeVariant.Light] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
-        newTheme.Palettes[ThemeVariant.Dark] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
-        currApp.Styles.Add(newTheme);
-    }
-
-
-
-    private Color selectedWallpaperCollectionColour;
     public Color SelectedWallpaperCollectionColour
     {
-        get => selectedWallpaperCollectionColour;
+        get => uniVM.SelectedWallpaperCollectionColour;
         set
         {
-            UpdateSelectedWallpaperCollectionColour(value);
-            SetProperty(ref selectedWallpaperCollectionColour, convertUIColour(value));
+            if (uniVM.SelectedWallpaperCollectionColour != value)
+            {
+                uniVM.SelectedWallpaperCollectionColour = value;
+                OnPropertyChanged();
+            }
         }
     }
 
-    private Color selectedPreviewBackgroundColour;
     public Color SelectedPreviewBackgroundColour
     {
-        get => selectedPreviewBackgroundColour;
+        get => uniVM.SelectedPreviewBackgroundColour;
         set
         {
-            UpdateSelectedPreviewBackgroundColour(value);
-            SetProperty(ref selectedPreviewBackgroundColour, convertUIColour(value));
+            if (uniVM.SelectedPreviewBackgroundColour != value)
+            {
+                uniVM.SelectedPreviewBackgroundColour = value;
+                OnPropertyChanged();
+            }
         }
     }
 
-    // version ===================================================
-    private string appNameVersion = "v0.0.11";
     public string AppNameVersion
     {
-        get => appNameVersion;
-        set => SetProperty(ref appNameVersion, value);
+        get => uniVM.AppNameVersion;
+        set
+        {
+            if (uniVM.AppNameVersion != value)
+            {
+                uniVM.AppNameVersion = value;
+                OnPropertyChanged();
+            }
+        }
     }
-
-    // ---------------------------------------------------
-
 
 
 
@@ -620,7 +611,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async void selectDirec(string direcChoice)
+    public async void selectDirec(string direcChoice)
     {
         Window window = new Window();
         Debug.WriteLine("direcbutton clicked");
@@ -659,7 +650,7 @@ public partial class MainWindowViewModel : ViewModelBase
         IsFilterOpen = true;
     }
 
-    private void filterSearchExec()
+    public void filterSearchExec()
     {
         applyAllFilters();
     }
@@ -676,7 +667,7 @@ public partial class MainWindowViewModel : ViewModelBase
         applyAllFilters();
     }
 
-    private void applyAllFilters()
+    public void applyAllFilters()
     {
         ImageHelper imageHelper = new ImageHelper();
         var result = AllWallpapers.AsEnumerable();
@@ -859,7 +850,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, mon.MonitorIdPath);
             }
 
-            if (allowSaveHistory)
+            if (uniVM.AllowSaveHistory)
             {
                 wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
@@ -871,7 +862,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             SetWallpaperHelper.SetWallpaper(LastSelectedWallpaper.FilePath, SelectedWallpaperStyle, firstMonitorId);
 
-            if (allowSaveHistory)
+            if (uniVM.AllowSaveHistory)
             {
                 wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
@@ -910,7 +901,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SetWallpaperHelper.SetWallpaper(tempPath, SelectedWallpaperStyle, monitorId);
 
             // save
-            if (allowSaveHistory)
+            if (uniVM.AllowSaveHistory)
             {
                 wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
             }
@@ -1040,170 +1031,9 @@ public partial class MainWindowViewModel : ViewModelBase
         MainGridVisibility = !MainGridVisibility;
     }
 
-    public bool SavedAllowSaveHistory()
-    {
-        string allowSaveHistoryStatus = settingsHistoryHelper.GetSettingEntry("AllowSaveHistory");
-        return bool.Parse(allowSaveHistoryStatus);
-    }
-    public void UpdateAllowSaveHistory(bool allowsavehistbool)
-    {
-        settingsHistoryHelper.UpdateSetting("AllowSaveHistory", allowsavehistbool.ToString());
-    }
-
-    public void DeleteHistory()
-    {
-        HistoryWallpaperList.Clear();
-
-        var history = wallpaperHistoryHelper.LoadHistoryJson();
-
-        foreach (var filePath in history)
-        {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-        }
-    }
+    
 
 
-    public bool SavedStayRunningInBackground()
-    {
-        string allowSaveHistoryStatus = settingsHistoryHelper.GetSettingEntry("StayRunningInBackground");
-        return bool.Parse(allowSaveHistoryStatus);
-    }
-    public void UpdateStayRunningInBackground(bool stayrunninginbg)
-    {
-        settingsHistoryHelper.UpdateSetting("StayRunningInBackground", stayrunninginbg.ToString());
-    }
-
-
-
-    public bool SavedAutoOpenLastDirectory()
-    {
-        string autoOpenLastDirectoryStatus = settingsHistoryHelper.GetSettingEntry("AutoOpenLastChosenDirectoryOnAppStart");
-        return bool.Parse(autoOpenLastDirectoryStatus);
-    }
-    public void UpdateAutoOpenLastDirectory(bool autoopenlastdir)
-    {
-        settingsHistoryHelper.UpdateSetting("AutoOpenLastChosenDirectoryOnAppStart", autoopenlastdir.ToString());
-    }
-    public void execAutoOpenLastDir()
-    {
-        string previousDir = settingsHistoryHelper.GetSettingEntry("LastChosenDirectory");
-        if (!string.IsNullOrEmpty(previousDir) && Directory.Exists(previousDir))
-        {
-            selectDirec(previousDir);
-        }
-    }
-    public void updateLastChosenDir()
-    {
-        settingsHistoryHelper.UpdateSetting("LastChosenDirectory", CurrentSelectedDirectory);
-    }
-
-
-
-    public bool SavedRememberFilters()
-    {
-        string rememberFiltersStatus = settingsHistoryHelper.GetSettingEntry("RememberFilterSettings");
-        return bool.Parse(rememberFiltersStatus);
-    }
-    public void UpdateRememberFilters(bool rememfilters)
-    {
-        settingsHistoryHelper.UpdateSetting("RememberFilterSettings", rememfilters.ToString());
-    }
-    public void updateRememberFilterValue(string filterType, string filterVal)
-    {
-        settingsHistoryHelper.UpdateSetting(filterType, filterVal);
-    }
-    public void execRememberFilters()
-    {
-        FilterSearchText = settingsHistoryHelper.GetSettingEntry("SearchFilter");
-        ShowFolders = bool.Parse(settingsHistoryHelper.GetSettingEntry("ShowFoldersFilter"));
-        CurrentSortChoice = settingsHistoryHelper.GetSettingEntry("ImgPropertySort");
-        CurrentAspectRatio = settingsHistoryHelper.GetSettingEntry("AspectRatioFilter");
-
-        applyAllFilters();
-    }
-
-
-
-    public int SavedCPUThreadsAllocated()
-    {
-        string cpuThreadsAllocatedStatus = settingsHistoryHelper.GetSettingEntry("CPUThreadsAllocated");
-        return int.Parse(cpuThreadsAllocatedStatus);
-    }
-    public void UpdateCPUThreadsAllocated(int cputhreadsalloc)
-    {
-        settingsHistoryHelper.UpdateSetting("CPUThreadsAllocated", cputhreadsalloc.ToString());
-    }
-
-
-
-
-    public Color SavedSelectedBackgroundColour()
-    {
-        string savedSelectedBackgroundStatus = settingsHistoryHelper.GetSettingEntry("SelectedBackgroundColour");
-        return Color.Parse(savedSelectedBackgroundStatus);
-    }
-    public void UpdateSelectedBackgroundColour(Color newBgColour)
-    {
-        settingsHistoryHelper.UpdateSetting("SelectedBackgroundColour", newBgColour.ToString());
-    }
-
-    public Color SavedSelectedPrimaryAccentColour()
-    {
-        string savedPrimAccentColStatus = settingsHistoryHelper.GetSettingEntry("SelectedPrimaryAccentColour");
-        return Color.Parse(savedPrimAccentColStatus);
-    }
-    public void UpdateSelectedPrimaryAccentColour(Color newPrimAccentColour)
-    {
-        settingsHistoryHelper.UpdateSetting("SelectedPrimaryAccentColour", newPrimAccentColour.ToString());
-    }
-
-    public Color SavedSelectedWallpaperCollectionColour()
-    {
-        string savedWpCollecColStatus = settingsHistoryHelper.GetSettingEntry("SelectedWallpaperCollectionColour");
-        return Color.Parse(savedWpCollecColStatus);
-    }
-    public void UpdateSelectedWallpaperCollectionColour(Color newWallpaperCollecColour)
-    {
-        settingsHistoryHelper.UpdateSetting("SelectedWallpaperCollectionColour", newWallpaperCollecColour.ToString());
-    }
-
-    public Color SavedSelectedPreviewBackgroundColour()
-    {
-        string savedPreviewBgColStatus = settingsHistoryHelper.GetSettingEntry("SelectedPreviewBackgroundColour");
-        return Color.Parse(savedPreviewBgColStatus);
-    }
-    public void UpdateSelectedPreviewBackgroundColour(Color newPrevBgColour)
-    {
-        settingsHistoryHelper.UpdateSetting("SelectedPreviewBackgroundColour", newPrevBgColour.ToString());
-    }
-
-    public void OpenGithub()
-    {
-        string url = "https://github.com/DefrimBinakaj/WallMod";
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to open GitHub repository: {ex.Message}");
-        }
-
-    }
-
-    // open AppData/WallMod
-    public void OpenStorageFiles()
-    {
-        FileExporerHelper fileExporerHelper = new FileExporerHelper();
-        fileExporerHelper.OpenFolderInExplorer(appStorageHelper.appStorageDirectory);
-    }
 
 
     // ===============================
