@@ -37,14 +37,25 @@ public class UniversalAppStore : ViewModelBase
             {
                 currentSelectedDirectory = value;
                 OnPropertyChanged(nameof(CurrentSelectedDirectory));
-                CurrentSelectedDirecName = "/" + Path.GetFileName(value); // change the display var
+                CurrentSelectedDirecName = "/" + Path.GetFileName(Path.TrimEndingDirectorySeparator(value)); // change the display var
                 settingsHistoryHelper.UpdateSetting("LastChosenDirectory", CurrentSelectedDirectory);
             }
         }
     }
 
     private string currentSelectedDirecName = "No Directory Selected";
-    public string CurrentSelectedDirecName { get => currentSelectedDirecName; set => SetProperty(ref currentSelectedDirecName, value); }
+    public string CurrentSelectedDirecName
+    {
+        get => currentSelectedDirecName;
+        set
+        {
+            if (currentSelectedDirecName != value)
+            {
+                currentSelectedDirecName = value;
+                OnPropertyChanged(nameof(CurrentSelectedDirecName));
+            }
+        }
+    }
 
 
     // =======================================================
@@ -113,6 +124,17 @@ public class UniversalAppStore : ViewModelBase
     private bool isHistoryViewVisible = false;
     public bool IsHistoryViewVisible { get => isHistoryViewVisible; set => SetProperty(ref isHistoryViewVisible, value); }
 
+
+
+
+    // =======================================================
+    // PREVIEW
+    private bool setBackgroundButtonEnabled = false;
+    public bool SetBackgroundButtonEnabled
+    {
+        get => setBackgroundButtonEnabled;
+        set => SetProperty(ref setBackgroundButtonEnabled, value);
+    }
 
 
 

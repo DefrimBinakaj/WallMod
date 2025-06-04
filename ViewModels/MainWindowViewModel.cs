@@ -63,7 +63,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
     // autoset background
-    [RelayCommand] public void autoSetWallpaperCommand() => AutoSetWallpaper();
+    [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
     [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
 
 
@@ -363,6 +363,19 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
+    public bool SetBackgroundButtonEnabled
+    {
+        get => uniVM.SetBackgroundButtonEnabled;
+        set
+        {
+            if (uniVM.SetBackgroundButtonEnabled != value)
+            {
+                uniVM.SetBackgroundButtonEnabled = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
 
 
     // filter stuff ===================================================
@@ -428,6 +441,10 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
+
+
+
+    // settings stuff ===================================================
     public bool AllowSaveHistory
     {
         get => uniVM.AllowSaveHistory;
@@ -782,8 +799,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
 
                 // disable set button
-                MainWindow mw = new MainWindow(this);
-                mw.SetBackgroundButton.IsEnabled = false;
+                // DO NOT init mainwindow since it bugs out gallery
+                SetBackgroundButtonEnabled = false;
 
                 // disable dropdown
                 StyleDropdownEnabled = false;
@@ -917,7 +934,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // ===============================
     // auto set wallpaper / "Wallpaper Queue"
-    public void AutoSetWallpaper()
+    public void AddWallpaperToAutoSet()
     {
         Debug.WriteLine("AUTOSET");
         // TEMP: should i prevent the same wallpaper from being queued again?
@@ -1006,8 +1023,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         StyleDropdownEnabled = false;
 
-        MainWindow mw = new MainWindow(this);
-        mw.SetBackgroundButton.IsEnabled = true;
+        SetBackgroundButtonEnabled = true;
     }
 
     public async Task AllMonitorsSelected()

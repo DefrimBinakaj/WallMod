@@ -5,11 +5,13 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using WallMod.Helpers;
 using WallMod.Models;
+using WallMod.State;
 using WallMod.ViewModels;
 
 namespace WallMod.Views;
@@ -21,6 +23,9 @@ namespace WallMod.Views;
  */
 public partial class MainWindow : Window
 {
+
+    private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
+
     private enum RectOperation { None, Dragging, Resizing }
     private bool _isPointerDown;
     private RectOperation _operation = RectOperation.None;
@@ -58,7 +63,7 @@ public partial class MainWindow : Window
             {
                 mon.FillColour = "Navy";
             }
-            SetBackgroundButton.IsEnabled = false;
+            uniVM.SetBackgroundButtonEnabled = false;
         }
 
 
@@ -77,7 +82,7 @@ public partial class MainWindow : Window
             {
                 mon.FillColour = "Navy";
             }
-            SetBackgroundButton.IsEnabled = false;
+            uniVM.SetBackgroundButtonEnabled = false;
         }
     }
 
@@ -270,7 +275,7 @@ public partial class MainWindow : Window
             if (wallpaper != lastTapImage)
             {
                 ResetRectangle();
-                SetBackgroundButton.IsEnabled = false;
+                uniVM.SetBackgroundButtonEnabled = false;
             }
 
 
@@ -328,14 +333,14 @@ public partial class MainWindow : Window
 
                 // size rect specific monitors real aspect ratio
                 ShowDraggableRectangle(monitor);
-                SetBackgroundButton.IsEnabled = true;
+                uniVM.SetBackgroundButtonEnabled = true;
             }
         }
     }
 
     private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
     {
-        SetBackgroundButton.IsEnabled = true;
+        uniVM.SetBackgroundButtonEnabled = true;
         ResetRectangle();
         var viewModel = DataContext as MainWindowViewModel;
         viewModel.StyleDropdownEnabled = true;
@@ -377,7 +382,7 @@ public partial class MainWindow : Window
 
     private void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
     {
-        SetBackgroundButton.IsEnabled = false; // ensure no spamming
+        uniVM.SetBackgroundButtonEnabled = false; // ensure no spamming
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel.StyleDropdownEnabled == true)
         {
@@ -387,7 +392,7 @@ public partial class MainWindow : Window
         {
             SetCroppedWallpaper();
         }
-        SetBackgroundButton.IsEnabled = true;
+        uniVM.SetBackgroundButtonEnabled = true;
     }
 
     public void SetCroppedWallpaper()

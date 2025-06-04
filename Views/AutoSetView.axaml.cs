@@ -9,15 +9,15 @@ using WallMod.ViewModels;
 
 namespace WallMod.Views;
 
-public partial class QueueView : UserControl
+public partial class AutoSetView : UserControl
 {
 
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
-    public QueueView()
+    public AutoSetView()
     {
         InitializeComponent();
-        DataContext = App.Services!.GetRequiredService<QueueViewModel>();
+        DataContext = App.Services!.GetRequiredService<AutoSetViewModel>();
     }
 
 

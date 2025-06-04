@@ -35,13 +35,13 @@ namespace WallMod
 
                                // view-models
                                services.AddTransient<MainWindowViewModel>();
-                               services.AddTransient<QueueViewModel>();
+                               services.AddTransient<AutoSetViewModel>();
                                services.AddTransient<HistoryViewModel>();
                                services.AddTransient<SettingsViewModel>();
 
                                // views / windows
                                services.AddTransient<MainWindow>();
-                               services.AddTransient<QueueView>();
+                               services.AddTransient<AutoSetView>();
                                services.AddTransient<HistoryView>();
                                services.AddTransient<SettingsView>();
                            })

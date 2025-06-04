@@ -13,7 +13,7 @@ using WallMod.State;
 
 namespace WallMod.ViewModels;
 
-public partial class QueueViewModel : ObservableObject
+public partial class AutoSetViewModel : ObservableObject
 {
     
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
@@ -22,7 +22,7 @@ public partial class QueueViewModel : ObservableObject
     public ObservableCollection<Wallpaper> WallpaperQueue => uniVM.WallpaperQueue;
 
 
-    public QueueViewModel(UniversalAppStore universalVM)
+    public AutoSetViewModel(UniversalAppStore universalVM)
     {
         uniVM = universalVM;
     }

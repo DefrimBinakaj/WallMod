@@ -399,7 +399,7 @@
 
 
 								<!-- add wallpaper to autoset -->
-								<Button Content="Add Wallpaper to Autoset" Command="{Binding autoSetWallpaperCommand}"
+								<Button Content="Add Wallpaper to Autoset" Command="{Binding addWallpaperToAutoSetCommand}"
 										Grid.Row="6" Grid.ColumnSpan="2" Background="Gray"
 										VerticalAlignment="Bottom" HorizontalAlignment="Left">
 									<Image Source="avares://Wallmod/Assets/autoset-icon.png"
@@ -417,15 +417,15 @@
 											HorizontalContentAlignment="Center"
 											Margin="0,10,0,0"
 											Grid.Row="6" Grid.ColumnSpan="2"
-											IsEnabled="False"/>
+											IsEnabled="{Binding SetBackgroundButtonEnabled}"/>
 
 
 							</Grid>
 						</ScrollViewer>
 
-						<!--QUEUE SECTION =========-->
+						<!--AUTOSET SECTION =========-->
 						<Grid IsVisible="{Binding IsAutoSetVisible}">
-							<views:QueueView/>
+							<views:AutoSetView/>
 						</Grid>
 
 						<!-- bar with buttons -->
