@@ -264,6 +264,8 @@
 			<Border Grid.Column="2" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="10" Margin="8">
 
 					<Grid RowDefinitions="19*,1*" >
+						
+						
 						<!--PREVIEW SECTION =========-->
 						<ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsPreviewVisible}">
 							<Grid Margin="18, 6, 18, 0">
@@ -423,11 +425,14 @@
 							</Grid>
 						</ScrollViewer>
 
+						
 						<!--AUTOSET SECTION =========-->
 						<Grid IsVisible="{Binding IsAutoSetVisible}">
 							<views:AutoSetView/>
 						</Grid>
 
+						
+						
 						<!-- bar with buttons -->
 						<Grid Grid.Row="1" ColumnDefinitions="*,*">
 

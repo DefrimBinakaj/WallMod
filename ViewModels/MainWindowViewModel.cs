@@ -34,56 +34,23 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
     AppStorageHelper appStorageHelper = new AppStorageHelper();
+    WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
+    SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
-    // img upload ==========================================================
-    [RelayCommand] public void uploadClicked() => execImgUpload();
-    [RelayCommand] public void selectedDirectory() => execSelectDirec();
-    [RelayCommand] public void navigateToParentDirec() => execNavigateToParentDirec();
-
-    // filter ==============================================================
-    [RelayCommand] public void filterClicked() => filterExec();
-    [RelayCommand] public void filterSearchCommand() => filterSearchExec();
-    [RelayCommand] public void filterGroupSelectedCommand(string choice) => filterSelectExec(choice);
-    [RelayCommand] public void filterAspectRatioCommand(string choice) => filterAspectRatioExec(choice);
-
-
-    // wallpaper list ======================================================
-    
     // all wallpapers from a directory
     public ObservableCollection<Wallpaper> AllWallpapers { get; set; } = new ObservableCollection<Wallpaper>();
 
     // current display of wallpapers after filtering
     public ObservableCollection<Wallpaper> DisplayWallpaperList { get; set; } = new ObservableCollection<Wallpaper>();
 
-
-    // set background ======================================================
-    [RelayCommand] public void setWallpaperCommand() => SetWallpaper();
-
+    // set of styles available (eg. fill, fit, tile, etc)
     public ObservableCollection<string> WallpaperStyleList { get; set; }
 
-
-    // autoset background
-    [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
-    [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
-
-
-    // monitors ============================================================
+    // list of all current monitors of pc
     public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
 
-    [RelayCommand] public void detectMonitorsButton() => DetectMonitors();
-
-
-    // history =============================================================
-    [RelayCommand] public void viewHistoryButton() => ViewHistory();
-    
-    WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
+    // list of history wallpapers
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
-
-    SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
-
-
-    // settings ============================================================
-    [RelayCommand] public void settingsButton() => navToSettings();
 
 
 
@@ -99,12 +66,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         WallpaperStyleList = new ObservableCollection<string>
         {
-            "Fill",
-            "Fit",
-            "Stretch",
-            "Tile",
-            "Center",
-            "Span"
+            "Fill", "Fit", "Stretch", "Tile", "Center", "Span"
         };
         SelectedWallpaperStyle = WallpaperStyleList[0];
 
@@ -579,13 +541,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
-    // ===============================
-    // image upload
+    // img upload ==========================================================
+
+    [RelayCommand] public void uploadClicked() => execImgUpload();
     private void execImgUpload()
     {
         multipleImgUpload();
     }
-
     private async void multipleImgUpload()
     {
         Window window = new Window();
@@ -604,20 +566,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
         applyAllFilters();
     }
-    // ===============================
 
 
-
-    // ===============================
     // select directory
+    [RelayCommand] public void selectedDirectory() => execSelectDirec();
     private void execSelectDirec()
     {
         selectDirec(null); // execute it without any folder name in particular
     }
 
+    [RelayCommand] public void navigateToParentDirec() => execNavigateToParentDirec();
     private void execNavigateToParentDirec()
     {
-        Debug.WriteLine("CurrDirec = " + CurrentSelectedDirectory);
         if (CurrentSelectedDirectory != "No Directory Selected" || !string.IsNullOrEmpty(CurrentSelectedDirectory))
         {
             string parentDir = Path.GetDirectoryName(CurrentSelectedDirectory);
@@ -631,7 +591,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public async void selectDirec(string direcChoice)
     {
         Window window = new Window();
-        Debug.WriteLine("direcbutton clicked");
         ImageHelper imgHelper = new ImageHelper();
         ObservableCollection<Wallpaper> directoryPath = await imgHelper.getWallpaperListFromDirec(window, this, direcChoice);
 
@@ -654,30 +613,31 @@ public partial class MainWindowViewModel : ViewModelBase
 
     }
 
-    // ===============================
 
 
+    // filter ==============================================================
 
-    // ===============================
-    // filter stuff
-
+    [RelayCommand] public void filterClicked() => filterExec();
     private void filterExec()
     {
         IsFilterOpen = false;
         IsFilterOpen = true;
     }
 
+    [RelayCommand] public void filterSearchCommand() => filterSearchExec();
     public void filterSearchExec()
     {
         applyAllFilters();
     }
 
+    [RelayCommand] public void filterGroupSelectedCommand(string choice) => filterSelectExec(choice);
     private void filterSelectExec(string selectedChoice)
     {
         CurrentSortChoice = selectedChoice;
         applyAllFilters();
     }
 
+    [RelayCommand] public void filterAspectRatioCommand(string choice) => filterAspectRatioExec(choice);
     private void filterAspectRatioExec(string selectedChoice)
     {
         CurrentAspectRatio = selectedChoice;
@@ -754,16 +714,16 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
-    // ===============================
 
 
 
 
 
+
+    // image clicking ============================================================
 
     private readonly SemaphoreSlim imageTappedSemaphore = new SemaphoreSlim(1, 1);
-    // ===============================
-    // image clicked in UI
+
     public async Task ImageTapped(Wallpaper wallpaper)
     {
         await imageTappedSemaphore.WaitAsync();
@@ -849,13 +809,12 @@ public partial class MainWindowViewModel : ViewModelBase
         
 
     }
-    // ===============================
 
 
-    // ===============================
-    // set image as background/wallpaper
+    // image setting to background ============================================================
 
     // set all monitors to same wallpaper
+    [RelayCommand] public void setWallpaperCommand() => SetWallpaper();
     public void SetWallpaper()
     {
         // if its null, that means either no monitors selected, or all monitors selected
@@ -928,12 +887,11 @@ public partial class MainWindowViewModel : ViewModelBase
             Debug.WriteLine($"Error setting cropped wallpaper: {ex.Message}");
         }
     }
-    // ===============================
 
 
 
-    // ===============================
-    // auto set wallpaper / "Wallpaper Queue"
+    // auto set wallpaper / "Wallpaper Queue" ============================================================
+    [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
     public void AddWallpaperToAutoSet()
     {
         Debug.WriteLine("AUTOSET");
@@ -945,6 +903,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
     public void AutoSetMenuNav()
     {
         // switch preview for autoset
@@ -957,8 +916,11 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
-    // ===============================
+
+    // monitors ============================================================
+
     // redetect monitors
+    [RelayCommand] public void detectMonitorsButton() => DetectMonitors();
     private void DetectMonitors()
     {
         Window window = new Window();
@@ -976,39 +938,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Debug.WriteLine("ERROR --" + ex);
         }
     }
-    // ===============================
 
-
-
-    // ===============================
-    // background set history
-    private async void ViewHistory()
-    {
-        if (IsHistoryViewVisible == false)
-        {
-            HistoryWallpaperList.Clear();
-
-            var historyList = await wallpaperHistoryHelper.GetHistoryWallpapers();
-            foreach (var item in historyList)
-            {
-                HistoryWallpaperList.Add(item);
-            }
-        }
-
-        // switch view
-        IsHistoryViewVisible = !IsHistoryViewVisible;
-        IsImageGalleryViewVisible = !IsImageGalleryViewVisible;
-
-        // repeated clicks doesnt infinitely increase memory
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-
-    }
-
-    // ===============================
-
-
-    // ===============================
     // monitor rect tapped in UI - used for selecting monitor to set background of
     public async Task MonitorTapped(MonitorInfo monitor)
     {
@@ -1034,24 +964,43 @@ public partial class MainWindowViewModel : ViewModelBase
             mon.FillColour = "#8ccd00";
         }
     }
-    // ===============================
 
 
+    // history ============================================================
+
+    [RelayCommand] public void viewHistoryButton() => ViewHistory();
+    private async void ViewHistory()
+    {
+        if (IsHistoryViewVisible == false)
+        {
+            HistoryWallpaperList.Clear();
+
+            var historyList = await wallpaperHistoryHelper.GetHistoryWallpapers();
+            foreach (var item in historyList)
+            {
+                HistoryWallpaperList.Add(item);
+            }
+        }
+
+        // switch view
+        IsHistoryViewVisible = !IsHistoryViewVisible;
+        IsImageGalleryViewVisible = !IsImageGalleryViewVisible;
+
+        // repeated clicks doesnt infinitely increase memory
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+
+    }
 
 
-    // ===============================
-    // settings
+    // settings ============================================================
+
+    [RelayCommand] public void settingsButton() => navToSettings();
     public void navToSettings()
     {
         SettingsViewVisibility = !SettingsViewVisibility;
         MainGridVisibility = !MainGridVisibility;
     }
 
-    
-
-
-
-
-    // ===============================
 
 }

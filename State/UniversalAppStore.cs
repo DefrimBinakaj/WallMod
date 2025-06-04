@@ -21,6 +21,7 @@ public class UniversalAppStore : ViewModelBase
 
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
+
     // =======================================================
     // GALLERY
     private bool isImageGalleryViewVisible = true;
@@ -139,7 +140,7 @@ public class UniversalAppStore : ViewModelBase
 
 
     // =======================================================
-    // QUEUE
+    // AUTOSET QUEUE
     public ObservableCollection<Wallpaper> WallpaperQueue { get; set; } = new ObservableCollection<Wallpaper>();
 
     // MAYBE?: Convenience helper (avoids duplicates)
