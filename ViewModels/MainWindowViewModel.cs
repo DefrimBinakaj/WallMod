@@ -124,172 +124,41 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
-    // UI variables ---------------------------------------
+    // UI variables ------------------------------------------------------------------------------
 
     private Wallpaper lastSelectedWallpaper;
-
-    public Wallpaper LastSelectedWallpaper
-    {
-        get => lastSelectedWallpaper;
-        set => SetProperty(ref lastSelectedWallpaper, value);
-    }
-
-
+    public Wallpaper LastSelectedWallpaper { get => lastSelectedWallpaper; set => SetProperty(ref lastSelectedWallpaper, value); }
 
     private MonitorInfo lastSelMonitor;
-
-    public MonitorInfo LastSelMonitor
-    {
-        get => lastSelMonitor;
-        set => SetProperty(ref lastSelMonitor, value);
-    }
-
+    public MonitorInfo LastSelMonitor { get => lastSelMonitor; set => SetProperty(ref lastSelMonitor, value); }
 
     private Bitmap currentWallpaperPreview;
-    public Bitmap CurrentWallpaperPreview
-    {
-        get => currentWallpaperPreview;
-        set
-        {
-            if (value != currentWallpaperPreview)
-            {
-                currentWallpaperPreview = value;
-                OnPropertyChanged(nameof(CurrentWallpaperPreview));
-            }
-        }
-    }
+    public Bitmap CurrentWallpaperPreview { get => currentWallpaperPreview; set { if (value != currentWallpaperPreview) { currentWallpaperPreview = value; OnPropertyChanged(nameof(CurrentWallpaperPreview)); } } }
 
     private String currentWallpaperName;
-    public String CurrentWallpaperName
-    {
-        get => currentWallpaperName;
-        set
-        {
-            if (value != currentWallpaperName)
-            {
-                currentWallpaperName = value;
-                OnPropertyChanged(nameof(CurrentWallpaperName));
-            }
-        }
-    }
+    public String CurrentWallpaperName { get => currentWallpaperName; set { if (value != currentWallpaperName) { currentWallpaperName = value; OnPropertyChanged(nameof(CurrentWallpaperName)); } } }
 
     private String currentWallpaperSize;
-    public String CurrentWallpaperSize
-    {
-        get => currentWallpaperSize;
-        set
-        {
-            if (value != currentWallpaperSize)
-            {
-                currentWallpaperSize = value;
-                OnPropertyChanged(nameof(CurrentWallpaperSize));
-            }
-        }
-    }
-
+    public String CurrentWallpaperSize { get => currentWallpaperSize; set { if (value != currentWallpaperSize) { currentWallpaperSize = value; OnPropertyChanged(nameof(CurrentWallpaperSize)); } } }
 
     private double imgLoadProgress;
-    public double ImgLoadProgress
-    {
-        get => imgLoadProgress;
-        set
-        {
-            if (value != imgLoadProgress)
-            {
-                imgLoadProgress = value;
-                OnPropertyChanged(nameof(ImgLoadProgress));
-            }
-        }
-    }
+    public double ImgLoadProgress { get => imgLoadProgress; set { if (value != imgLoadProgress) { imgLoadProgress = value; OnPropertyChanged(nameof(ImgLoadProgress)); } } }
 
-    // private string currentSelectedDirectory = "No Directory Selected";
-    public string CurrentSelectedDirectory
-    {
-        get => uniVM.CurrentSelectedDirectory;
-        set
-        {
-            if (uniVM.CurrentSelectedDirectory != value)
-            {
-                uniVM.CurrentSelectedDirectory = value;
-                OnPropertyChanged(nameof(uniVM.CurrentSelectedDirectory));
-            }
-        }
-    }
-
-    public string CurrentSelectedDirecName
-    {
-        get => uniVM.CurrentSelectedDirecName;
-        set
-        {
-            if (uniVM.CurrentSelectedDirecName != value)
-            {
-                uniVM.CurrentSelectedDirecName = value;
-                OnPropertyChanged(nameof(uniVM.CurrentSelectedDirecName));
-            }
-        }
-    }
-
+    public string CurrentSelectedDirectory { get => uniVM.CurrentSelectedDirectory; set { if (uniVM.CurrentSelectedDirectory != value) { uniVM.CurrentSelectedDirectory = value; OnPropertyChanged(nameof(uniVM.CurrentSelectedDirectory)); } } }
+    public string CurrentSelectedDirecName { get => uniVM.CurrentSelectedDirecName; set { if (uniVM.CurrentSelectedDirecName != value) { uniVM.CurrentSelectedDirecName = value; OnPropertyChanged(nameof(uniVM.CurrentSelectedDirecName)); } } }
 
     private string selectedWallpaperStyle = "Fill";
-    public string SelectedWallpaperStyle
-    {
-        get => selectedWallpaperStyle;
-        set => SetProperty(ref selectedWallpaperStyle, value);
-    }
-
+    public string SelectedWallpaperStyle { get => selectedWallpaperStyle; set => SetProperty(ref selectedWallpaperStyle, value); }
 
     private double thumbnailZoomLevel = 150;
-
-    public double ThumbnailZoomLevel
-    {
-        get => thumbnailZoomLevel;
-        set
-        {
-            if (thumbnailZoomLevel != value)
-            {
-                thumbnailZoomLevel = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
+    public double ThumbnailZoomLevel { get => thumbnailZoomLevel; set { if (thumbnailZoomLevel != value) { thumbnailZoomLevel = value; OnPropertyChanged(); } } }
 
     private bool styleDropdownEnabled = false;
-    public bool StyleDropdownEnabled
-    {
-        get => styleDropdownEnabled;
-        set => SetProperty(ref styleDropdownEnabled, value);
-    }
+    public bool StyleDropdownEnabled { get => styleDropdownEnabled; set => SetProperty(ref styleDropdownEnabled, value); }
 
 
-
-    // views ===================================================
-    public bool IsHistoryViewVisible
-    {
-        get => uniVM.IsHistoryViewVisible;
-        set
-        {
-            if (uniVM.IsHistoryViewVisible != value)
-            {
-                uniVM.IsHistoryViewVisible = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool IsImageGalleryViewVisible
-    {
-        get => uniVM.IsImageGalleryViewVisible;
-        set
-        {
-            if (uniVM.IsImageGalleryViewVisible != value)
-            {
-                uniVM.IsImageGalleryViewVisible = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
+    public bool IsHistoryViewVisible { get => uniVM.IsHistoryViewVisible; set { if (uniVM.IsHistoryViewVisible != value) { uniVM.IsHistoryViewVisible = value; OnPropertyChanged(); } } }
+    public bool IsImageGalleryViewVisible { get => uniVM.IsImageGalleryViewVisible; set { if (uniVM.IsImageGalleryViewVisible != value) { uniVM.IsImageGalleryViewVisible = value; OnPropertyChanged(); } } }
 
     private bool isPreviewVisible = true;
     public bool IsPreviewVisible { get => isPreviewVisible; set => SetProperty(ref isPreviewVisible, value); }
@@ -297,57 +166,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool isAutoSetVisible = false;
     public bool IsAutoSetVisible { get => isAutoSetVisible; set => SetProperty(ref isAutoSetVisible, value); }
 
+    public bool MainGridVisibility { get => uniVM.MainGridVisibility; set { if (uniVM.MainGridVisibility != value) { uniVM.MainGridVisibility = value; OnPropertyChanged(); } } }
+    public bool SettingsViewVisibility { get => uniVM.SettingsViewVisibility; set { if (uniVM.SettingsViewVisibility != value) { uniVM.SettingsViewVisibility = value; OnPropertyChanged(); } } }
+    public bool SetBackgroundButtonEnabled { get => uniVM.SetBackgroundButtonEnabled; set { if (uniVM.SetBackgroundButtonEnabled != value) { uniVM.SetBackgroundButtonEnabled = value; OnPropertyChanged(); } } }
 
-    public bool MainGridVisibility 
-    { 
-        get => uniVM.MainGridVisibility;
-        set
-        {
-            if (uniVM.MainGridVisibility != value)
-            {
-                uniVM.MainGridVisibility = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool SettingsViewVisibility 
-    { 
-        get => uniVM.SettingsViewVisibility;
-        set
-        {
-            if (uniVM.SettingsViewVisibility != value)
-            {
-                uniVM.SettingsViewVisibility = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-
-    public bool SetBackgroundButtonEnabled
-    {
-        get => uniVM.SetBackgroundButtonEnabled;
-        set
-        {
-            if (uniVM.SetBackgroundButtonEnabled != value)
-            {
-                uniVM.SetBackgroundButtonEnabled = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-
-
-    // filter stuff ===================================================
 
     private bool isFilterOpen;
-    public bool IsFilterOpen
-    {
-        get => isFilterOpen;
-        set => SetProperty(ref isFilterOpen, value);
-    }
+    public bool IsFilterOpen { get => isFilterOpen; set => SetProperty(ref isFilterOpen, value); }
 
     public string FilterSearchText
     {
@@ -402,143 +227,21 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-
-
-
-
-    // settings stuff ===================================================
-    public bool AllowSaveHistory
-    {
-        get => uniVM.AllowSaveHistory;
-        set
-        {
-            if (uniVM.AllowSaveHistory != value)
-            {
-                uniVM.AllowSaveHistory = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool StayRunningInBackground
-    {
-        get => uniVM.StayRunningInBackground;
-        set
-        {
-            if (uniVM.StayRunningInBackground != value)
-            {
-                uniVM.StayRunningInBackground = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool AutoOpenLastDirectory
-    {
-        get => uniVM.AutoOpenLastDirectory;
-        set
-        {
-            if (uniVM.AutoOpenLastDirectory != value)
-            {
-                uniVM.AutoOpenLastDirectory = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool RememberFilters
-    {
-        get => uniVM.RememberFilters;
-        set
-        {
-            if (uniVM.RememberFilters != value)
-            {
-                uniVM.RememberFilters = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public int CPUThreadsAllocated
-    {
-        get => uniVM.CPUThreadsAllocated;
-        set
-        {
-            if (uniVM.CPUThreadsAllocated != value)
-            {
-                uniVM.CPUThreadsAllocated = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    public bool AllowSaveHistory { get => uniVM.AllowSaveHistory; set { if (uniVM.AllowSaveHistory != value) { uniVM.AllowSaveHistory = value; OnPropertyChanged(); } } }
+    public bool StayRunningInBackground { get => uniVM.StayRunningInBackground; set { if (uniVM.StayRunningInBackground != value) { uniVM.StayRunningInBackground = value; OnPropertyChanged(); } } }
+    public bool AutoOpenLastDirectory { get => uniVM.AutoOpenLastDirectory; set { if (uniVM.AutoOpenLastDirectory != value) { uniVM.AutoOpenLastDirectory = value; OnPropertyChanged(); } } }
+    public bool RememberFilters { get => uniVM.RememberFilters; set { if (uniVM.RememberFilters != value) { uniVM.RememberFilters = value; OnPropertyChanged(); } } }
+    public int CPUThreadsAllocated { get => uniVM.CPUThreadsAllocated; set { if (uniVM.CPUThreadsAllocated != value) { uniVM.CPUThreadsAllocated = value; OnPropertyChanged(); } } }
     public int MaxCPUThreads { get; } = Environment.ProcessorCount;
-
-    public Color SelectedBackgroundColour
-    {
-        get => uniVM.SelectedBackgroundColour;
-        set
-        {
-            if (uniVM.SelectedBackgroundColour != value)
-            {
-                uniVM.SelectedBackgroundColour = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public Color SelectedPrimaryAccentColour
-    {
-        get => uniVM.SelectedPrimaryAccentColour;
-        set
-        {
-            if (uniVM.SelectedPrimaryAccentColour != value)
-            {
-                uniVM.SelectedPrimaryAccentColour = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public Color SelectedWallpaperCollectionColour
-    {
-        get => uniVM.SelectedWallpaperCollectionColour;
-        set
-        {
-            if (uniVM.SelectedWallpaperCollectionColour != value)
-            {
-                uniVM.SelectedWallpaperCollectionColour = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public Color SelectedPreviewBackgroundColour
-    {
-        get => uniVM.SelectedPreviewBackgroundColour;
-        set
-        {
-            if (uniVM.SelectedPreviewBackgroundColour != value)
-            {
-                uniVM.SelectedPreviewBackgroundColour = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string AppNameVersion
-    {
-        get => uniVM.AppNameVersion;
-        set
-        {
-            if (uniVM.AppNameVersion != value)
-            {
-                uniVM.AppNameVersion = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    public Color SelectedBackgroundColour { get => uniVM.SelectedBackgroundColour; set { if (uniVM.SelectedBackgroundColour != value) { uniVM.SelectedBackgroundColour = value; OnPropertyChanged(); } } }
+    public Color SelectedPrimaryAccentColour { get => uniVM.SelectedPrimaryAccentColour; set { if (uniVM.SelectedPrimaryAccentColour != value) { uniVM.SelectedPrimaryAccentColour = value; OnPropertyChanged(); } } }
+    public Color SelectedWallpaperCollectionColour { get => uniVM.SelectedWallpaperCollectionColour; set { if (uniVM.SelectedWallpaperCollectionColour != value) { uniVM.SelectedWallpaperCollectionColour = value; OnPropertyChanged(); } } }
+    public Color SelectedPreviewBackgroundColour { get => uniVM.SelectedPreviewBackgroundColour; set { if (uniVM.SelectedPreviewBackgroundColour != value) { uniVM.SelectedPreviewBackgroundColour = value; OnPropertyChanged(); } } }
+    public string AppNameVersion { get => uniVM.AppNameVersion; set { if (uniVM.AppNameVersion != value) { uniVM.AppNameVersion = value; OnPropertyChanged(); } } }
 
 
+    // ------------------------------------------------------------------------------
+    // funcs
 
 
     // img upload ==========================================================

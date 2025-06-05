@@ -23,31 +23,8 @@ public partial class HistoryViewModel : ObservableObject
     // create WallpaperQueue replica which is the same as universal value
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
 
-    public bool IsHistoryViewVisible
-    {
-        get => uniVM.IsHistoryViewVisible;
-        set
-        {
-            if (uniVM.IsHistoryViewVisible != value)
-            {
-                uniVM.IsHistoryViewVisible = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool IsImageGalleryViewVisible
-    {
-        get => uniVM.IsImageGalleryViewVisible;
-        set
-        {
-            if (uniVM.IsImageGalleryViewVisible != value)
-            {
-                uniVM.IsImageGalleryViewVisible = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    public bool IsHistoryViewVisible { get => uniVM.IsHistoryViewVisible; set { if (uniVM.IsHistoryViewVisible != value) { uniVM.IsHistoryViewVisible = value; OnPropertyChanged(); } } }
+    public bool IsImageGalleryViewVisible { get => uniVM.IsImageGalleryViewVisible; set { if (uniVM.IsImageGalleryViewVisible != value) { uniVM.IsImageGalleryViewVisible = value; OnPropertyChanged(); } } }
 
 
     public HistoryViewModel(UniversalAppStore universalVM)
