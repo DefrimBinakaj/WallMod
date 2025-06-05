@@ -580,7 +580,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (CurrentSelectedDirectory != "No Directory Selected" || !string.IsNullOrEmpty(CurrentSelectedDirectory))
         {
-            string parentDir = Path.GetDirectoryName(CurrentSelectedDirectory);
+            string parentDir = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(CurrentSelectedDirectory));
             if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
             {
                 selectDirec(parentDir);
