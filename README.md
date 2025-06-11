@@ -69,8 +69,8 @@ Currently being developed - in proficient state
 
 - Customize to your heart's content!
 <div align="center">
-  <img src="./src/WallMod/Assets/readmeassets/WallModColourPic1.png" width="475"/>
-  <img src="./src/WallMod/Assets/readmeassets/WallModColourPic2.png" width="475"/>
+  <img src="./src/WallMod/Assets/readmeassets/WallModColourPic1.png" width="425"/>
+  <img src="./src/WallMod/Assets/readmeassets/WallModColourPic2.png" width="425"/>
 </div>
 <br><br>
 
