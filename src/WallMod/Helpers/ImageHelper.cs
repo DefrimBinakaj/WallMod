@@ -98,7 +98,7 @@ public class ImageHelper
         };
     }
 
-    private static double RgbToHue(double r, double g, double b)
+    public static double RgbToHue(double r, double g, double b)
     {
         double rr = r / 255.0;
         double gg = g / 255.0;
