@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WallMod\WallMod.csproj" />
+    <ProjectReference Include="..\..\src\WallMod\WallMod.csproj" />
   </ItemGroup>
 
   <ItemGroup>
