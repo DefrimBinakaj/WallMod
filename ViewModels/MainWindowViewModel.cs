@@ -47,7 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<string> WallpaperStyleList { get; set; }
 
     // list of all current monitors of pc
-    public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
+    public ObservableCollection<MonitorInfo> MonitorList => uniVM.MonitorList;
 
     // list of history wallpapers
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
@@ -141,9 +141,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private String currentWallpaperSize;
     public String CurrentWallpaperSize { get => currentWallpaperSize; set { if (value != currentWallpaperSize) { currentWallpaperSize = value; OnPropertyChanged(nameof(CurrentWallpaperSize)); } } }
 
-    private double imgLoadProgress;
-    public double ImgLoadProgress { get => imgLoadProgress; set { if (value != imgLoadProgress) { imgLoadProgress = value; OnPropertyChanged(nameof(ImgLoadProgress)); } } }
-
+    public double ImgLoadProgress { get => uniVM.ImgLoadProgress; set { if (uniVM.ImgLoadProgress != value) { uniVM.ImgLoadProgress = value; OnPropertyChanged(nameof(uniVM.ImgLoadProgress)); } } }
+    
     public string CurrentSelectedDirectory { get => uniVM.CurrentSelectedDirectory; set { if (uniVM.CurrentSelectedDirectory != value) { uniVM.CurrentSelectedDirectory = value; OnPropertyChanged(nameof(uniVM.CurrentSelectedDirectory)); } } }
     public string CurrentSelectedDirecName { get => uniVM.CurrentSelectedDirecName; set { if (uniVM.CurrentSelectedDirecName != value) { uniVM.CurrentSelectedDirecName = value; OnPropertyChanged(nameof(uniVM.CurrentSelectedDirecName)); } } }
 
@@ -295,12 +294,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Window window = new Window();
         ImageHelper imgHelper = new ImageHelper();
-        ObservableCollection<Wallpaper> directoryPath = await imgHelper.getWallpaperListFromDirec(window, this, direcChoice);
+        ObservableCollection<Wallpaper> directoryPathImageCollec = await imgHelper.getWallpaperListFromDirec(window, direcChoice);
 
         AllWallpapers.Clear();
-        if (directoryPath != null && directoryPath.Count > 0)
+        if (directoryPathImageCollec != null && directoryPathImageCollec.Count > 0)
         {
-            foreach (var imgFile in directoryPath)
+            foreach (var imgFile in directoryPathImageCollec)
             {
                 AllWallpapers.Add(imgFile);
             }
@@ -517,8 +516,7 @@ public partial class MainWindowViewModel : ViewModelBase
     // image setting to background ============================================================
 
     // set all monitors to same wallpaper
-    [RelayCommand] public void setWallpaperCommand() => SetWallpaper();
-    public void SetWallpaper()
+    public async Task SetWallpaperWithoutCrop()
     {
         // if its null, that means either no monitors selected, or all monitors selected
         if (LastSelMonitor == null)
@@ -549,7 +547,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     // set background of a single monitor with specific area selected
-    public void SetWallpaperWithCrop(string imagePath, string monitorId, int x, int y, int width, int height)
+    public async Task SetWallpaperWithCrop(string imagePath, string monitorId, int x, int y, int width, int height)
     {
         try
         {

@@ -404,7 +404,7 @@
 								<Button Content="Add Wallpaper to Autoset" Command="{Binding addWallpaperToAutoSetCommand}"
 										Grid.Row="6" Grid.ColumnSpan="2" Background="Gray"
 										VerticalAlignment="Bottom" HorizontalAlignment="Left">
-									<Image Source="avares://Wallmod/Assets/autoset-icon.png"
+									<Image Source="avares://Wallmod/Assets/addtoqueue-icon.png"
 										   Width="18" Height="17"/>
 								</Button>
 

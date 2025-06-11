@@ -45,18 +45,10 @@ public class UniversalAppStore : ViewModelBase
     }
 
     private string currentSelectedDirecName = "No Directory Selected";
-    public string CurrentSelectedDirecName
-    {
-        get => currentSelectedDirecName;
-        set
-        {
-            if (currentSelectedDirecName != value)
-            {
-                currentSelectedDirecName = value;
-                OnPropertyChanged(nameof(CurrentSelectedDirecName));
-            }
-        }
-    }
+    public string CurrentSelectedDirecName { get => currentSelectedDirecName; set { if (currentSelectedDirecName != value) { currentSelectedDirecName = value; OnPropertyChanged(nameof(CurrentSelectedDirecName)); } } }
+
+    private double imgLoadProgress;
+    public double ImgLoadProgress { get => imgLoadProgress; set { if (value != imgLoadProgress) { imgLoadProgress = value; OnPropertyChanged(nameof(ImgLoadProgress)); } } }
 
 
     // =======================================================
@@ -130,6 +122,10 @@ public class UniversalAppStore : ViewModelBase
 
     // =======================================================
     // PREVIEW
+
+    // list of all current monitors of pc
+    public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
+
     private bool setBackgroundButtonEnabled = false;
     public bool SetBackgroundButtonEnabled
     {

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using WallMod.Helpers;
 using WallMod.Models;
 using WallMod.State;
@@ -380,22 +381,21 @@ public partial class MainWindow : Window
     }
 
 
-    private void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
+    private async void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
     {
-        uniVM.SetBackgroundButtonEnabled = false; // ensure no spamming
+        uniVM.SetBackgroundButtonEnabled = false; // just make it false without making it true; ensures no spamming
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel.StyleDropdownEnabled == true)
         {
-            viewModel.SetWallpaper();
+            await viewModel.SetWallpaperWithoutCrop();
         }
         else
         {
-            SetCroppedWallpaper();
+            await SetCroppedWallpaper();
         }
-        uniVM.SetBackgroundButtonEnabled = true;
     }
 
-    public void SetCroppedWallpaper()
+    public async Task SetCroppedWallpaper()
     {
         if (DragRect == null || OverlayCanvas == null || PreviewImage == null) return;
 
@@ -411,7 +411,7 @@ public partial class MainWindow : Window
         int cropWidth = (int)(DragRect.Width * (originalImage.Width / PreviewImage.Bounds.Width));
         int cropHeight = (int)(DragRect.Height * (originalImage.Height / PreviewImage.Bounds.Height));
 
-        viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
+        await viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
     }
 
 

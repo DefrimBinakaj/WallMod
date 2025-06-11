@@ -210,7 +210,7 @@ public class ImageHelper
 
 
     // func for returning a list of wallpaper objects
-    public async Task<ObservableCollection<Wallpaper?>> getWallpaperListFromDirec(Window window, MainWindowViewModel mvm, string folderSpecified)
+    public async Task<ObservableCollection<Wallpaper?>> getWallpaperListFromDirec(Window window, string folderSpecified)
     {
 
         List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp" };
@@ -300,8 +300,7 @@ public class ImageHelper
                     {
                         imgCollec.Add(wallpaper);
                         processedFiles++;
-                        // currently using mvm instead of uniVM since its only used in mvm
-                        mvm.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
+                        uniVM.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
                     });
                 }
                 catch (Exception ex)
