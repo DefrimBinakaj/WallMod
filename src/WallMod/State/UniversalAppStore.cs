@@ -312,4 +312,9 @@ public class UniversalAppStore : ViewModelBase
         get => appNameVersion;
         set => SetProperty(ref appNameVersion, value);
     }
+
+
+    private bool updateAvailableVisible = false;
+    public bool UpdateAvailableVisible { get => updateAvailableVisible; set => SetProperty(ref updateAvailableVisible, value); }
+
 }

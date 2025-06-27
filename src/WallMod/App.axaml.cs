@@ -5,9 +5,14 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using NetSparkleUpdater;
+using NetSparkleUpdater.Enums;
+using NetSparkleUpdater.SignatureVerifiers;
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Threading.Tasks;
 using WallMod.Helpers;
 using WallMod.ViewModels;
@@ -35,22 +40,31 @@ public partial class App : Application
             // Prevent double data-validation (Avalonia + CommunityToolkit)
             BindingPlugins.DataValidators.RemoveAt(0);
 
-            // -------- MainWindow resolved through DI ---------------------------
-            var mainWindow = Services.GetRequiredService<MainWindow>();
-            desk.MainWindow = mainWindow;
+            // show splash screen
+            var splash = new SplashScreen();
+            desk.MainWindow = splash;
+            splash.Show();
 
-            InitializeTrayIcon(mainWindow);
 
-            // minimise to tray (existing logic)
-            mainWindow.Closing += (_, e) =>
+            Dispatcher.UIThread.Post(async () =>
             {
-                if (((MainWindowViewModel)mainWindow.DataContext!).StayRunningInBackground)
+                await Task.Yield();
+
+                var mainWindow = Services.GetRequiredService<MainWindow>();
+                desk.MainWindow = mainWindow;
+                InitializeTrayIcon(mainWindow);
+                mainWindow.Closing += (_, e) =>
                 {
-                    e.Cancel = true;
-                    mainWindow.Hide();
-                    Debug.WriteLine("App minimised to tray");
-                }
-            };
+                    if (((MainWindowViewModel)mainWindow.DataContext!).StayRunningInBackground)
+                    {
+                        e.Cancel = true;
+                        mainWindow.Hide();
+                        Debug.WriteLine("App minimised to tray");
+                    }
+                };
+                mainWindow.Show();
+                splash.Close();
+            }, DispatcherPriority.Background);
         }
 
         base.OnFrameworkInitializationCompleted();

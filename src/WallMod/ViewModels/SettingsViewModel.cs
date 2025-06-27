@@ -26,16 +26,22 @@ public partial class SettingsViewModel : ObservableObject
     AppStorageHelper appStorageHelper = new AppStorageHelper();
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
     WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
-
+    UpdateVersionHelper updateVersionHelper = new UpdateVersionHelper();
 
     [RelayCommand] public void backButton() => navBack();
     [RelayCommand] public void deleteHistoryButton() => DeleteHistory();
     [RelayCommand] public void openGithubButton() => OpenGithub();
-
+    [RelayCommand] public void updateAppButton() => UpdateApp();
 
     public SettingsViewModel(UniversalAppStore universalVM)
     {
         uniVM = universalVM;
+
+        uniVM.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(uniVM.UpdateAvailableVisible))
+                OnPropertyChanged(nameof(UpdateAvailableVisible));
+        };
     }
 
 
@@ -50,6 +56,7 @@ public partial class SettingsViewModel : ObservableObject
     public Color SelectedWallpaperCollectionColour { get => uniVM.SelectedWallpaperCollectionColour; set { if (uniVM.SelectedWallpaperCollectionColour != value) { uniVM.SelectedWallpaperCollectionColour = value; OnPropertyChanged(); } } }
     public Color SelectedPreviewBackgroundColour { get => uniVM.SelectedPreviewBackgroundColour; set { if (uniVM.SelectedPreviewBackgroundColour != value) { uniVM.SelectedPreviewBackgroundColour = value; OnPropertyChanged(); } } }
     public string AppNameVersion { get => uniVM.AppNameVersion; set { if (uniVM.AppNameVersion != value) { uniVM.AppNameVersion = value; OnPropertyChanged(); } } }
+    public bool UpdateAvailableVisible { get => uniVM.UpdateAvailableVisible; set { if (uniVM.UpdateAvailableVisible != value) { uniVM.UpdateAvailableVisible = value; OnPropertyChanged(); } } }
 
 
 
@@ -94,6 +101,15 @@ public partial class SettingsViewModel : ObservableObject
         }
 
     }
+
+
+    public async void UpdateApp()
+    {
+        var versionList = updateVersionHelper.GetGithubVersionAndInstallLink();
+        updateVersionHelper.ExecuteAppUpdate(versionList.Result.Item2, versionList.Result.Item3);
+    }
+
+
 
     // open AppData/WallMod
     public void OpenStorageFiles()

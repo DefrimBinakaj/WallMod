@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" 
+		Width="300" Height="150"
+		SizeToContent="WidthAndHeight"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        Background="#222"
+        x:Class="WallMod.Views.SplashScreen"
+        Title="SplashScreen">
+
+	<Border CornerRadius="10" Background="#333" Padding="20">
+		<StackPanel Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+			<TextBlock Text="WallMod" FontSize="32" TextAlignment="Center"/>
+			<Image Source="avares://WallMod/Assets/wallmodicon.ico"
+                   Width="120"/>
+			<ProgressBar IsIndeterminate="True" Width="160" Height="4" />
+		</StackPanel>
+	</Border>
+	
+</Window>

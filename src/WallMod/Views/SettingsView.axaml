@@ -279,6 +279,16 @@
 								<Image Source="avares://WallMod/Assets/github-logo.png"
 									   Width="30" Height="35"/>
 							</Button>
+
+							<Button Content="Update Available!"
+									Command="{Binding updateAppButton}"
+									Background="Transparent"
+									BorderThickness="0"
+									Foreground="Goldenrod"
+									FontSize="18"
+									FontWeight="Bold"
+									IsVisible="{Binding UpdateAvailableVisible}"/>
+
 						</StackPanel>
 
 						<!-- GROUP: System Settings -->
