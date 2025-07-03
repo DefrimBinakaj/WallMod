@@ -4,6 +4,7 @@
 		xmlns:convs="using:WallMod.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:ia="using:Avalonia.Xaml.Interactions.Animated"
 		xmlns:views="using:WallMod.Views"
 		WindowStartupLocation="CenterScreen"
 		Width="1500"
@@ -216,6 +217,11 @@
 
 						<ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled"
 									  VerticalAlignment="Stretch" Margin="45,12,45,15">
+
+							<Interaction.Behaviors>
+								<ia:VerticalScrollViewerAnimatedBehavior/>
+							</Interaction.Behaviors>
+							
 							<ItemsControl ItemsSource="{Binding DisplayWallpaperList}" x:Name="ImageViewControl">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
@@ -269,6 +275,10 @@
 						
 						<!--PREVIEW SECTION =========-->
 						<ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsPreviewVisible}">
+							<Interaction.Behaviors>
+								<ia:VerticalScrollViewerAnimatedBehavior/>
+							</Interaction.Behaviors>
+							
 							<Grid Margin="18, 6, 18, 0">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="*" />
