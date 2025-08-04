@@ -213,9 +213,12 @@ public partial class AutoSetViewModel : ObservableObject
     [RelayCommand] public void ExecDisableAutoSet() => disableAutoSet();
     private async void disableAutoSet()
     {
+        cancelToken.Cancel();
+        cancelToken = new CancellationTokenSource();
         AutoSetDisableButtonEnabled = false;
         AutoSetEnableButtonEnabled = true;
-        WallpaperQueue.Clear();
+        // do not clear the custom queue
+        // WallpaperQueue.Clear();
         RandDirImageCollection.Clear();
         RandDirecName = "";
         RandWallpapersRemaining = "";
@@ -225,7 +228,12 @@ public partial class AutoSetViewModel : ObservableObject
     {
         while (!cancelToken.IsCancellationRequested)
         {
-            if (WallpaperQueue.Count > 0 && TotalSeconds >= 60)
+            if (WallpaperQueue.Count == 0)
+            {
+                disableAutoSet();
+                return;
+            }
+            else if (WallpaperQueue.Count > 0 && TotalSeconds >= 60)
             {
                 Debug.WriteLine("current time interval = " + TotalSeconds.ToString() + "seconds");
                 Debug.WriteLine("current image that is set = " + WallpaperQueue.First().Name);
@@ -236,16 +244,28 @@ public partial class AutoSetViewModel : ObservableObject
                 WallpaperQueue.RemoveAt(0);
             }
 
-            await Task.Delay(TotalSeconds * 1000, cancelToken.Token);
+            try
+            {
+                await Task.Delay(TotalSeconds * 1000, cancelToken.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+            
         }
     }
 
     private async Task ExecAutoSetRand()
     {
-        Debug.WriteLine("rand folder image count = " + RandDirImageCollection.Count);
         while (!cancelToken.IsCancellationRequested)
         {
-            if (RandDirImageCollection.Count > 0 && TotalSeconds >= 60)
+            if (RandDirImageCollection.Count == 0)
+            {
+                disableAutoSet();
+                return;
+            }
+            else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 60)
             {
                 // choose between one rand image for all monitors, or diff rand for each monitor
                 if (ChooseRandForEachMonitor == true)
@@ -273,7 +293,14 @@ public partial class AutoSetViewModel : ObservableObject
                 RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
             }
 
-            await Task.Delay(TotalSeconds * 1000, cancelToken.Token);
+            try
+            {
+                await Task.Delay(TotalSeconds * 1000, cancelToken.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
         }
     }
 

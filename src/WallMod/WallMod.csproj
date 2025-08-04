@@ -22,16 +22,21 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.2" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Xaml.Interactions.DragAndDrop" Version="11.3.0.6" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="DataJuggler.PixelDatabase" Version="8.3.6" />
-    <PackageReference Include="Egolds.Avalonia.Xaml.Interactions.Animated" Version="11.2.3" />
+    <PackageReference Include="Egolds.Xaml.Behaviors.Interactions.Animated" Version="11.3.2" />
+    <PackageReference Include="Eremex.Avalonia.Controls" Version="1.1.144" />
+    <PackageReference Include="Eremex.Avalonia.Themes.DeltaDesign" Version="1.1.144" />
     <PackageReference Include="ksemenenko.ColorThief" Version="1.1.1.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="NetSparkleUpdater.SparkleUpdater" Version="3.0.2" />
     <PackageReference Include="NetSparkleUpdater.UI.Avalonia" Version="3.0.2" />
     <PackageReference Include="SystemPerformanceUI.NetSparkleUISelf" Version="2.2.3" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.2" />
+    <PackageReference Include="Xaml.Behaviors.Interactions" Version="11.3.2" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.DragAndDrop" Version="11.3.2" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.Draggable" Version="11.3.2" />
     <PackageReference Include="Xaml.Behaviors.Interactivity" Version="11.3.2" />
   </ItemGroup>
 

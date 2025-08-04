@@ -2,7 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:ia="using:Avalonia.Xaml.Interactions.Animated"
+		xmlns:ia="using:Xaml.Behaviors.Interactions.Animated"
+		xmlns:i="using:Avalonia.Xaml.Interactivity"			 
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="WallMod.Views.AutoSetView"
 		xmlns:vm="using:WallMod.ViewModels"
@@ -71,45 +72,65 @@
 
 			<!-- ─────────────  CUSTOM QUEUE PANEL  ───────────── -->
 			<Border Background="#202020" CornerRadius="8" Padding="10"
-					IsVisible="{Binding CustomQueueViewVisible}">
+        IsVisible="{Binding CustomQueueViewVisible}" DragDrop.DragOver="ListBox_DragOver">
 				<StackPanel Spacing="8">
 					<TextBlock Text="Custom Wallpaper Queue"
-								Foreground="White"
-								FontWeight="Bold"/>
+							   Foreground="White"
+							   FontWeight="Bold"/>
 
-					<ItemsControl ItemsSource="{Binding WallpaperQueue}">
-						<ItemsControl.ItemTemplate>
+					<ListBox
+						x:Name="QueueListBox"
+						ItemsSource="{Binding WallpaperQueue}"
+						Background="Transparent"
+						BorderThickness="0"
+						DragDrop.AllowDrop="True"
+						DragDrop.DragOver="ListBox_DragOver"
+						DragDrop.Drop="ListBox_Drop"
+						DragDrop.DragLeave="ListBox_DragLeave">
+
+						<ListBox.ItemTemplate>
 							<DataTemplate>
-								<Border Background="#303030" CornerRadius="6"
-										Margin="0,2" Padding="6">
-									<Grid ColumnDefinitions="Auto,* ,Auto" VerticalAlignment="Center">
+								<Border Background="#303030"
+										CornerRadius="6"
+										Margin="0,2"
+										Padding="4"
+										Cursor="SizeAll"
+										PointerPressed="Item_PointerPressed"
+										PointerMoved="Item_PointerMoved"
+										PointerReleased="Item_PointerReleased">
+									<Grid ColumnDefinitions="Auto,*,Auto"
+											VerticalAlignment="Center">
 										<Image Source="{Binding ImageThumbnailBitmap}"
 												Width="50" Height="50"/>
-
-										<TextBlock Grid.Column="1" Text="{Binding Name}"
-													Foreground="White" Margin="8,0"
+										<TextBlock Grid.Column="1"
+													Text="{Binding Name}"
+													Foreground="White"
+													Margin="8,0"
 													VerticalAlignment="Center"/>
-
-										<StackPanel Grid.Column="2" Orientation="Vertical">
-											<Button Content="▲" Width="60" Margin="0,0,0,2"
-													Background="#2D8258"
-													Click="MoveWallpaperUpClicked"/>
-											<Button Content="▼" Width="60"
-													Background="#2D3982"
-													Click="MoveWallpaperDownClicked"/>
-										</StackPanel>
 									</Grid>
 								</Border>
 							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
+						</ListBox.ItemTemplate>
+					</ListBox>
+
+					<!-- overlay for insertion indicator -->
+					<Canvas x:Name="DropIndicator"
+							IsHitTestVisible="False"
+							Panel.ZIndex="1">
+						<Border x:Name="InsertLine"
+								Background="Aqua"
+								Height="2"
+								IsVisible="False"/>
+					</Canvas>
 
 					<Button Content="Clear queue"
 							HorizontalAlignment="Right"
 							Click="ClearWallpaperQueue"/>
 				</StackPanel>
 			</Border>
-
+			
+			
+			
 			<!-- ─────────────  RANDOM DIRECTORY PANEL  ───────────── -->
 			<Border Background="#202020" CornerRadius="8" Padding="10"
 					IsVisible="{Binding RandomQueueViewVisible}">
