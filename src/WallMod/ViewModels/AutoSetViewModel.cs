@@ -70,11 +70,19 @@ public partial class AutoSetViewModel : ObservableObject
     private bool randomQueueViewVisible;
     public bool RandomQueueViewVisible { get => randomQueueViewVisible; set => SetProperty(ref randomQueueViewVisible, value); }
 
-    private bool autoSetDisableButtonEnabled = false;
-    public bool AutoSetDisableButtonEnabled { get => autoSetDisableButtonEnabled; set => SetProperty(ref autoSetDisableButtonEnabled, value); }
 
-    private bool autoSetEnableButtonEnabled = true;
-    public bool AutoSetEnableButtonEnabled { get => autoSetEnableButtonEnabled; set => SetProperty(ref autoSetEnableButtonEnabled, value); }
+    private bool customAutoSetDisableButtonEnabled = false;
+    public bool CustomAutoSetDisableButtonEnabled { get => customAutoSetDisableButtonEnabled; set => SetProperty(ref customAutoSetDisableButtonEnabled, value); }
+
+    private bool customAutoSetEnableButtonEnabled = true;
+    public bool CustomAutoSetEnableButtonEnabled { get => customAutoSetEnableButtonEnabled; set => SetProperty(ref customAutoSetEnableButtonEnabled, value); }
+
+
+    private bool randomAutoSetDisableButtonEnabled = false;
+    public bool RandomAutoSetDisableButtonEnabled { get => randomAutoSetDisableButtonEnabled; set => SetProperty(ref randomAutoSetDisableButtonEnabled, value); }
+
+    private bool randomAutoSetEnableButtonEnabled = true;
+    public bool RandomAutoSetEnableButtonEnabled { get => randomAutoSetEnableButtonEnabled; set => SetProperty(ref randomAutoSetEnableButtonEnabled, value); }
 
 
     private string randDirecName;
@@ -109,6 +117,13 @@ public partial class AutoSetViewModel : ObservableObject
     }
     private async void browseDirec()
     {
+
+        // clear previous choice
+        RandDirImageCollection.Clear();
+        RandDirecName = "";
+        RandWallpapersRemaining = "";
+
+
         Window window = new Window();
         ImageHelper imgHelper = new ImageHelper();
 
@@ -152,6 +167,7 @@ public partial class AutoSetViewModel : ObservableObject
                     await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         RandDirImageCollection.Add(wallpaper);
+                        RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
                     });
                 }
                 catch (Exception ex)
@@ -168,6 +184,7 @@ public partial class AutoSetViewModel : ObservableObject
         }
 
         await Task.WhenAll(tasks);
+        
     }
 
 
@@ -186,51 +203,73 @@ public partial class AutoSetViewModel : ObservableObject
 
 
 
-
-    [RelayCommand] public void ExecEnableAutoSet() => enableAutoSet();
-    private async void enableAutoSet()
+    // enable for custom queue
+    [RelayCommand] public void ExecEnableCustomAutoSet() => enableCustomAutoSet();
+    private async Task enableCustomAutoSet()
     {
-        if (CustomQueueViewVisible == true)
+        if (WallpaperQueue.Count > 0)
         {
-            if (WallpaperQueue.Count > 0)
-            {
-                AutoSetDisableButtonEnabled = true;
-                AutoSetEnableButtonEnabled = false;
-                await ExecAutoSetQueue();
-            }
-        }
-        else if (RandomQueueViewVisible == true)
-        {
-            if (RandDirImageCollection.Count > 0)
-            {
-                AutoSetDisableButtonEnabled = true;
-                AutoSetEnableButtonEnabled = false;
-                await ExecAutoSetRand();
-            }
+            CustomAutoSetDisableButtonEnabled = true;
+            CustomAutoSetEnableButtonEnabled = false;
+
+            // make sure you disable random to avoid concurrent autosetting
+            disableRandomAutoSet();
+
+            await ExecCustomAutoSet();
         }
     }
-
-    [RelayCommand] public void ExecDisableAutoSet() => disableAutoSet();
-    private async void disableAutoSet()
+    // disable for custom queue
+    [RelayCommand] public void ExecDisableCustomAutoSet() => disableCustomAutoSet();
+    private async void disableCustomAutoSet()
     {
         cancelToken.Cancel();
         cancelToken = new CancellationTokenSource();
-        AutoSetDisableButtonEnabled = false;
-        AutoSetEnableButtonEnabled = true;
+        CustomAutoSetDisableButtonEnabled = false;
+        CustomAutoSetEnableButtonEnabled = true;
         // do not clear the custom queue
         // WallpaperQueue.Clear();
-        RandDirImageCollection.Clear();
-        RandDirecName = "";
-        RandWallpapersRemaining = "";
     }
 
-    private async Task ExecAutoSetQueue()
+
+
+    // enable for rand queue
+    [RelayCommand] public void ExecEnableRandomAutoSet() => enableRandomAutoSet();
+    private async Task enableRandomAutoSet()
+    {
+        if (RandDirImageCollection.Count > 0)
+        {
+            RandomAutoSetDisableButtonEnabled = true;
+            RandomAutoSetEnableButtonEnabled = false;
+
+            // make sure you disable custom to avoid concurrent autosetting
+            disableCustomAutoSet();
+
+            await ExecRandomAutoSet();
+        }
+    }
+    // disable for rand queue
+    [RelayCommand] public void ExecDisableRandomAutoSet() => disableRandomAutoSet();
+    private async void disableRandomAutoSet()
+    {
+        cancelToken.Cancel();
+        cancelToken = new CancellationTokenSource();
+        RandomAutoSetDisableButtonEnabled = false;
+        RandomAutoSetEnableButtonEnabled = true;
+        // do not clear random queue
+        // RandDirImageCollection.Clear();
+        // RandDirecName = "";
+        // RandWallpapersRemaining = "";
+    }
+
+
+
+    private async Task ExecCustomAutoSet()
     {
         while (!cancelToken.IsCancellationRequested)
         {
             if (WallpaperQueue.Count == 0)
             {
-                disableAutoSet();
+                disableCustomAutoSet();
                 return;
             }
             else if (WallpaperQueue.Count > 0 && TotalSeconds >= 60)
@@ -256,13 +295,13 @@ public partial class AutoSetViewModel : ObservableObject
         }
     }
 
-    private async Task ExecAutoSetRand()
+    private async Task ExecRandomAutoSet()
     {
         while (!cancelToken.IsCancellationRequested)
         {
             if (RandDirImageCollection.Count == 0)
             {
-                disableAutoSet();
+                disableRandomAutoSet();
                 return;
             }
             else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 60)
@@ -277,6 +316,7 @@ public partial class AutoSetViewModel : ObservableObject
                         var randWallpaperChoice = RandDirImageCollection.OrderBy(rnd => randInit.Next()).First();
                         SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
                         RandDirImageCollection.Remove(randWallpaperChoice);
+                        RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
                     }
                 }
                 else if (ChooseRandForEachMonitor == false)
@@ -289,8 +329,8 @@ public partial class AutoSetViewModel : ObservableObject
                         SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
                     }
                     RandDirImageCollection.Remove(randWallpaperChoice);
+                    RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
                 }
-                RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
             }
 
             try

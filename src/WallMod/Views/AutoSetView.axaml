@@ -14,11 +14,11 @@
 			<ia:VerticalScrollViewerAnimatedBehavior/>
 		</Interaction.Behaviors>
 		
-		<StackPanel Spacing="20" Margin="20">
+		<StackPanel Spacing="12" Margin="20">
 		
 			<TextBlock Text="Autoset Wallpapers (beta)" HorizontalAlignment="Center" FontWeight="Bold" FontSize="15" Foreground="White"/>
 
-			<TextBlock Text="NOTE: Still in development. No queue memory and autosetting will not work if app is closed" FontSize="12" Foreground="Gray" TextWrapping="Wrap" />
+			<TextBlock Text="NOTE: Still in development. No queue memory and autosetting will not work if app is closed" FontSize="12" Foreground="DarkGray" TextWrapping="Wrap" />
 			
 			<!-- ─────────────  INTERVAL (spans full width)  ───────────── -->
 			<Border Background="#222" CornerRadius="8" Padding="16">
@@ -126,6 +126,29 @@
 					<Button Content="Clear queue"
 							HorizontalAlignment="Right"
 							Click="ClearWallpaperQueue"/>
+
+					<!-- customqueue disable/enable buttons -->
+					<StackPanel Orientation="Horizontal"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="24">
+						<Button Content="Disable"
+								Width="100" Command="{Binding ExecDisableCustomAutoSet}"
+								Background="DarkRed"
+								Foreground="White"
+								IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"
+								HorizontalContentAlignment="Center"
+								Margin="0,10,0,0" />
+
+						<Button Content="Enable"
+								Width="100" Command="{Binding ExecEnableCustomAutoSet}"
+								Background="DarkGreen"
+								Foreground="White"
+								IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"
+								HorizontalContentAlignment="Center"
+								Margin="0,10,0,0" />
+					</StackPanel>
+					
 				</StackPanel>
 			</Border>
 			
@@ -151,6 +174,7 @@
 								TextWrapping="Wrap"
 								Margin="4,4,0,0"/>
 
+					<!-- random type choice -->
 					<StackPanel Orientation="Vertical" HorizontalAlignment="Center">
 						<RadioButton	Content="1 Random Image For All Monitors"
 										FontSize="13"
@@ -167,32 +191,36 @@
 										IsChecked="{Binding ChooseRandForEachMonitor, Mode=TwoWay}"
 										Foreground="White"/>
 					</StackPanel>
+
+
+					<!-- randomqueue disable/enable buttons -->
+					<StackPanel Orientation="Horizontal"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="24">
+						<Button Content="Disable"
+								Width="100" Command="{Binding ExecDisableRandomAutoSet}"
+								Background="DarkRed"
+								Foreground="White"
+								IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"
+								HorizontalContentAlignment="Center"
+								Margin="0,10,0,0" />
+
+						<Button Content="Enable"
+								Width="100" Command="{Binding ExecEnableRandomAutoSet}"
+								Background="DarkGreen"
+								Foreground="White"
+								IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"
+								HorizontalContentAlignment="Center"
+								Margin="0,10,0,0" />
+					</StackPanel>
+					
 				
 				</StackPanel>
 				
 			</Border>
-
-			<StackPanel Orientation="Horizontal" 
-						HorizontalAlignment="Center"
-						VerticalAlignment="Center"
-						Spacing="24">
-				<Button Content="Disable"
-						Width="100" Command="{Binding ExecDisableAutoSet}"
-						Background="DarkRed"
-						Foreground="White"
-						IsEnabled="{Binding AutoSetDisableButtonEnabled}"
-						HorizontalContentAlignment="Center"
-						Margin="0,10,0,0" />
-
-				<Button Content="Enable"
-						Width="100" Command="{Binding ExecEnableAutoSet}"
-						Background="DarkGreen"
-						Foreground="White"
-						IsEnabled="{Binding AutoSetEnableButtonEnabled}"
-						HorizontalContentAlignment="Center"
-						Margin="0,10,0,0" />
-			</StackPanel>
-
+			
+			
 
 		</StackPanel>
 	</ScrollViewer>
