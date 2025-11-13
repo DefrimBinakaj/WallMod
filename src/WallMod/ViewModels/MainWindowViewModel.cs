@@ -608,7 +608,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public void AutoSetMenuNav()
     {
         // switch preview for autoset
-        IsPreviewVisible = !IsPreviewVisible;
+        // IsPreviewVisible = !IsPreviewVisible;
         IsAutoSetVisible = !IsAutoSetVisible;
 
         // repeated clicks doesnt infinitely increase memory

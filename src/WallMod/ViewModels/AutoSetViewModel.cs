@@ -40,6 +40,8 @@ public partial class AutoSetViewModel : ObservableObject
         uniVM = universalVM;
     }
 
+    private int? secondsInput = 0;
+    public int? SecondsInput { get => secondsInput; set => SetProperty(ref secondsInput, value); }
 
     private int? minutesInput = 1;
     public int? MinutesInput { get => minutesInput; set => SetProperty(ref minutesInput, value); }
@@ -58,7 +60,7 @@ public partial class AutoSetViewModel : ObservableObject
 
     // fallback = 60 seconds
     public int TotalSeconds => 
-        (((((MonthsInput * 30 + WeeksInput * 7) + DaysInput) * 24 + hoursInput) * 60) + minutesInput) * 60 ?? 60;
+        (((((MonthsInput * 30 + WeeksInput * 7) + DaysInput) * 24 + hoursInput) * 60) + minutesInput) * 60 + secondsInput ?? 60;
 
 
 
