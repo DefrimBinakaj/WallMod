@@ -34,9 +34,6 @@ public partial class AutoSetView : UserControl
     }
 
 
-
-
-
     private void Item_PointerPressed(object sender, PointerPressedEventArgs e)
     {
         if (sender is Control c && c.DataContext is Wallpaper wp)
@@ -74,11 +71,6 @@ public partial class AutoSetView : UserControl
         ShowInsertionLine(e);
     }
 
-    private void ListBox_DragLeave(object sender, RoutedEventArgs e)
-    {
-        InsertLine.IsVisible = false;
-    }
-
     private void ListBox_Drop(object? sender, DragEventArgs e)
     {
         if (_draggedItem != null && 
@@ -89,6 +81,11 @@ public partial class AutoSetView : UserControl
             var newIndex = FindInsertionIndex(pos, lb);
             var oldIndex = uniVM.WallpaperQueue.IndexOf(_draggedItem);
             
+            if (newIndex > oldIndex)
+            {
+                newIndex--;
+            }
+
             if (oldIndex >= 0 && newIndex >= 0 && oldIndex != newIndex)
             {
                 uniVM.WallpaperQueue.Move(oldIndex, newIndex);
@@ -104,7 +101,7 @@ public partial class AutoSetView : UserControl
         {
             if (lb.ContainerFromIndex(i) is Control c)
             {
-                if (pos.Y < c.Bounds.Top + c.Bounds.Height / 2)
+                if (pos.X < c.Bounds.Left + c.Bounds.Width / 2)
                 {
                     return i;
                 }
@@ -113,43 +110,45 @@ public partial class AutoSetView : UserControl
         return lb.ItemCount - 1;
     }
 
-    // positions the insertion indicator line
+    // positions the insertion indicator line (VERTICAL line, move by X)
     private void ShowInsertionLine(DragEventArgs e)
     {
         if (QueueListBox is not ListBox lb || DropIndicator is not Canvas canvas) return;
-        
+
         var pos = e.GetPosition(lb);
-        double yPos = 0;
+        double xPos = 0;
         bool found = false;
 
         for (int i = 0; i < lb.ItemCount; i++)
         {
             if (lb.ContainerFromIndex(i) is Control c)
             {
-                if (pos.Y < c.Bounds.Top + c.Bounds.Height / 2)
+                if (pos.X < c.Bounds.Left + c.Bounds.Width / 2)
                 {
                     var pt = c.TranslatePoint(new Point(0, 0), canvas);
-                    yPos = pt?.Y ?? 0;
+                    xPos = pt?.X ?? 0;
                     found = true;
                     break;
                 }
             }
         }
 
+        // if after last item, place after the last container
         if (!found && lb.ItemCount > 0)
         {
             if (lb.ContainerFromIndex(lb.ItemCount - 1) is Control last)
             {
-                var pt = last.TranslatePoint(new Point(0, last.Bounds.Height), canvas);
-                yPos = pt?.Y ?? canvas.Bounds.Height;
+                var pt = last.TranslatePoint(new Point(last.Bounds.Width, 0), canvas);
+                xPos = pt?.X ?? canvas.Bounds.Width;
             }
         }
 
-        InsertLine.Width = canvas.Bounds.Width * 0.9;
-        Canvas.SetLeft(InsertLine, canvas.Bounds.Width * 0.05);
-        Canvas.SetTop(InsertLine, yPos);
+        // InsertLine already has Width="2" and Height bound in XAML
+        Canvas.SetLeft(InsertLine, xPos);
+        Canvas.SetTop(InsertLine, 15);
         InsertLine.IsVisible = true;
     }
+
 
     private void CleanupDrag()
     {
