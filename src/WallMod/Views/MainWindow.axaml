@@ -417,9 +417,6 @@
 						</Grid>
 					</ScrollViewer>
 
-					<!--AUTOSET SECTION =========-->
-					<!-- moved to the full-width bottom tray -->
-
 					<!-- bar with buttons -->
 					<Grid Grid.Row="1" ColumnDefinitions="*,*">
 						<Button Content="Autoset Menu" Command="{Binding autoSetNavCommand}" CornerRadius="0,0,0,8"

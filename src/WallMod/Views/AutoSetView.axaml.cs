@@ -49,8 +49,10 @@ public partial class AutoSetView : UserControl
         if (_draggedItem == null || _isDragging) return;
         
         var currentPos = e.GetPosition(null);
-        if (Math.Abs(currentPos.X - _dragStart.X) > 5 || 
-            Math.Abs(currentPos.Y - _dragStart.Y) > 5)
+        var distance = Math.Sqrt(Math.Pow(currentPos.X - _dragStart.X, 2) +
+                                 Math.Pow(currentPos.Y - _dragStart.Y, 2));
+
+        if (distance > 5)
         {
             _isDragging = true;
             var data = new DataObject();
@@ -73,79 +75,101 @@ public partial class AutoSetView : UserControl
 
     private void ListBox_Drop(object? sender, DragEventArgs e)
     {
-        if (_draggedItem != null && 
-            e.Data.Contains("Wallpaper") && 
-            sender is ListBox lb)
+        if (_draggedItem == null || !e.Data.Contains("Wallpaper") || sender is not ListBox lb)
         {
-            var pos = e.GetPosition(lb);
-            var newIndex = FindInsertionIndex(pos, lb);
-            var oldIndex = uniVM.WallpaperQueue.IndexOf(_draggedItem);
-            
-            if (newIndex > oldIndex)
+            CleanupDrag();
+            return;
+        }
+
+        var pos = e.GetPosition(lb);
+        var targetIndex = FindInsertionIndex(pos, lb);
+        var currentIndex = uniVM.WallpaperQueue.IndexOf(_draggedItem);
+
+        // don't move if dropping at the same position or adjacent position that results in no change
+        if (currentIndex >= 0 && targetIndex >= 0)
+        {
+            // adjust target index if we're moving from left to right
+            // (since removing the item shifts indices)
+            var adjustedTarget = targetIndex;
+            if (currentIndex < targetIndex)
             {
-                newIndex--;
+                adjustedTarget--;
             }
 
-            if (oldIndex >= 0 && newIndex >= 0 && oldIndex != newIndex)
+            // only move if it actually changes position
+            if (currentIndex != adjustedTarget)
             {
-                uniVM.WallpaperQueue.Move(oldIndex, newIndex);
+                uniVM.WallpaperQueue.Move(currentIndex, adjustedTarget);
             }
         }
+
         CleanupDrag();
     }
 
     // finds where to insert based on mouse position
     private int FindInsertionIndex(Point pos, ListBox lb)
     {
+        // check each item to see if we're to the left of its center
         for (int i = 0; i < lb.ItemCount; i++)
         {
-            if (lb.ContainerFromIndex(i) is Control c)
+            if (lb.ContainerFromIndex(i) is Control container)
             {
-                if (pos.X < c.Bounds.Left + c.Bounds.Width / 2)
+                var itemBounds = container.Bounds;
+                var itemCenterX = itemBounds.Left + (itemBounds.Width / 2);
+
+                // if mouse is left of this item's center, insert here
+                if (pos.X < itemCenterX)
                 {
                     return i;
                 }
             }
         }
-        return lb.ItemCount - 1;
+
+        // if we're past all items, insert at the end
+        return lb.ItemCount;
     }
 
     // positions the insertion indicator line (VERTICAL line, move by X)
     private void ShowInsertionLine(DragEventArgs e)
     {
-        if (QueueListBox is not ListBox lb || DropIndicator is not Canvas canvas) return;
+        if (QueueListBox is not ListBox lb || DropIndicator is not Canvas canvas)
+        {
+            InsertLine.IsVisible = false;
+            return;
+        }
 
         var pos = e.GetPosition(lb);
-        double xPos = 0;
-        bool found = false;
+        var insertIndex = FindInsertionIndex(pos, lb);
+        double xPosition = 0;
 
-        for (int i = 0; i < lb.ItemCount; i++)
+        if (insertIndex < lb.ItemCount)
         {
-            if (lb.ContainerFromIndex(i) is Control c)
+            // position line at the left edge of the target item
+            if (lb.ContainerFromIndex(insertIndex) is Control container)
             {
-                if (pos.X < c.Bounds.Left + c.Bounds.Width / 2)
-                {
-                    var pt = c.TranslatePoint(new Point(0, 0), canvas);
-                    xPos = pt?.X ?? 0;
-                    found = true;
-                    break;
-                }
+                var translation = container.TranslatePoint(new Point(0, 0), canvas);
+                xPosition = translation?.X ?? 0;
+
+                // adjust for the margin (3 pixels on each side based on your XAML)
+                xPosition -= 3;
+            }
+        }
+        else
+        {
+            // position line at the right edge of the last item
+            if (lb.ItemCount > 0 && lb.ContainerFromIndex(lb.ItemCount - 1) is Control lastContainer)
+            {
+                var translation = lastContainer.TranslatePoint(new Point(lastContainer.Bounds.Width, 0), canvas);
+                xPosition = translation?.X ?? canvas.Bounds.Width;
+
+                // adjust for the margin
+                xPosition += 3;
             }
         }
 
-        // if after last item, place after the last container
-        if (!found && lb.ItemCount > 0)
-        {
-            if (lb.ContainerFromIndex(lb.ItemCount - 1) is Control last)
-            {
-                var pt = last.TranslatePoint(new Point(last.Bounds.Width, 0), canvas);
-                xPos = pt?.X ?? canvas.Bounds.Width;
-            }
-        }
-
-        // InsertLine already has Width="2" and Height bound in XAML
-        Canvas.SetLeft(InsertLine, xPos);
-        Canvas.SetTop(InsertLine, 15);
+        // position the insertion line
+        Canvas.SetLeft(InsertLine, xPosition); // center the 2px wide line
+        Canvas.SetTop(InsertLine, 10); // vertically center in the 84px high area
         InsertLine.IsVisible = true;
     }
 
@@ -154,7 +178,10 @@ public partial class AutoSetView : UserControl
     {
         _draggedItem = null;
         _isDragging = false;
-        InsertLine.IsVisible = false;
+        if (InsertLine != null)
+        {
+            InsertLine.IsVisible = false;
+        }
     }
 
 

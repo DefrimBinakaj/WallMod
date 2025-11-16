@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:convs="using:WallMod.Converters"
              mc:Ignorable="d"
              d:DesignWidth="800"
              d:DesignHeight="75"
@@ -9,247 +10,256 @@
              xmlns:vm="using:WallMod.ViewModels"
              x:DataType="vm:AutoSetViewModel">
 
-  <!-- one horizontal area: LEFT sticky, RIGHT single-row scroller -->
-  <Grid ColumnDefinitions="Auto,*" Margin="8">
+	<!-- one horizontal area: LEFT sticky, RIGHT single-row scroller -->
+	<Grid ColumnDefinitions="Auto,Auto,*" Margin="8">
 
-    <!-- ===== LEFT (sticky) ===== -->
-    <Border Background="#1e1e1e" CornerRadius="6" Padding="6" MinWidth="480" Margin="0,0,8,0">
-      <StackPanel Spacing="4">
+		<!-- ===== LEFT (sticky) ===== -->
+		<Border CornerRadius="6" Padding="6" MinWidth="420" Margin="0,0,8,0">
+			<StackPanel Spacing="4">
 
-        <!-- Title (left) + full time controls (right) -->
-        <Border Background="#222" CornerRadius="6" Padding="4">
-          <Grid ColumnDefinitions="Auto,24,Auto,32" VerticalAlignment="Center">
-            
-			  
-            <!-- Title -->
-            <TextBlock Grid.Column="0"
-                       Text="Autoset"
-                       FontWeight="Bold"
-                       FontSize="14"
-                       Foreground="White"
-                       VerticalAlignment="Center"/>
+				<!-- Title (left) + full time controls (right) -->
+				<Border CornerRadius="6" Padding="4">
+					<Grid ColumnDefinitions="Auto,72,Auto" VerticalAlignment="Center">
 
-			<!-- radio buttons (horizontal) -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <RadioButton Content="Custom"
-                           FontSize="11"
-                           GroupName="QueueChoice"
-                           Command="{Binding queueChoiceCommand}"
-                           CommandParameter="Custom"
-                           IsChecked="{Binding CustomQueueViewVisible, Mode=TwoWay}"
-                           Foreground="White"/>
-              <RadioButton Content="Random"
-                           FontSize="11"
-                           GroupName="QueueChoice"
-                           Command="{Binding queueChoiceCommand}"
-                           CommandParameter="Random"
-                           IsChecked="{Binding RandomQueueViewVisible, Mode=TwoWay}"
-                           Foreground="White"/>
-            </StackPanel>
-			  
-			<!-- grid for both queue button types -->
-            <Grid Grid.Column="4">
+						<!-- Title -->
+						<TextBlock Grid.Column="0"
+								   Text="Autoset"
+								   FontWeight="Bold"
+								   FontSize="14"
+								   Foreground="White"
+								   VerticalAlignment="Center"/>
 
-				<!-- CUSTOM actions -->
-            <Grid   IsVisible="{Binding CustomQueueViewVisible}"
-                    ColumnDefinitions="Auto,12,Auto,24,Auto,10,Auto"
-                    VerticalAlignment="Center">
-                <Button Grid.Column="0"
-                        Content="Enable"
-                        Background="DarkGreen"
-                        Foreground="White"
-                        Command="{Binding ExecEnableCustomAutoSet}"
-                        IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"/>
+						<!-- radio buttons (horizontal) -->
+						<StackPanel Grid.Column="2"
+									Orientation="Horizontal"
+									Spacing="24"
+									VerticalAlignment="Center">
+							<RadioButton Content="Custom"
+										 FontSize="12"
+										 GroupName="QueueChoice"
+										 Command="{Binding queueChoiceCommand}"
+										 CommandParameter="Custom"
+										 IsChecked="{Binding CustomQueueViewVisible, Mode=TwoWay}"
+										 Foreground="White"/>
+							<RadioButton Content="Random"
+										 FontSize="12"
+										 GroupName="QueueChoice"
+										 Command="{Binding queueChoiceCommand}"
+										 CommandParameter="Random"
+										 IsChecked="{Binding RandomQueueViewVisible, Mode=TwoWay}"
+										 Foreground="White"/>
+						</StackPanel>
 
-                <Button Grid.Column="2"
-                        Content="Disable"
-                        Background="DarkRed"
-                        Foreground="White"
-                        Command="{Binding ExecDisableCustomAutoSet}"
-                        IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"/>
+					</Grid>
+				</Border>
 
-                <!-- Clear queue placed uniquely at far right of the same row -->
-                <Button Grid.Column="4"
-                        Content="Clear queue"
-                        Click="ClearWallpaperQueue"
-                        HorizontalAlignment="Right"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"
-		                Background="Red"/>
-            </Grid>			  
-		      
-              <!-- RANDOM actions -->
-              <Grid IsVisible="{Binding RandomQueueViewVisible}"
-                    ColumnDefinitions="Auto,6,Auto"
-                    VerticalAlignment="Center">
-                <Button Grid.Column="0"
-                        Content="Enable"
-                        Background="DarkGreen"
-                        Foreground="White"
-                        Command="{Binding ExecEnableRandomAutoSet}"
-                        IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"/>
+				<!-- Single compact row: choice + per-mode actions (keeps height minimal) -->
+				<Border CornerRadius="6" Padding="4">
+					<Grid ColumnDefinitions="Auto,16,Auto,8,Auto">
 
-                <Button Grid.Column="2"
-                        Content="Disable"
-                        Background="DarkRed"
-                        Foreground="White"
-                        Command="{Binding ExecDisableRandomAutoSet}"
-                        IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"/>
+						<!-- Label -->
+						<TextBlock Grid.Column="0"
+								   Text="Change wallpaper every"
+								   FontSize="12"
+								   Foreground="White"
+								   VerticalAlignment="Center"/>
 
-              </Grid>
-            </Grid>
-			  
-            
+						<!-- Number -->
+						<NumericUpDown Grid.Column="2"
+									   Minimum="1"
+									   Value="7"
+									   Height="16"
+									   FontSize="13"
+									   Width="120"
+									   FormatString="0"
+									   VerticalAlignment="Center"/>
+
+						<!-- Unit -->
+						<ComboBox Grid.Column="4"
+								  SelectedIndex="1"
+								  MinHeight="32"
+								  Height="32"
+								  FontSize="13"
+								  Width="100"
+								  VerticalAlignment="Center">
+							<ComboBoxItem Content="seconds"/>
+							<ComboBoxItem Content="minutes"/>
+							<ComboBoxItem Content="hours"/>
+							<ComboBoxItem Content="days"/>
+							<ComboBoxItem Content="weeks"/>
+							<ComboBoxItem Content="months"/>
+						</ComboBox>
+
+					</Grid>
+				</Border>
+
+			</StackPanel>
+		</Border>
+
+		<!-- Vertical divider between sections -->
+		<Rectangle Grid.Column="1" Width="4" Margin="0,10,12,10" Fill="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+		
+		<!-- ===== RIGHT ===== -->
+		<Border Grid.Column="2" CornerRadius="6" Padding="4">
+			<Grid>
+
+				<!-- Custom Queue -->
+				<Grid ColumnDefinitions="Auto,*"
+					  IsVisible="{Binding CustomQueueViewVisible}">
+
+					<!-- CUSTOM controls: Enable/Disable + Clear queue -->
+					<StackPanel Grid.Column="0"
+								Orientation="Vertical"
+								Spacing="6"
+								VerticalAlignment="Center"
+								Margin="8,0,0,0">
+
+						<!-- Enable / Disable (tight spacing) -->
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<Button Content="Enable"
+									Background="DarkGreen"
+									Foreground="White"
+									Command="{Binding ExecEnableCustomAutoSet}"
+									IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"
+									MinHeight="18"
+									Padding="8,2"
+									FontSize="11"/>
+
+							<Button Content="Disable"
+									Background="DarkRed"
+									Foreground="White"
+									Command="{Binding ExecDisableCustomAutoSet}"
+									IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"
+									MinHeight="18"
+									Padding="8,2"
+									FontSize="11"/>
+						</StackPanel>
+
+						<!-- Clear queue centered underneath -->
+						<Button Content="Clear queue"
+								Click="ClearWallpaperQueue"
+								HorizontalAlignment="Center"
+								MinHeight="18"
+								Padding="8,2"
+								FontSize="11"
+								Background="Red"/>
+					</StackPanel>
+
+					<!-- Custom queue thumbnails (outer ScrollViewer owns the scrolling) -->
+					<ScrollViewer Grid.Column="1"
+								  x:Name="CustomScroll"
+								  HorizontalScrollBarVisibility="Auto"
+								  VerticalScrollBarVisibility="Disabled"
+								  Height="84">
+						<ListBox x:Name="QueueListBox"
+								 ItemsSource="{Binding WallpaperQueue}"
+								 Background="Transparent"
+								 BorderThickness="0"
+								 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+								 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+								 DragDrop.AllowDrop="True"
+								 DragDrop.DragOver="ListBox_DragOver"
+								 DragDrop.Drop="ListBox_Drop"
+								 HorizontalAlignment="Left"
+								 VerticalAlignment="Center">
+							<ListBox.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal"/>
+								</ItemsPanelTemplate>
+							</ListBox.ItemsPanel>
+
+							<ListBox.ItemTemplate>
+								<DataTemplate>
+									<Border CornerRadius="6"
+											Margin="3,0"
+											Cursor="SizeAll"
+											ToolTip.Tip="{Binding Name}"
+											PointerPressed="Item_PointerPressed"
+											PointerMoved="Item_PointerMoved"
+											PointerReleased="Item_PointerReleased">
+										<Image Source="{Binding ImageThumbnailBitmap}"
+											   Width="120"
+											   Height="72"
+											   Stretch="UniformToFill"
+											   ClipToBounds="True"/>
+									</Border>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</ScrollViewer>
+
+					<!-- drag-drop insertion indicator -->
+					<Canvas x:Name="DropIndicator"
+							IsHitTestVisible="False"
+							Panel.ZIndex="1"
+							IsVisible="{Binding CustomQueueViewVisible}">
+						<Border x:Name="InsertLine"
+								Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+								Width="2"
+								Height="64"
+								IsVisible="False"/>
+					</Canvas>
+					
+				</Grid>
 
 
-          </Grid>
-        </Border>
 
-        <!-- Single compact row: choice + per-mode actions (keeps height minimal) -->
-        <Border Background="#222" CornerRadius="6" Padding="4">
-          <Grid ColumnDefinitions="Auto,16,Auto,8,Auto">
-            
-			<!-- Label -->
-            <TextBlock Grid.Column="0"
-                       Text="Change wallpaper every"
-					   FontSize="12"
-                       Foreground="White"
-                       VerticalAlignment="Center"/>
+				<!-- Random Queue -->
+				<ScrollViewer x:Name="RandomScroll"
+							  HorizontalScrollBarVisibility="Auto"
+							  VerticalScrollBarVisibility="Disabled"
+							  Height="56"
+							  IsVisible="{Binding RandomQueueViewVisible}">
+					<Grid ColumnDefinitions="Auto,32,Auto"
+						  VerticalAlignment="Center">
 
-            <!-- Number -->
-            <NumericUpDown Grid.Column="2"
-                           Minimum="1"
-                           Value="7"
-                           Height="16"
-                           FontSize="13"
-                           Width="120"
-                           FormatString="0"
-                           VerticalAlignment="Center"/>
+						<!-- RANDOM controls: Enable/Disable + Browse -->
+						<StackPanel Grid.Column="0"
+									Orientation="Vertical"
+									Spacing="6">
+							<StackPanel Orientation="Horizontal"
+										Spacing="4"
+										HorizontalAlignment="Left">
+								<Button Content="Enable"
+										Background="DarkGreen"
+										Foreground="White"
+										Command="{Binding ExecEnableRandomAutoSet}"
+										IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"
+										MinHeight="18"
+										Padding="8,2"
+										FontSize="11"/>
 
-            <!-- Unit -->
-            <ComboBox Grid.Column="4"
-                      SelectedIndex="1"
-                      MinHeight="32"
-					  Height="32"
-                      FontSize="13"
-                      Width="100"
-                      VerticalAlignment="Center">
-			  <ComboBoxItem Content="seconds"/>
-              <ComboBoxItem Content="minutes"/>
-              <ComboBoxItem Content="hours"/>
-              <ComboBoxItem Content="days"/>
-              <ComboBoxItem Content="weeks"/>
-              <ComboBoxItem Content="months"/>
-            </ComboBox>
-			  
-            
-          </Grid>
-        </Border>
+								<Button Content="Disable"
+										Background="DarkRed"
+										Foreground="White"
+										Command="{Binding ExecDisableRandomAutoSet}"
+										IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"
+										MinHeight="18"
+										Padding="8,2"
+										FontSize="11"/>
+							</StackPanel>
 
-      </StackPanel>
-    </Border>
-	  
-	  
-	  
-	  
-	
-    <!-- ===== RIGHT (one-row scroller; tiles fit height) ===== -->
-    <Border Grid.Column="1" Background="#202020" CornerRadius="8" Padding="4">
-      <Grid ColumnDefinitions="Auto, 12, Auto">	  
+							<Button Content="Browse…"
+									Command="{Binding execBrowseDirectory}"
+									HorizontalAlignment="Left"
+									MinHeight="18"
+									Padding="8,2"
+									FontSize="11"/>
+						</StackPanel>
 
-        <!-- Custom queue thumbnails -->
-        <ScrollViewer x:Name="CustomScroll"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Disabled"
-                      Height="56"
-                      IsVisible="{Binding CustomQueueViewVisible}">
-          <ListBox x:Name="QueueListBox"
-                   ItemsSource="{Binding WallpaperQueue}"
-                   Background="Transparent"
-                   BorderThickness="0"
-                   Height="{Binding #CustomScroll.Bounds.Height}"
-                   DragDrop.AllowDrop="True"
-                   DragDrop.DragOver="ListBox_DragOver"
-                   DragDrop.Drop="ListBox_Drop"
-                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                   ScrollViewer.VerticalScrollBarVisibility="Disabled">
-            <ListBox.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal"/>
-              </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
+						<!-- RANDOM status -->
+						<TextBlock Grid.Column="2"
+								   Text="{Binding RandWallpapersRemaining}"
+								   Foreground="Aqua"
+								   VerticalAlignment="Center"/>
+					</Grid>
+				</ScrollViewer>
 
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <Border Background="#303030"
-                        CornerRadius="6"
-                        Margin="3,0"
-                        Padding="0"
-                        Cursor="SizeAll"
-                        ToolTip.Tip="{Binding Name}"
-                        PointerPressed="Item_PointerPressed"
-                        PointerMoved="Item_PointerMoved"
-                        PointerReleased="Item_PointerReleased">
-                  <Image Source="{Binding ImageThumbnailBitmap}"
-                         Width="{Binding #CustomScroll.Bounds.Height}"
-                         Height="{Binding #CustomScroll.Bounds.Height}"
-                         Stretch="UniformToFill"
-                         ClipToBounds="True"/>
-                </Border>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </ScrollViewer>
 
-        <!-- Random mode lane (add preview tiles if desired) -->
-        <ScrollViewer x:Name="RandomScroll"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Disabled"
-                      Height="56"
-                      IsVisible="{Binding RandomQueueViewVisible}">
-			<Grid ColumnDefinitions="Auto,24,Auto">
-                <Button Grid.Column="0"
-                        Content="Browse…"
-                        Command="{Binding execBrowseDirectory}"
-                        HorizontalAlignment="Right"
-                        MinHeight="18"
-                        Padding="8,2"
-                        FontSize="11"/>
-                <TextBlock Grid.Column="2"
-                            Text="{Binding RandWallpapersRemaining}"
-                            Foreground="Aqua"
-                            VerticalAlignment="Center"/>	
+
 			</Grid>
-        </ScrollViewer>
+		</Border>
 
-        <!-- drag-drop insertion indicator -->
-        <Canvas x:Name="DropIndicator"
-                IsHitTestVisible="False"
-                Panel.ZIndex="1"
-                IsVisible="{Binding CustomQueueViewVisible}">
-          <Border x:Name="InsertLine"
-                  Background="Aqua"
-                  Width="2"
-                  Height="{Binding #CustomScroll.Bounds.Height}"
-                  IsVisible="False"/>
-        </Canvas>
-	  
-	
-      </Grid>
-    </Border>
-
-  </Grid>
+	</Grid>
 </UserControl>
