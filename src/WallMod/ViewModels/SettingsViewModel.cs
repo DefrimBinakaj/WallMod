@@ -37,6 +37,8 @@ public partial class SettingsViewModel : ObservableObject
     {
         uniVM = universalVM;
 
+        appStorageHelper.InitAppStorage();
+
         uniVM.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(uniVM.UpdateAvailableVisible))
@@ -116,6 +118,8 @@ public partial class SettingsViewModel : ObservableObject
     {
         FileExporerHelper fileExporerHelper = new FileExporerHelper();
         fileExporerHelper.OpenFolderInExplorer(appStorageHelper.appStorageDirectory);
+
+        Console.WriteLine("Going to => " + appStorageHelper.appStorageDirectory.ToString());
     }
 
 

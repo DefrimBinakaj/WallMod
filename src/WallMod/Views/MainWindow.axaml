@@ -420,13 +420,13 @@
 					<!-- bar with buttons -->
 					<Grid Grid.Row="1" ColumnDefinitions="*,*">
 						<Button Content="Autoset Menu" Command="{Binding autoSetNavCommand}" CornerRadius="0,0,0,8"
-								MinHeight="32" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+								MinHeight="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
 								Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}">
-							<Image Source="avares://Wallmod/Assets/autoset-icon.png" Width="23" Height="23"/>
+							<Image Source="avares://Wallmod/Assets/autoset-icon.png" Width="23" Height="22"/>
 						</Button>
 						<Button Grid.Column="1" Content="Settings" Command="{Binding settingsButton}" CornerRadius="0,0,8,0"
-								MinHeight="32" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Gray">
-							<Image Source="avares://Wallmod/Assets/settings-icon.png" Width="23" Height="23"/>
+								MinHeight="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Gray">
+							<Image Source="avares://Wallmod/Assets/settings-icon.png" Width="23" Height="22"/>
 						</Button>
 					</Grid>
 

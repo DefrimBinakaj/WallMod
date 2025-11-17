@@ -209,15 +209,20 @@
 				<ScrollViewer x:Name="RandomScroll"
 							  HorizontalScrollBarVisibility="Auto"
 							  VerticalScrollBarVisibility="Disabled"
-							  Height="56"
-							  IsVisible="{Binding RandomQueueViewVisible}">
-					<Grid ColumnDefinitions="Auto,32,Auto"
-						  VerticalAlignment="Center">
+							  IsVisible="{Binding RandomQueueViewVisible}"
+							  VerticalAlignment="Center">
+					<Grid	RowDefinitions="Auto,4,Auto"
+							ColumnDefinitions="Auto,48,*"
+							Margin="8,0,0,0"
+							VerticalAlignment="Center">
 
 						<!-- RANDOM controls: Enable/Disable + Browse -->
-						<StackPanel Grid.Column="0"
+						<StackPanel	Grid.Row="0"
+									Grid.RowSpan="3"
+									Grid.Column="0"
 									Orientation="Vertical"
-									Spacing="6">
+									Spacing="6"
+									VerticalAlignment="Bottom">
 							<StackPanel Orientation="Horizontal"
 										Spacing="4"
 										HorizontalAlignment="Left">
@@ -240,7 +245,10 @@
 										FontSize="11"/>
 							</StackPanel>
 
-							<Button Content="Browse…"
+							<Button Grid.Row="1"
+									Grid.Column="0"
+									Grid.ColumnSpan="2"
+									Content="Browse…"
 									Command="{Binding execBrowseDirectory}"
 									HorizontalAlignment="Left"
 									MinHeight="18"
@@ -248,11 +256,21 @@
 									FontSize="11"/>
 						</StackPanel>
 
-						<!-- RANDOM status -->
-						<TextBlock Grid.Column="2"
-								   Text="{Binding RandWallpapersRemaining}"
-								   Foreground="Aqua"
+						<!-- Random Queue Info -->
+						<TextBlock Grid.Row="0"
+								   Grid.Column="2"
+								   FontSize="14"
+								   Text="{Binding RandDirecName}"
+								   Foreground="White"
 								   VerticalAlignment="Center"/>
+
+						<!-- Random Queue Info -->
+						<TextBlock Grid.Row="2"
+								   Grid.Column="2"
+								   Text="{Binding RandWallpapersRemaining}"
+								   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+								   VerticalAlignment="Top"/>
+						
 					</Grid>
 				</ScrollViewer>
 

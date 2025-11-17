@@ -39,6 +39,12 @@ public partial class AutoSetViewModel : ObservableObject
     public AutoSetViewModel(UniversalAppStore universalVM)
     {
         uniVM = universalVM;
+
+        uniVM.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(uniVM.SelectedPrimaryAccentColour))
+                OnPropertyChanged(nameof(SelectedPrimaryAccentColour));
+        };
     }
 
     private int? secondsInput = 0;
@@ -148,6 +154,7 @@ public partial class AutoSetViewModel : ObservableObject
             RandDirecName = "";
         }
 
+        if (!folderOpenPick.Any()) return; // if cancel is clicked, don't crash
         RandDirecName = folderOpenPick.Last().Path.LocalPath;
 
 
