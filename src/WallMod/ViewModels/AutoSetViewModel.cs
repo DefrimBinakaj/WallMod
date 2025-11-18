@@ -47,10 +47,10 @@ public partial class AutoSetViewModel : ObservableObject
         };
     }
 
-    private int? secondsInput = 0;
+    private int? secondsInput = 1;
     public int? SecondsInput { get => secondsInput; set => SetProperty(ref secondsInput, value); }
 
-    private int? minutesInput = 1;
+    private int? minutesInput = 0;
     public int? MinutesInput { get => minutesInput; set => SetProperty(ref minutesInput, value); }
 
     private int? hoursInput = 0;
@@ -288,7 +288,7 @@ public partial class AutoSetViewModel : ObservableObject
                 disableCustomAutoSet();
                 return;
             }
-            else if (WallpaperQueue.Count > 0 && TotalSeconds >= 60)
+            else if (WallpaperQueue.Count > 0 && TotalSeconds >= 1)
             {
                 Debug.WriteLine("current time interval = " + TotalSeconds.ToString() + "seconds");
                 Debug.WriteLine("current image that is set = " + WallpaperQueue.First().Name);
@@ -320,7 +320,7 @@ public partial class AutoSetViewModel : ObservableObject
                 disableRandomAutoSet();
                 return;
             }
-            else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 60)
+            else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 1)
             {
                 // choose between one rand image for all monitors, or diff rand for each monitor
                 if (ChooseRandForEachMonitor == true)

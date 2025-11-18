@@ -67,7 +67,7 @@
 						<!-- Number -->
 						<NumericUpDown Grid.Column="2"
 									   Minimum="1"
-									   Value="7"
+									   Value="5"
 									   Height="16"
 									   FontSize="13"
 									   Width="120"

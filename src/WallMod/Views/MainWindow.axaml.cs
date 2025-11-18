@@ -322,6 +322,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private void JumpToTopClicked(object? sender, RoutedEventArgs e)
+    {
+        ImageGalleryScrollView.ScrollToHome();
+    }
+    private void JumpToBottomClicked(object? sender, RoutedEventArgs e)
+    {
+        ImageGalleryScrollView.ScrollToEnd();
+    }
+
+
     private async void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Control control && control.DataContext is MonitorInfo monitor)
