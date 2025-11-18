@@ -47,27 +47,33 @@ public partial class AutoSetViewModel : ObservableObject
         };
     }
 
-    private int? secondsInput = 1;
-    public int? SecondsInput { get => secondsInput; set => SetProperty(ref secondsInput, value); }
 
-    private int? minutesInput = 0;
-    public int? MinutesInput { get => minutesInput; set => SetProperty(ref minutesInput, value); }
 
-    private int? hoursInput = 0;
-    public int? HoursInput { get => hoursInput; set => SetProperty(ref hoursInput, value); }
+    private int timeValueInput = 5; // default to 5
+    public int TimeValueInput { get => timeValueInput; set { SetProperty(ref timeValueInput, value); OnPropertyChanged(nameof(TotalSeconds)); } }
 
-    private int? daysInput = 0;
-    public int? DaysInput { get => daysInput; set => SetProperty(ref daysInput, value); }
+    private int selectedTimeUnitIndex = 1; // Default to minutes
+    public int SelectedTimeUnitIndex { get => selectedTimeUnitIndex; set { SetProperty(ref selectedTimeUnitIndex, value); OnPropertyChanged(nameof(TotalSeconds)); } }
 
-    private int? weeksInput = 0;
-    public int? WeeksInput { get => weeksInput; set => SetProperty(ref weeksInput, value); }
+    // calc total seconds based on selected value and unit
+    public int TotalSeconds
+    {
+        get
+        {
+            int multiplier = selectedTimeUnitIndex switch
+            {
+                0 => 1,           // seconds
+                1 => 60,          // minutes
+                2 => 3600,        // hours
+                3 => 86400,       // days
+                4 => 604800,      // weeks
+                5 => 2592000,     // months (30 days)
+                _ => 60           // default to minutes
+            };
 
-    private int? monthsInput = 0;
-    public int? MonthsInput { get => monthsInput; set => SetProperty(ref monthsInput, value); }
-
-    // fallback = 60 seconds
-    public int TotalSeconds => 
-        (((((MonthsInput * 30 + WeeksInput * 7) + DaysInput) * 24 + hoursInput) * 60) + minutesInput) * 60 + secondsInput ?? 60;
+            return Math.Max(1, TimeValueInput * multiplier);
+        }
+    }
 
 
 
@@ -106,8 +112,8 @@ public partial class AutoSetViewModel : ObservableObject
     private string randWallpapersRemaining;
     public string RandWallpapersRemaining { get => randWallpapersRemaining; set => SetProperty(ref randWallpapersRemaining, value); }
 
-    private bool chooseRandForEachMonitor;
-    public bool ChooseRandForEachMonitor { get => chooseRandForEachMonitor; set => SetProperty(ref chooseRandForEachMonitor, value); }
+    private bool randomizeEachMonitor;
+    public bool RandomizeEachMonitor { get => randomizeEachMonitor; set => SetProperty(ref randomizeEachMonitor, value); }
 
     [RelayCommand] public void queueChoiceCommand(string choice) => queueChoiceExec(choice);
     private void queueChoiceExec(string selectedChoice)
@@ -152,6 +158,7 @@ public partial class AutoSetViewModel : ObservableObject
         if (folderOpenPick == null || !folderOpenPick.Any())
         {
             RandDirecName = "";
+            return;
         }
 
         if (!folderOpenPick.Any()) return; // if cancel is clicked, don't crash
@@ -201,20 +208,6 @@ public partial class AutoSetViewModel : ObservableObject
 
         await Task.WhenAll(tasks);
         
-    }
-
-
-    [RelayCommand] public void randMonitorChoiceCommand(string choice) => randMonitorChoiceExec(choice);
-    private void randMonitorChoiceExec(string selectedChoice)
-    {
-        if (selectedChoice == "SingularRand")
-        {
-            ChooseRandForEachMonitor = false;
-        }
-        else if (selectedChoice == "RandEach")
-        {
-            ChooseRandForEachMonitor = true;
-        }
     }
 
 
@@ -310,6 +303,15 @@ public partial class AutoSetViewModel : ObservableObject
             
         }
     }
+    [RelayCommand] public void skipCustomAutoSetImageButton() => SkipCustomAutoSetImage();
+    private void SkipCustomAutoSetImage()
+    {
+        Debug.WriteLine("Skipping one custom queued wallpaper");
+        cancelToken.Cancel();
+        cancelToken = new CancellationTokenSource();
+        enableCustomAutoSet();
+    }
+
 
     private async Task ExecRandomAutoSet()
     {
@@ -323,7 +325,7 @@ public partial class AutoSetViewModel : ObservableObject
             else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 1)
             {
                 // choose between one rand image for all monitors, or diff rand for each monitor
-                if (ChooseRandForEachMonitor == true)
+                if (RandomizeEachMonitor == true)
                 {
                     // make different rand image for each monitor
                     foreach (var mon in uniVM.MonitorList)
@@ -335,7 +337,7 @@ public partial class AutoSetViewModel : ObservableObject
                         RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
                     }
                 }
-                else if (ChooseRandForEachMonitor == false)
+                else if (RandomizeEachMonitor == false)
                 {
                     // use same image for all monitors
                     var randInit = new Random();
@@ -358,6 +360,14 @@ public partial class AutoSetViewModel : ObservableObject
                 return;
             }
         }
+    }
+    [RelayCommand] public void skipRandomAutoSetImageButton() => SkipRandomAutoSetImage();
+    private void SkipRandomAutoSetImage()
+    {
+        Debug.WriteLine("Skipping one random queued wallpaper");
+        cancelToken.Cancel();
+        cancelToken = new CancellationTokenSource();
+        enableRandomAutoSet();
     }
 
 }

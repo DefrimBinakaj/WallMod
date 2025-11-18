@@ -67,7 +67,7 @@
 						<!-- Number -->
 						<NumericUpDown Grid.Column="2"
 									   Minimum="1"
-									   Value="5"
+									   Value="{Binding TimeValueInput, Mode=TwoWay}"
 									   Height="16"
 									   FontSize="13"
 									   Width="120"
@@ -76,7 +76,7 @@
 
 						<!-- Unit -->
 						<ComboBox Grid.Column="4"
-								  SelectedIndex="1"
+								  SelectedIndex="{Binding SelectedTimeUnitIndex, Mode=TwoWay}"
 								  MinHeight="32"
 								  Height="32"
 								  FontSize="13"
@@ -115,35 +115,38 @@
 								VerticalAlignment="Center"
 								Margin="8,0,0,0">
 
-						<!-- Enable / Disable (tight spacing) -->
+						<!-- Enable / Disable buttons -->
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							<Button Content="Enable"
 									Background="DarkGreen"
 									Foreground="White"
+									FontSize="11"
 									Command="{Binding ExecEnableCustomAutoSet}"
-									IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"
-									MinHeight="18"
-									Padding="8,2"
-									FontSize="11"/>
+									IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"/>
 
 							<Button Content="Disable"
 									Background="DarkRed"
 									Foreground="White"
+									FontSize="11"
 									Command="{Binding ExecDisableCustomAutoSet}"
-									IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"
-									MinHeight="18"
-									Padding="8,2"
-									FontSize="11"/>
+									IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"/>
 						</StackPanel>
 
-						<!-- Clear queue centered underneath -->
-						<Button Content="Clear queue"
-								Click="ClearWallpaperQueue"
-								HorizontalAlignment="Center"
-								MinHeight="18"
-								Padding="8,2"
-								FontSize="11"
-								Background="Red"/>
+						<!-- Clear and skip buttons -->
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<Button Content="Clear Queue"
+									Click="ClearWallpaperQueue"
+									FontSize="11"
+									Background="Red"/>
+
+							<Button Content=">"
+									Background="Transparent"
+									Command="{Binding skipCustomAutoSetImageButton}">
+								<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
+							</Button>
+						</StackPanel>
+						
+						
 					</StackPanel>
 
 					<!-- Custom queue thumbnails (outer ScrollViewer owns the scrolling) -->
@@ -212,7 +215,7 @@
 							  IsVisible="{Binding RandomQueueViewVisible}"
 							  VerticalAlignment="Center">
 					<Grid	RowDefinitions="Auto,4,Auto"
-							ColumnDefinitions="Auto,48,*"
+							ColumnDefinitions="Auto,24,Auto,48,*"
 							Margin="8,0,0,0"
 							VerticalAlignment="Center">
 
@@ -221,8 +224,8 @@
 									Grid.RowSpan="3"
 									Grid.Column="0"
 									Orientation="Vertical"
-									Spacing="6"
-									VerticalAlignment="Bottom">
+									Spacing="4"
+									VerticalAlignment="Center">
 							<StackPanel Orientation="Horizontal"
 										Spacing="4"
 										HorizontalAlignment="Left">
@@ -231,8 +234,6 @@
 										Foreground="White"
 										Command="{Binding ExecEnableRandomAutoSet}"
 										IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"
-										MinHeight="18"
-										Padding="8,2"
 										FontSize="11"/>
 
 								<Button Content="Disable"
@@ -240,25 +241,38 @@
 										Foreground="White"
 										Command="{Binding ExecDisableRandomAutoSet}"
 										IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"
-										MinHeight="18"
-										Padding="8,2"
 										FontSize="11"/>
 							</StackPanel>
 
-							<Button Grid.Row="1"
-									Grid.Column="0"
-									Grid.ColumnSpan="2"
-									Content="Browse…"
-									Command="{Binding execBrowseDirectory}"
-									HorizontalAlignment="Left"
-									MinHeight="18"
-									Padding="8,2"
-									FontSize="11"/>
+
+
+							<CheckBox Height="12" FontSize="12" IsChecked="{Binding RandomizeEachMonitor, Mode=TwoWay}">
+								Randomize All Monitors
+							</CheckBox>
+								
+
 						</StackPanel>
 
+						<Button Grid.Row="0"
+								Grid.Column="2"
+								Content="Browse…"
+								Command="{Binding execBrowseDirectory}"
+								VerticalAlignment="Center"
+								FontSize="11"/>
+						
+						<Button Grid.Row="2"
+								Grid.Column="2"
+								Content=">"
+								Background="Transparent"
+								VerticalAlignment="Top"
+								HorizontalAlignment="Center"
+								Command="{Binding skipRandomAutoSetImageButton}">
+							<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
+						</Button>
+						
 						<!-- Random Queue Info -->
 						<TextBlock Grid.Row="0"
-								   Grid.Column="2"
+								   Grid.Column="4"
 								   FontSize="14"
 								   Text="{Binding RandDirecName}"
 								   Foreground="White"
@@ -266,7 +280,7 @@
 
 						<!-- Random Queue Info -->
 						<TextBlock Grid.Row="2"
-								   Grid.Column="2"
+								   Grid.Column="4"
 								   Text="{Binding RandWallpapersRemaining}"
 								   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 								   VerticalAlignment="Top"/>
