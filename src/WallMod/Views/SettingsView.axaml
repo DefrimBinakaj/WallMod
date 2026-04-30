@@ -54,7 +54,7 @@
 						<ColumnDefinition Width="0.15*"/>
 					</Grid.ColumnDefinitions>
 
-					<StackPanel Grid.Column="1" Margin="0,30,0,20">
+					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="4">
 
 						<!-- GROUP 1: History Settings -->
 						<TextBlock Text="Wallpaper History"
@@ -155,7 +155,7 @@
 						<ColumnDefinition Width="0.15*"/>
 					</Grid.ColumnDefinitions>
 
-					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="16">
+					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="4">
 						<TextBlock Text="Colour / Theme"
 								   Foreground="LightGray"
 								   FontSize="16"
@@ -246,7 +246,202 @@
 				</Grid>
 			</TabItem>
 
-			<!-- TAB 3: SYSTEM -->
+			<!-- TAB 3: HOTKEYS -->
+			<TabItem Header="Hotkeys">
+
+				<Grid HorizontalAlignment="Stretch">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="0.15*"/>
+						<ColumnDefinition Width="0.7*"/>
+						<ColumnDefinition Width="0.15*"/>
+					</Grid.ColumnDefinitions>
+
+					<!-- SUBTITLE -->
+					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="4">
+						<TextBlock Text="Keyboard Hotkeys/Shortcuts"
+								   Foreground="LightGray"
+								   FontSize="16"
+								   FontWeight="Bold"
+								   Margin="0,32,0,8"/>
+
+						<!-- main border -->
+						<Border CornerRadius="12"
+								Background="rgba(20, 20, 20, 200)"
+								Padding="16">
+							<StackPanel>
+
+
+							<!-- slider +/- (=/-) -->
+							<TextBlock Text="Image Thumbnail Zoom"
+										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+										FontSize="15"
+										Margin="0,0,0,10"/>
+							<Grid ColumnDefinitions="Auto,*"
+									ColumnSpacing="64"
+									Margin="0,0,0,6">
+
+								<!-- key group -->
+								<Border Grid.Column="0"
+										Background="rgba(45, 45, 45, 180)"
+										CornerRadius="10"
+										Padding="14,10"
+										MinWidth="140"
+										HorizontalAlignment="Left">
+									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="="
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="-"
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+									</StackPanel>
+								</Border>
+
+								<TextBlock Grid.Column="1"
+											Text="Increase / decrease thumbnail size in the image layout (+/-)"
+											Foreground="LightGray"
+											FontSize="15"
+											VerticalAlignment="Center"/>
+							</Grid>
+
+
+							<!-- divider between sets -->
+							<Border Height="1"
+									Background="rgba(255,255,255,0.10)"
+									Margin="0,18,0,18"/>
+
+
+							<!-- Jump to top/bot -->
+							<TextBlock Text="Jump to Top / Bottom"
+										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+										FontSize="15"
+										Margin="0,0,0,10"/>
+							<Grid ColumnDefinitions="Auto,*"
+									ColumnSpacing="64"
+									Margin="0,0,0,6">
+
+								<Border Grid.Column="0"
+										Background="rgba(45, 45, 45, 180)"
+										CornerRadius="10"
+										Padding="14,10"
+										MinWidth="140"
+										HorizontalAlignment="Left">
+									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="g"
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="G"
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+									</StackPanel>
+								</Border>
+								<TextBlock Grid.Column="1"
+											Text="Jump to the top / bottom of the list of images"
+											Foreground="LightGray"
+											FontSize="15"
+											VerticalAlignment="Center"/>
+							</Grid>
+
+
+							<!-- divider between sets -->
+							<Border Height="1"
+									Background="rgba(255,255,255,0.10)"
+									Margin="0,18,0,18"/>
+
+
+							<!-- Vert Splitter Shifting -->
+							<TextBlock Text="Vertical Splitter Shifting"
+										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+										FontSize="15"
+										Margin="0,0,0,10"/>
+
+							<Grid ColumnDefinitions="Auto,*"
+									ColumnSpacing="64">
+
+								<Border Grid.Column="0"
+										Background="rgba(45, 45, 45, 180)"
+										CornerRadius="10"
+										Padding="14,10"
+										MinWidth="140"
+										HorizontalAlignment="Left">
+									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="["
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+
+										<Border Background="rgba(25, 25, 25, 220)"
+												CornerRadius="8"
+												Padding="16,8"
+												MinWidth="56">
+											<TextBlock Text="]"
+														Foreground="White"
+														FontSize="28"
+														FontWeight="Bold"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Center"/>
+										</Border>
+									</StackPanel>
+								</Border>
+
+								<TextBlock Grid.Column="1"
+											Text="Move the vertical splitter in the main layout left / right"
+											Foreground="LightGray"
+											FontSize="15"
+											VerticalAlignment="Center"/>
+							</Grid>
+
+						</StackPanel>
+
+						</Border>
+
+					</StackPanel>
+
+				</Grid>
+			</TabItem>
+
+			<!-- TAB 4: SYSTEM -->
 			<TabItem Header="System">
 				<Grid HorizontalAlignment="Stretch">
 					<Grid.ColumnDefinitions>
@@ -255,7 +450,7 @@
 						<ColumnDefinition Width="0.15*"/>
 					</Grid.ColumnDefinitions>
 
-					<StackPanel Grid.Column="1" Margin="0,30,0,20">
+					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="4">
 
 						<!-- AppName, Version & GitHub Row -->
 						<StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,30,0,0">
@@ -342,6 +537,8 @@
 					</StackPanel>
 				</Grid>
 			</TabItem>
+
+			
 
 		</TabControl>
 

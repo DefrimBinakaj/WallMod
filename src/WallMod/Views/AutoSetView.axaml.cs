@@ -33,6 +33,26 @@ public partial class AutoSetView : UserControl
         uniVM.WallpaperQueue.Clear();
     }
 
+    private void WallpaperQueueItem_Clicked(object? sender, KeyEventArgs e)
+    {
+        // DELELE key pressed
+        if (e.Key == Key.Delete)
+        {
+            var listBoxWallpaperItem = sender as ListBox;
+            if (listBoxWallpaperItem?.SelectedItem != null && DataContext is AutoSetViewModel vm)
+            {
+                var selectedWallpaper = listBoxWallpaperItem.SelectedItem as Wallpaper;
+                if (selectedWallpaper != null)
+                {
+                    uniVM.WallpaperQueue.Remove(selectedWallpaper);
+                    e.Handled = true; // stop processing action
+                }
+            }
+        }
+
+        // can add more here...
+    }
+
 
     private void Item_PointerPressed(object sender, PointerPressedEventArgs e)
     {

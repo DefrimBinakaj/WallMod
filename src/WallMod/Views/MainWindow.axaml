@@ -23,6 +23,18 @@
 		<vm:MainWindowViewModel/>
 	</Design.DataContext>
 
+	<Window.KeyBindings>
+		<!-- + and - for thumbnailzoom -->
+		<KeyBinding Command="{Binding HotkeyPlusClicked}" Gesture="OemPlus" />
+		<KeyBinding Command="{Binding HotkeyMinusClicked}" Gesture="OemMinus" />
+		<!-- [ and ] for vertical slider shifting -->
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceLeft}" Gesture="OemOpenBrackets" />
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceRight}" Gesture="OemCloseBrackets" />
+		<!-- g and G for jumping to top / bottom -->
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyG}" Gesture="G" />
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyShiftG}" Gesture="Shift+G" />
+	</Window.KeyBindings>
+	
 	<Panel>
 		<ExperimentalAcrylicBorder IsHitTestVisible="False">
 			<ExperimentalAcrylicBorder.Material>
@@ -269,7 +281,8 @@
 			</Border>
 
 			<!-- GridSplitter: Allows Resizing Between Left and Right Sections ========= -->
-			<GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="1" Width="5" Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" Margin="0,25,0,25"
+			<GridSplitter x:Name="MainVertSplitter" Grid.Column="1" Grid.Row="0" Grid.RowSpan="1" Width="5" 
+						  Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" Margin="0,25,0,25"
 						  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
 						  ShowsPreview="False" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
 						  DragStarted="GridSplitterDragExec" />
@@ -363,7 +376,7 @@
 								<TextBlock Text="{Binding CurrentWallpaperName}"
 										   HorizontalAlignment="Left" FontSize="15"
 										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="35, 4, 0, 0"
-										   MaxWidth="180" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+										   MaxWidth="160" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
 								<TextBlock Text="{Binding CurrentWallpaperSize}"
 										   HorizontalAlignment="Right" FontSize="15"
 										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" FontWeight="Bold" Margin="4"/>

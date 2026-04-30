@@ -165,7 +165,9 @@
 								 DragDrop.DragOver="ListBox_DragOver"
 								 DragDrop.Drop="ListBox_Drop"
 								 HorizontalAlignment="Left"
-								 VerticalAlignment="Center">
+								 VerticalAlignment="Center"
+								 KeyDown="WallpaperQueueItem_Clicked"
+								 Focusable="True">
 							<ListBox.ItemsPanel>
 								<ItemsPanelTemplate>
 									<StackPanel Orientation="Horizontal"/>

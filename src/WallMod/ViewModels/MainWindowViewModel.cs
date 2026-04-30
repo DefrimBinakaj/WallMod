@@ -421,6 +421,29 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
 
+    // hotkeys ==================================================================
+    
+    // - and + hotkeys (for zooming image gallery)
+    [RelayCommand] public void HotkeyPlusClicked() => HotkeyPlus();
+    public void HotkeyPlus()
+    {
+        ThumbnailZoomLevel = Math.Min(ThumbnailZoomLevel + 2.5, 300); // 300 is max zoom value
+    }
+
+    [RelayCommand] public void HotkeyMinusClicked() => HotkeyMinus();
+    public void HotkeyMinus()
+    {
+        ThumbnailZoomLevel = Math.Max(ThumbnailZoomLevel - 2.5, 50); // 50 is min zoom value
+    }
+
+    // g and G hotkeys (for jumping to top/bottom) are in MainWindow.axaml.cs because its manipulating listview
+
+
+    // [ and ] hotkey (for horizontally shifting vertical divider)
+
+
+
+
 
     // image clicking ============================================================
 

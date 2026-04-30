@@ -5,6 +5,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
@@ -322,14 +323,105 @@ public partial class MainWindow : Window
         }
     }
 
-    private void JumpToTopClicked(object? sender, RoutedEventArgs e)
+
+
+
+    // jump to top / bottom (buttons)
+    public void JumpToTopClicked(object? sender, RoutedEventArgs e)
     {
         ImageGalleryScrollView.ScrollToHome();
     }
-    private void JumpToBottomClicked(object? sender, RoutedEventArgs e)
+    public void JumpToBottomClicked(object? sender, RoutedEventArgs e)
     {
         ImageGalleryScrollView.ScrollToEnd();
     }
+
+
+    // HOTKEYS --------------------
+
+    // jump hotkeys
+    public void HotkeyG()
+    {
+        ImageGalleryScrollView.ScrollToHome();
+    }
+    public void HotkeyShiftG()
+    {
+        ImageGalleryScrollView.ScrollToEnd();
+    }
+
+
+    // horizontally shift vertical splitter hotkeys
+    public void HotkeySqBraceLeft()
+    {
+        double shiftAmount = 10;
+
+        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
+        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
+        
+
+        double leftColPixels = leftCol.ActualWidth;
+        double rightColPixels = rightCol.ActualWidth;
+        double totalPixels = leftColPixels + rightColPixels;
+
+
+        double newLeftPixels = leftColPixels - shiftAmount; // shift
+        double newRightPixels = rightColPixels + shiftAmount; // shift
+
+        // enforce mid width
+        if (newLeftPixels < leftCol.MinWidth)
+            newLeftPixels = leftCol.MinWidth;
+        if (newRightPixels < rightCol.MinWidth)
+            newRightPixels = rightCol.MinWidth;
+
+
+        double clampedTotalPixels = newLeftPixels + newRightPixels;
+        // derive new star values based on the new pixel ratio
+        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
+        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
+        double newRightColStars = totalStars - newLeftColStars;
+
+
+        // apply calcd values to UI
+        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
+        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
+
+    }
+    public void HotkeySqBraceRight()
+    {
+        double shiftAmount = -10;
+
+        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
+        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
+
+
+        double leftColPixels = leftCol.ActualWidth;
+        double rightColPixels = rightCol.ActualWidth;
+        double totalPixels = leftColPixels + rightColPixels;
+
+
+        double newLeftPixels = leftColPixels - shiftAmount; // shift
+        double newRightPixels = rightColPixels + shiftAmount; // shift
+
+        // enforce mid width
+        if (newLeftPixels < leftCol.MinWidth)
+            newLeftPixels = leftCol.MinWidth;
+        if (newRightPixels < rightCol.MinWidth)
+            newRightPixels = rightCol.MinWidth;
+
+
+        double clampedTotalPixels = newLeftPixels + newRightPixels;
+        // derive new star values based on the new pixel ratio
+        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
+        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
+        double newRightColStars = totalStars - newLeftColStars;
+
+
+        // apply calcd values to UI
+        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
+        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
+    }
+
+
 
 
     private async void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
