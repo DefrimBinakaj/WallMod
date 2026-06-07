@@ -518,7 +518,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 for (int i = 0; i < MonitorList.Count; i++)
                 {
                     MonitorInfo monitor = MonitorList[i];
-                    Debug.WriteLine("mmm" + monitor + monitor.CurrWallpaper + monitor.IsPrimary);
                     if (monitor == LastSelMonitor)
                     {
                         Debug.WriteLine("YES!!");

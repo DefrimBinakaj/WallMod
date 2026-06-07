@@ -108,7 +108,7 @@ public partial class SettingsViewModel : ObservableObject
     public async void UpdateApp()
     {
         var versionList = updateVersionHelper.GetGithubVersionAndInstallLink();
-        updateVersionHelper.ExecuteAppUpdate(versionList.Result.Item2, versionList.Result.Item3);
+        await updateVersionHelper.ExecuteAppUpdate(versionList.Result.Item2, versionList.Result.Item3);
     }
 
 

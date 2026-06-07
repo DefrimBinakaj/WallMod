@@ -213,7 +213,7 @@ public partial class AutoSetViewModel : ObservableObject
 
 
     // enable for custom queue
-    [RelayCommand] public void ExecEnableCustomAutoSet() => enableCustomAutoSet();
+    [RelayCommand] public async Task ExecEnableCustomAutoSet() => await enableCustomAutoSet();
     private async Task enableCustomAutoSet()
     {
         if (WallpaperQueue.Count > 0)
@@ -242,7 +242,7 @@ public partial class AutoSetViewModel : ObservableObject
 
 
     // enable for rand queue
-    [RelayCommand] public void ExecEnableRandomAutoSet() => enableRandomAutoSet();
+    [RelayCommand] public async Task ExecEnableRandomAutoSet() => await enableRandomAutoSet();
     private async Task enableRandomAutoSet()
     {
         if (RandDirImageCollection.Count > 0)

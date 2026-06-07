@@ -441,13 +441,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
+    private async void OnSelectAllClicked(object? sender, RoutedEventArgs e)
     {
         uniVM.SetBackgroundButtonEnabled = true;
         ResetRectangle();
         var viewModel = DataContext as MainWindowViewModel;
         viewModel.StyleDropdownEnabled = true;
-        viewModel.AllMonitorsSelected();
+        await viewModel.AllMonitorsSelected();
     }
 
 

@@ -14,43 +14,27 @@ namespace WallMod.Models;
  */
 public class MonitorInfo: INotifyPropertyChanged
 {
-    public string MonitorIdPath { get; set; }
+    public required string MonitorIdPath { get; set; }
     public PixelRect Bounds { get; set; }
     public PixelRect WorkingArea { get; set; }
-    public string IsPrimary { get; set; }
-    public Wallpaper CurrWallpaper { get; set; }
+    public bool IsPrimary { get; set; }
+    public Wallpaper? CurrWallpaper { get; set; }
     public PixelRect UIBounds { get; set; }
 
-    private string fillColour;
-    public string FillColour
-    {
-        get => fillColour;
-        set
-        {
-            if (value != fillColour)
-            {
-                fillColour = value;
-                OnPropertyChanged();
-            }
-        }
+    private string? fillColour;
+    public string? FillColour { 
+        get => fillColour; 
+        set { if (value != fillColour) { fillColour = value; OnPropertyChanged(); } } 
     }
 
-    private string strokeColour;
-    public string StrokeColour
-    {
-        get => strokeColour;
-        set
-        {
-            if (value != strokeColour)
-            {
-                strokeColour = value;
-                OnPropertyChanged();
-            }
-        }
+    private string? strokeColour;
+    public string? StrokeColour { 
+        get => strokeColour; 
+        set { if (value != strokeColour) { strokeColour = value; OnPropertyChanged(); } } 
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
-    private void OnPropertyChanged([CallerMemberName] string propName = null)
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }

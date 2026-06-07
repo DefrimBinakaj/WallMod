@@ -139,8 +139,7 @@
 									FontSize="11"
 									Background="Red"/>
 
-							<Button Content=">"
-									Background="Transparent"
+							<Button Background="Transparent"
 									Command="{Binding skipCustomAutoSetImageButton}">
 								<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
 							</Button>
@@ -264,7 +263,6 @@
 						
 						<Button Grid.Row="2"
 								Grid.Column="2"
-								Content=">"
 								Background="Transparent"
 								VerticalAlignment="Top"
 								HorizontalAlignment="Center"

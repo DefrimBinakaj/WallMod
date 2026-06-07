@@ -15,7 +15,7 @@ namespace WallMod.Converters;
 // https://stackoverflow.com/questions/34458592/how-to-update-radio-button-in-view-from-viewmodel
 public class BoolToStrConverter: IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value == null || parameter == null)
             return false;
@@ -23,10 +23,10 @@ public class BoolToStrConverter: IValueConverter
     }
 
     // When the user changes the UI (bool) update your property (string)
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool boolValue && boolValue)
-            return parameter.ToString();
+            return parameter?.ToString();
         return null;
     }
 }
