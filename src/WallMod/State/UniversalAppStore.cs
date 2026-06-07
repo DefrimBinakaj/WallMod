@@ -271,14 +271,19 @@ public class UniversalAppStore : ViewModelBase
     }
     // function to change fluent-based UI colours (eg. sliders / tabs / etc )
     // https://github.com/AvaloniaUI/Avalonia/discussions/12042
+    private FluentTheme? newFluentTheme;
     public void changeFluentColour()
     {
         App currApp = (App)Application.Current;
 
-        var newTheme = new FluentTheme();
-        newTheme.Palettes[ThemeVariant.Light] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
-        newTheme.Palettes[ThemeVariant.Dark] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
-        currApp.Styles.Add(newTheme);
+        if (newFluentTheme == null)
+        {
+            newFluentTheme = new FluentTheme();
+            currApp.Styles.Add(newFluentTheme);
+        }
+
+        newFluentTheme.Palettes[ThemeVariant.Light] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
+        newFluentTheme.Palettes[ThemeVariant.Dark] = new ColorPaletteResources() { Accent = SelectedPrimaryAccentColour };
     }
 
 
