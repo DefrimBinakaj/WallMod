@@ -485,15 +485,23 @@ public partial class MainWindow : Window
 
     private async void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
     {
-        uniVM.SetBackgroundButtonEnabled = false; // just make it false without making it true; ensures no spamming
         var viewModel = DataContext as MainWindowViewModel;
+        if (viewModel == null) return;
+
+        uniVM.SetBackgroundButtonEnabled = false; // disable button to ensure no spamming
+
+        // delay button enable by a second (Task.Delay) ; helps users intuitively understand that the button worked
         if (viewModel.StyleDropdownEnabled == true)
         {
             await viewModel.SetWallpaperWithoutCrop();
+            await Task.Delay(1000);
+            uniVM.SetBackgroundButtonEnabled = true;
         }
         else
         {
             await SetCroppedWallpaper();
+            await Task.Delay(1000);
+            uniVM.SetBackgroundButtonEnabled = true;
         }
     }
 
