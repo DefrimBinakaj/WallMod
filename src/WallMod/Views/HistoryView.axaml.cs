@@ -32,14 +32,10 @@ public partial class HistoryView : UserControl
     {
         if (sender is Control control && control.DataContext is Wallpaper wallpaper)
         {
-            // get actual window that owns this view
             var mainWindow = this.GetVisualRoot() as MainWindow;
-            if (mainWindow?.DataContext is not MainWindowViewModel mainVM) return;
+            if (mainWindow == null) return;
 
-            // replicate MainWindow code behind history image tap
-            mainWindow.ResetRectangle();
-            mainWindow.SetBackgroundButton.IsEnabled = false;
-            await mainVM.ImageTapped(wallpaper);
+            await mainWindow.HandleImageTapped(wallpaper);
         }
     }
 

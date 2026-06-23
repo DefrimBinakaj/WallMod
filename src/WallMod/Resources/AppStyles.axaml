@@ -1,16 +1,64 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Design.PreviewWith>
-    <Border Padding="20">
-      <!-- Add Controls for Previewer Here -->
-    </Border>
-  </Design.PreviewWith>
+	<Design.PreviewWith>
+		<Border Padding="20">
+			<!-- Add Controls for Previewer Here -->
+		</Border>
+	</Design.PreviewWith>
 
-  <!-- Add Styles Here -->
-  <Style>
-    <Style.Resources>
-	    <StreamGeometry x:Key="store_microsoft_regular">M11.5 9.5V13H8V9.5H11.5Z M11.5 17.5V14H8V17.5H11.5Z M16 9.5V13H12.5V9.5H16Z M16 17.5V14H12.5V17.5H16Z M8 6V3.75C8 2.7835 8.7835 2 9.75 2H14.25C15.2165 2 16 2.7835 16 3.75V6H21.25C21.6642 6 22 6.33579 22 6.75V18.25C22 19.7688 20.7688 21 19.25 21H4.75C3.23122 21 2 19.7688 2 18.25V6.75C2 6.33579 2.33579 6 2.75 6H8ZM9.5 3.75V6H14.5V3.75C14.5 3.61193 14.3881 3.5 14.25 3.5H9.75C9.61193 3.5 9.5 3.61193 9.5 3.75ZM3.5 18.25C3.5 18.9404 4.05964 19.5 4.75 19.5H19.25C19.9404 19.5 20.5 18.9404 20.5 18.25V7.5H3.5V18.25Z</StreamGeometry>
-	</Style.Resources>
-  </Style>
+	<!-- Add Styles Here -->
+	<Style>
+		<Style.Resources>
+			<StreamGeometry x:Key="store_microsoft_regular">M11.5 9.5V13H8V9.5H11.5Z M11.5 17.5V14H8V17.5H11.5Z M16 9.5V13H12.5V9.5H16Z M16 17.5V14H12.5V17.5H16Z M8 6V3.75C8 2.7835 8.7835 2 9.75 2H14.25C15.2165 2 16 2.7835 16 3.75V6H21.25C21.6642 6 22 6.33579 22 6.75V18.25C22 19.7688 20.7688 21 19.25 21H4.75C3.23122 21 2 19.7688 2 18.25V6.75C2 6.33579 2.33579 6 2.75 6H8ZM9.5 3.75V6H14.5V3.75C14.5 3.61193 14.3881 3.5 14.25 3.5H9.75C9.61193 3.5 9.5 3.61193 9.5 3.75ZM3.5 18.25C3.5 18.9404 4.05964 19.5 4.75 19.5H19.25C19.9404 19.5 20.5 18.9404 20.5 18.25V7.5H3.5V18.25Z</StreamGeometry>
+		</Style.Resources>
+	</Style>
+
+	<!-- segmented One/All toggle ===== -->
+	<Style Selector="RadioButton.segmented">
+		<Setter Property="FontSize" Value="14"/>
+		<Setter Property="Padding" Value="12,5"/>
+		<Setter Property="CornerRadius" Value="6"/>
+		<Setter Property="Foreground" Value="#C8C4CD"/>
+		<Setter Property="BorderThickness" Value="0"/>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						Padding="{TemplateBinding Padding}">
+					<ContentPresenter Content="{TemplateBinding Content}"
+										Foreground="{TemplateBinding Foreground}"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"/>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</Style>
+	<!-- unchecked = hide the accent background -->
+	<Style Selector="RadioButton.segmented:unchecked /template/ Border">
+		<Setter Property="Background" Value="Transparent"/>
+	</Style>
+	<!-- checked = white text (accent background comes from the button itself) -->
+	<Style Selector="RadioButton.segmented:checked">
+		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="Opacity" Value="0.75"/>
+	</Style>
+
+	<!-- translucent dark colour ===== -->
+	<Style Selector="Button.translucentDark">
+		<Setter Property="Background" Value="#99000000"/>
+		<Setter Property="Foreground" Value="White"/>
+	</Style>
+	<Style Selector="ComboBox.translucentDark">
+		<Setter Property="Background" Value="#99000000"/>
+		<Setter Property="Foreground" Value="White"/>
+	</Style>
+
+	<!-- outlined icon buttons ===== -->
+	<Style Selector="Button.iconOutline">
+		<Setter Property="Background" Value="Transparent"/>
+		<Setter Property="BorderBrush" Value="#6A6671"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="CornerRadius" Value="8"/>
+	</Style>
 
 </Styles>

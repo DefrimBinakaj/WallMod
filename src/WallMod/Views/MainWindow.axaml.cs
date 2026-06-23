@@ -54,40 +54,230 @@ public partial class MainWindow : Window
 
     private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        // disable the rect
         ResetRectangle();
+        UnselectAllPreviewMonitors();
+    }
 
-        if (DataContext is MainWindowViewModel vm)
+
+    // gallery section ---------------------------------------------------------
+    // when an image is tapped, reset opacity of all other items (folders)
+    public void ResetAllItemsOpacity()
+    {
+        // 1) Find the ItemsControl
+        var itemsControl = this.FindControl<ItemsControl>("ImageViewControl");
+        if (itemsControl == null) return;
+
+        // 2) Find the generated WrapPanel in the visual tree
+        var wrapPanel = itemsControl.GetVisualDescendants()
+                                    .OfType<WrapPanel>()
+                                    .FirstOrDefault();
+        if (wrapPanel == null) return;
+
+        // 3) Each item is typically hosted in a ContentPresenter or direct StackPanel child
+        foreach (var child in wrapPanel.GetVisualChildren())
         {
-            vm.LastSelMonitor = null;
-            // manipulate monitor UI
-            foreach (MonitorInfo mon in vm.MonitorList)
+            // child might be a ContentPresenter
+            if (child is ContentPresenter cp)
             {
-                mon.FillColour = "Navy";
+                // The actual StackPanel is inside the content presenter
+                var sp = cp.GetVisualDescendants().OfType<StackPanel>().FirstOrDefault();
+                if (sp != null) sp.Opacity = 1.0;
             }
+            else if (child is StackPanel sp2)
+            {
+                // If the item is a direct StackPanel
+                sp2.Opacity = 1.0;
+            }
+        }
+    }
+
+    public async void OnImageTapped(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control control && control.DataContext is Wallpaper wallpaper)
+        {
+            if (wallpaper.IsDirectory == true)
+            {
+                ResetAllItemsOpacity();
+                control.Opacity = 0.7;
+            }
+            await HandleImageTapped(wallpaper);
+        }
+    }
+
+    public async Task HandleImageTapped(Wallpaper wallpaper)
+    {
+        // if user clicked a diff wallpaper than before, reset rect and disable set button
+        // (dont reset if All Monitors is selected)
+        if (wallpaper != lastTapImage && SelectOneToggle.IsChecked == true)
+        {
+            ResetRectangle();
             uniVM.SetBackgroundButtonEnabled = false;
+            UnselectAllPreviewMonitors();
         }
 
+        var viewModel = DataContext as MainWindowViewModel;
+        if (viewModel != null)
+        {
+            if (CheckDoubleTapped(wallpaper))
+            {
+                lastTapTime = DateTime.Now;
+                lastTapImage = wallpaper;
+                await viewModel.ImageDoubleTapped(wallpaper);
+            }
+            else
+            {
+                lastTapTime = DateTime.Now;
+                lastTapImage = wallpaper;
+                await viewModel.ImageTapped(wallpaper);
+            }
+        }
+    }
+
+    private bool CheckDoubleTapped(Wallpaper tappedWallpaper)
+    {
+        var currentTime = DateTime.Now;
+        var elapsed = (currentTime - lastTapTime).TotalMilliseconds;
+
+        if (elapsed < DoubleTapThreshold && lastTapImage == tappedWallpaper)
+        {
+            return true;
+        }
+        else
+        {
+            lastTapTime = currentTime;
+            return false;
+        }
+    }
+
+    // jump to top / bottom (buttons)
+    public void JumpToTopClicked(object? sender, RoutedEventArgs e)
+    {
+        ImageGalleryScrollView.ScrollToHome();
+    }
+    public void JumpToBottomClicked(object? sender, RoutedEventArgs e)
+    {
+        ImageGalleryScrollView.ScrollToEnd();
+    }
+
+
+    // HOTKEYS --------------------
+
+    // jump hotkeys
+    public void HotkeyG()
+    {
+        ImageGalleryScrollView.ScrollToHome();
+    }
+    public void HotkeyShiftG()
+    {
+        ImageGalleryScrollView.ScrollToEnd();
+    }
+
+
+    // horizontally shift vertical splitter hotkeys
+    public void HotkeySqBraceLeft()
+    {
+        double shiftAmount = 10;
+
+        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
+        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
+
+
+        double leftColPixels = leftCol.ActualWidth;
+        double rightColPixels = rightCol.ActualWidth;
+        double totalPixels = leftColPixels + rightColPixels;
+
+
+        double newLeftPixels = leftColPixels - shiftAmount; // shift
+        double newRightPixels = rightColPixels + shiftAmount; // shift
+
+        // enforce mid width
+        if (newLeftPixels < leftCol.MinWidth)
+            newLeftPixels = leftCol.MinWidth;
+        if (newRightPixels < rightCol.MinWidth)
+            newRightPixels = rightCol.MinWidth;
+
+
+        double clampedTotalPixels = newLeftPixels + newRightPixels;
+        // derive new star values based on the new pixel ratio
+        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
+        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
+        double newRightColStars = totalStars - newLeftColStars;
+
+
+        // apply calcd values to UI
+        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
+        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
 
     }
+    public void HotkeySqBraceRight()
+    {
+        double shiftAmount = -10;
+
+        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
+        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
+
+
+        double leftColPixels = leftCol.ActualWidth;
+        double rightColPixels = rightCol.ActualWidth;
+        double totalPixels = leftColPixels + rightColPixels;
+
+
+        double newLeftPixels = leftColPixels - shiftAmount; // shift
+        double newRightPixels = rightColPixels + shiftAmount; // shift
+
+        // enforce mid width
+        if (newLeftPixels < leftCol.MinWidth)
+            newLeftPixels = leftCol.MinWidth;
+        if (newRightPixels < rightCol.MinWidth)
+            newRightPixels = rightCol.MinWidth;
+
+
+        double clampedTotalPixels = newLeftPixels + newRightPixels;
+        // derive new star values based on the new pixel ratio
+        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
+        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
+        double newRightColStars = totalStars - newLeftColStars;
+
+
+        // apply calcd values to UI
+        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
+        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
+    }
+
+
 
     private void GridSplitterDragExec(object? sender, VectorEventArgs e)
     {
-        // disable the rect
         ResetRectangle();
+        UnselectAllPreviewMonitors();
+    }
 
-        if (DataContext is MainWindowViewModel vm)
+
+    private void OnEnlargedImageClick(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
         {
-            vm.LastSelMonitor = null;
-            // manipulate monitor UI
-            foreach (MonitorInfo mon in vm.MonitorList)
-            {
-                mon.FillColour = "Navy";
-            }
-            uniVM.SetBackgroundButtonEnabled = false;
+            EnlargedPreviewImage.IsVisible = false;
+            MainGrid.Opacity = 1;
         }
     }
 
+    // opens file explorer and navigates to image
+    private void OpenImageClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
+        {
+            FileExporerHelper fileExporerHelper = new FileExporerHelper();
+            if (viewModel.LastSelectedWallpaper != null)
+            {
+                fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
+            }
+        }
+    }
+
+
+
+    // draggable rect section ------------------------------------
 
     public void ShowDraggableRectangle(MonitorInfo monitor)
     {
@@ -233,193 +423,7 @@ public partial class MainWindow : Window
     }
 
 
-    public void ResetAllItemsOpacity()
-    {
-        // 1) Find the ItemsControl
-        var itemsControl = this.FindControl<ItemsControl>("ImageViewControl");
-        if (itemsControl == null)
-            return;
-
-        // 2) Find the generated WrapPanel in the visual tree
-        var wrapPanel = itemsControl.GetVisualDescendants()
-                                    .OfType<WrapPanel>()
-                                    .FirstOrDefault();
-        if (wrapPanel == null)
-            return;
-
-        // 3) Each item is typically hosted in a ContentPresenter or direct StackPanel child
-        foreach (var child in wrapPanel.GetVisualChildren())
-        {
-            // child might be a ContentPresenter
-            if (child is ContentPresenter cp)
-            {
-                // The actual StackPanel is inside the content presenter
-                var sp = cp.GetVisualDescendants()
-                           .OfType<StackPanel>()
-                           .FirstOrDefault();
-                if (sp != null)
-                    sp.Opacity = 1.0;
-            }
-            else if (child is StackPanel sp2)
-            {
-                // If the item is a direct StackPanel
-                sp2.Opacity = 1.0;
-            }
-        }
-    }
-
-
-    private async void OnImageTapped(object? sender, PointerPressedEventArgs e)
-    {
-        if (sender is Control control && control.DataContext is Wallpaper wallpaper)
-        {
-            // if user clicked a diff wallpaper than before, reset rect
-            if (wallpaper != lastTapImage)
-            {
-                ResetRectangle();
-                uniVM.SetBackgroundButtonEnabled = false;
-            }
-
-
-            if (wallpaper.IsDirectory == true)
-            {
-                ResetAllItemsOpacity();
-                control.Opacity = 0.7;
-            }
-
-
-            var viewModel = DataContext as MainWindowViewModel;
-            if (viewModel != null)
-            {
-                if (CheckDoubleTapped(wallpaper))
-                {
-                    lastTapTime = DateTime.Now;
-                    lastTapImage = wallpaper;
-                    await viewModel.ImageDoubleTapped(wallpaper);
-                }
-                else
-                {
-                    lastTapTime = DateTime.Now;
-                    lastTapImage = wallpaper;
-                    await viewModel.ImageTapped(wallpaper);
-                }
-            }
-        }
-    }
-
-    private bool CheckDoubleTapped(Wallpaper tappedWallpaper)
-    {
-        var currentTime = DateTime.Now;
-        var elapsed = (currentTime - lastTapTime).TotalMilliseconds;
-
-        if (elapsed < DoubleTapThreshold && lastTapImage == tappedWallpaper)
-        {
-            return true;
-        }
-        else
-        {
-            lastTapTime = currentTime;
-            return false;
-        }
-    }
-
-
-
-
-    // jump to top / bottom (buttons)
-    public void JumpToTopClicked(object? sender, RoutedEventArgs e)
-    {
-        ImageGalleryScrollView.ScrollToHome();
-    }
-    public void JumpToBottomClicked(object? sender, RoutedEventArgs e)
-    {
-        ImageGalleryScrollView.ScrollToEnd();
-    }
-
-
-    // HOTKEYS --------------------
-
-    // jump hotkeys
-    public void HotkeyG()
-    {
-        ImageGalleryScrollView.ScrollToHome();
-    }
-    public void HotkeyShiftG()
-    {
-        ImageGalleryScrollView.ScrollToEnd();
-    }
-
-
-    // horizontally shift vertical splitter hotkeys
-    public void HotkeySqBraceLeft()
-    {
-        double shiftAmount = 10;
-
-        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
-        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
-        
-
-        double leftColPixels = leftCol.ActualWidth;
-        double rightColPixels = rightCol.ActualWidth;
-        double totalPixels = leftColPixels + rightColPixels;
-
-
-        double newLeftPixels = leftColPixels - shiftAmount; // shift
-        double newRightPixels = rightColPixels + shiftAmount; // shift
-
-        // enforce mid width
-        if (newLeftPixels < leftCol.MinWidth)
-            newLeftPixels = leftCol.MinWidth;
-        if (newRightPixels < rightCol.MinWidth)
-            newRightPixels = rightCol.MinWidth;
-
-
-        double clampedTotalPixels = newLeftPixels + newRightPixels;
-        // derive new star values based on the new pixel ratio
-        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
-        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
-        double newRightColStars = totalStars - newLeftColStars;
-
-
-        // apply calcd values to UI
-        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
-        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
-
-    }
-    public void HotkeySqBraceRight()
-    {
-        double shiftAmount = -10;
-
-        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
-        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
-
-
-        double leftColPixels = leftCol.ActualWidth;
-        double rightColPixels = rightCol.ActualWidth;
-        double totalPixels = leftColPixels + rightColPixels;
-
-
-        double newLeftPixels = leftColPixels - shiftAmount; // shift
-        double newRightPixels = rightColPixels + shiftAmount; // shift
-
-        // enforce mid width
-        if (newLeftPixels < leftCol.MinWidth)
-            newLeftPixels = leftCol.MinWidth;
-        if (newRightPixels < rightCol.MinWidth)
-            newRightPixels = rightCol.MinWidth;
-
-
-        double clampedTotalPixels = newLeftPixels + newRightPixels;
-        // derive new star values based on the new pixel ratio
-        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
-        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
-        double newRightColStars = totalStars - newLeftColStars;
-
-
-        // apply calcd values to UI
-        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
-        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
-    }
+    
 
 
 
@@ -432,22 +436,55 @@ public partial class MainWindow : Window
             if (viewModel != null)
             {
                 Debug.WriteLine("monitor tapped = " + monitor.MonitorIdPath);
-                await viewModel.MonitorTapped(monitor);
+                SelectOneToggle.IsChecked = true; // flip first
 
-                // size rect specific monitors real aspect ratio
-                ShowDraggableRectangle(monitor);
+                await viewModel.MonitorTapped(monitor);
+                ShowDraggableRectangle(monitor); // size rect specific monitors real aspect ratio
                 uniVM.SetBackgroundButtonEnabled = true;
             }
         }
     }
 
-    private async void OnSelectAllClicked(object? sender, RoutedEventArgs e)
+    private void UnselectAllPreviewMonitors()
     {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.LastSelMonitor = null;
+            // manipulate monitor UI
+            foreach (MonitorInfo mon in vm.MonitorList)
+            {
+                mon.FillColour = "Navy";
+            }
+            uniVM.SetBackgroundButtonEnabled = false;
+        }
+    }
+
+    private void OnSelectOneMonitorToggleChecked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = DataContext as MainWindowViewModel;
+        if (viewModel == null) return;
+
+        viewModel.StyleDropdownEnabled = false;
+        UnselectAllPreviewMonitors();
+        ResetRectangle();
+        uniVM.SetBackgroundButtonEnabled = false;
+    }
+
+    private async void OnSelectAllMonitorsToggleChecked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = DataContext as MainWindowViewModel;
+        if (viewModel == null) return;
+
         uniVM.SetBackgroundButtonEnabled = true;
         ResetRectangle();
-        var viewModel = DataContext as MainWindowViewModel;
         viewModel.StyleDropdownEnabled = true;
         await viewModel.AllMonitorsSelected();
+    }
+
+
+    private void OnFavouriteClicked(object? sender, RoutedEventArgs e)
+    {
+        Debug.WriteLine("favourite clicked (not yet implemented)");
     }
 
 
@@ -460,27 +497,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnEnlargedImageClick(object? sender, PointerPressedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel viewModel)
-        {
-            EnlargedPreviewImage.IsVisible = false;
-            MainGrid.Opacity = 1;
-        }
-    }
 
-
-    private void OpenImageClicked(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
-        {
-            FileExporerHelper fileExporerHelper = new FileExporerHelper();
-            if (viewModel.LastSelectedWallpaper != null)
-            {
-                fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
-            }
-        }
-    }
 
 
     private async void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
@@ -522,15 +539,6 @@ public partial class MainWindow : Window
         int cropHeight = (int)(DragRect.Height * (originalImage.Height / PreviewImage.Bounds.Height));
 
         await viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
-    }
-
-
-
-    // window used in program.cs to enforce single-instance mechanism - this will be used to bring up window
-    public void BringWindowToFront()
-    {
-        // ***** put code to bring up window here
-        Debug.WriteLine("bring up window!");
     }
 
 

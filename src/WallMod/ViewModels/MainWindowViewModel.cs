@@ -475,20 +475,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     CurrentWallpaperSize = CurrentWallpaperPreview.Size.Width.ToString() + " x " + CurrentWallpaperPreview.Size.Height.ToString();
                 }
-                
-
-                // set preview monitors to "unclicked"
-                foreach (var mon in MonitorList)
-                {
-                    mon.FillColour = "Navy";
-                }
-
-                // disable set button
-                // DO NOT init mainwindow since it bugs out gallery
-                SetBackgroundButtonEnabled = false;
-
-                // disable dropdown
-                StyleDropdownEnabled = false;
 
             }
 
