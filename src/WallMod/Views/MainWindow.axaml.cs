@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,8 +39,6 @@ public partial class MainWindow : Window
     private double _aspectRatio = 1.0;
     private const double CornerHitSize = 16;
 
-    private DateTime lastTapTime = DateTime.MinValue;
-    private int DoubleTapThreshold = 500;
     public Wallpaper lastTapImage = new();
 
     public MainWindow(MainWindowViewModel vm)
@@ -49,6 +48,8 @@ public partial class MainWindow : Window
         DataContext = vm;
 
         this.SizeChanged += OnWindowSizeChanged;
+
+        this.AddHandler(KeyDownEvent, OnGalleryKeyDown, RoutingStrategies.Tunnel); // fixes arrow key navig
     }
 
 
@@ -60,51 +61,99 @@ public partial class MainWindow : Window
 
 
     // gallery section ---------------------------------------------------------
-    // when an image is tapped, reset opacity of all other items (folders)
-    public void ResetAllItemsOpacity()
+
+    // use arrows or hjkl to navig through image gallery (used LLM for some of this)
+    private async void OnGalleryKeyDown(object? sender, KeyEventArgs e)
     {
-        // 1) Find the ItemsControl
-        var itemsControl = this.FindControl<ItemsControl>("ImageViewControl");
-        if (itemsControl == null) return;
+        var lb = ImageViewControl;
+        var vm = DataContext as MainWindowViewModel;
+        if (vm == null || !lb.IsVisible || lb.ItemCount == 0) return;
 
-        // 2) Find the generated WrapPanel in the visual tree
-        var wrapPanel = itemsControl.GetVisualDescendants()
-                                    .OfType<WrapPanel>()
-                                    .FirstOrDefault();
-        if (wrapPanel == null) return;
+        // only handle nav/activation keys
+        bool isNav = e.Key is Key.Left or Key.Right or Key.Up or Key.Down
+                           or Key.H or Key.L or Key.K or Key.J
+                           or Key.Enter or Key.Space;
+        if (!isNav) return;
 
-        // 3) Each item is typically hosted in a ContentPresenter or direct StackPanel child
-        foreach (var child in wrapPanel.GetVisualChildren())
+        // nothing selected (e.g. just entered a folder) -> focus list, select top-left
+        if (lb.SelectedIndex < 0)
         {
-            // child might be a ContentPresenter
-            if (child is ContentPresenter cp)
-            {
-                // The actual StackPanel is inside the content presenter
-                var sp = cp.GetVisualDescendants().OfType<StackPanel>().FirstOrDefault();
-                if (sp != null) sp.Opacity = 1.0;
-            }
-            else if (child is StackPanel sp2)
-            {
-                // If the item is a direct StackPanel
-                sp2.Opacity = 1.0;
-            }
+            lb.SelectedIndex = 0;
+            lb.ScrollIntoView(lb.SelectedItem);
+            lb.Focus();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter || e.Key == Key.Space)
+        {
+            if (lb.SelectedItem is Wallpaper wp) await vm.ImageDoubleTapped(wp);
+            e.Handled = true;
+            return;
+        }
+
+        int count = lb.ItemCount;
+        int current = lb.SelectedIndex;
+        int perRow = CalcItemsPerRow(lb);
+        int target = current;
+
+        switch (e.Key)
+        {
+            case Key.Left: case Key.H: target = current - 1; break;
+            case Key.Right: case Key.L: target = current + 1; break;
+            case Key.Up: case Key.K: target = current - perRow; break;
+            case Key.Down: case Key.J: target = current + perRow; break;
+        }
+
+        e.Handled = true;
+        target = Math.Clamp(target, 0, count - 1);
+        if (target != current)
+        {
+            lb.SelectedIndex = target;
+            lb.ScrollIntoView(lb.SelectedItem);
         }
     }
 
-    public async void OnImageTapped(object? sender, PointerPressedEventArgs e)
+    // count how many items actually sit on the same visual row as the first item
+    private int CalcItemsPerRow(ListBox lb)
     {
-        if (sender is Control control && control.DataContext is Wallpaper wallpaper)
+        var wrapPanel = lb.GetVisualDescendants().OfType<WrapPanel>().FirstOrDefault();
+        if (wrapPanel == null) return 1;
+
+        var first = wrapPanel.GetVisualChildren().OfType<Control>().FirstOrDefault(c => c.Bounds.Width > 0);
+        if (first == null) return 1;
+
+        // full item width including its margin (that's what the wrap panel actually steps by)
+        double itemWidth = first.Bounds.Width + first.Margin.Left + first.Margin.Right;
+        if (itemWidth <= 0) return 1;
+
+        return Math.Max(1, (int)(wrapPanel.Bounds.Width / itemWidth));
+    }
+
+
+    // single-click OR keyboard navigation selects an item -> preview it
+    private async void OnGallerySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox lb) return;
+        if (lb.SelectedItem is not Wallpaper wallpaper) return;
+
+        await HandleImageSelected(wallpaper);
+    }
+
+    // double-click (or double-tap) a folder -> enter it; an image -> apply to selected monitor
+    private async void OnImageDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not ListBox lb) return;
+        if (lb.SelectedItem is not Wallpaper wallpaper) return;
+
+        var viewModel = DataContext as MainWindowViewModel;
+        if (viewModel != null)
         {
-            if (wallpaper.IsDirectory == true)
-            {
-                ResetAllItemsOpacity();
-                control.Opacity = 0.7;
-            }
-            await HandleImageTapped(wallpaper);
+            await viewModel.ImageDoubleTapped(wallpaper);
         }
     }
 
-    public async Task HandleImageTapped(Wallpaper wallpaper)
+    public async Task HandleImageSelected(Wallpaper wallpaper)
     {
         // if user clicked a diff wallpaper than before, reset rect and disable set button
         // (dont reset if All Monitors is selected)
@@ -115,37 +164,12 @@ public partial class MainWindow : Window
             UnselectAllPreviewMonitors();
         }
 
+        lastTapImage = wallpaper;
+
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel != null)
         {
-            if (CheckDoubleTapped(wallpaper))
-            {
-                lastTapTime = DateTime.Now;
-                lastTapImage = wallpaper;
-                await viewModel.ImageDoubleTapped(wallpaper);
-            }
-            else
-            {
-                lastTapTime = DateTime.Now;
-                lastTapImage = wallpaper;
-                await viewModel.ImageTapped(wallpaper);
-            }
-        }
-    }
-
-    private bool CheckDoubleTapped(Wallpaper tappedWallpaper)
-    {
-        var currentTime = DateTime.Now;
-        var elapsed = (currentTime - lastTapTime).TotalMilliseconds;
-
-        if (elapsed < DoubleTapThreshold && lastTapImage == tappedWallpaper)
-        {
-            return true;
-        }
-        else
-        {
-            lastTapTime = currentTime;
-            return false;
+            await viewModel.ImageTapped(wallpaper);
         }
     }
 

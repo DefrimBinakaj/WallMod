@@ -35,7 +35,7 @@ public partial class HistoryView : UserControl
             var mainWindow = this.GetVisualRoot() as MainWindow;
             if (mainWindow == null) return;
 
-            await mainWindow.HandleImageTapped(wallpaper);
+            await mainWindow.HandleImageSelected(wallpaper);
         }
     }
 
