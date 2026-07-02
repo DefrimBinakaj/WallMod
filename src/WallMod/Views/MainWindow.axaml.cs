@@ -159,6 +159,18 @@ public partial class MainWindow : Window
         ImageGalleryScrollView.ScrollToEnd();
     }
 
+    // scrolling while hovering on thumbnail-size slider
+    private void OnZoomSliderScroll(object? sender, PointerWheelEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        // scroll up = zoom in ; scroll down = zoom out
+        if (e.Delta.Y > 0) vm.HotkeyPlus();
+        else if (e.Delta.Y < 0) vm.HotkeyMinus();
+
+        e.Handled = true; // stop the scroll from bubbling to the gallery scrollviewer
+    }
+
 
     // HOTKEYS --------------------
 
