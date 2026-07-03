@@ -542,6 +542,16 @@
 
 		</TabControl>
 
+		<TextBlock Grid.Row="1"
+           Text="⚠"
+           FontSize="22"
+           FontWeight="Bold"
+           HorizontalAlignment="Left"
+           VerticalAlignment="Top"
+           Margin="423,11,0,0"
+           IsVisible="{Binding UpdateAvailableVisible}"
+           Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+           ToolTip.Tip="Update available"/>
 
 
 	</Grid>

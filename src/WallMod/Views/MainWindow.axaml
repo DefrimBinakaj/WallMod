@@ -534,6 +534,17 @@
 								MinHeight="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Gray">
 							<Image Source="avares://Wallmod/Assets/settings-icon.png" Width="23" Height="22"/>
 						</Button>
+						<TextBlock Grid.Column="1"
+								   Text="⚠"
+								   FontSize="18"
+								   FontWeight="Bold"
+								   HorizontalAlignment="Center"
+								   VerticalAlignment="Center"
+								   Margin="48,0,0,0"
+								   IsHitTestVisible="False"
+								   IsVisible="{Binding UpdateAvailableVisible}"
+								   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+								   ToolTip.Tip="Update available"/>
 					</Grid>
 
 				</Grid>
