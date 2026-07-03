@@ -13,13 +13,15 @@ namespace WallMod.Helpers;
  */
 public class AppStorageHelper
 {
-    public string appStorageDirectory;
+    public string? appStorageDirectory;
 
-    public string appWallpaperHistoryFile;
+    public string? appWallpaperHistoryFile;
 
-    public string appSettingsHistoryFile;
+    public string? appSettingsHistoryFile;
 
-    public static string crashLogFile;
+    public static string? crashLogFile;
+
+    public string? appFavouritesFile;
 
     public void InitAppStorage()
     {
@@ -38,6 +40,8 @@ public class AppStorageHelper
 
         // AppData/WallMod/WallModCrashLog.txt
         crashLogFile = Path.Combine(appStorageDirectory, "CrashLog.txt");
+
+        appFavouritesFile = Path.Combine(appStorageDirectory, "WallModFavourites.json");
 
     }
 

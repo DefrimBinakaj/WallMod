@@ -517,6 +517,13 @@ public partial class MainWindow : Window
         await viewModel.AllMonitorsSelected();
     }
 
+    // click method used just for resetting UI after refresh button is clicked
+    private void OnRefreshMonitorsClicked(object? sender, RoutedEventArgs e)
+    {
+        UnselectAllPreviewMonitors();
+        ResetRectangle();
+    }
+
 
     private void OnFavouriteClicked(object? sender, RoutedEventArgs e)
     {

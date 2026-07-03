@@ -36,6 +36,7 @@ public partial class MainWindowViewModel : ViewModelBase
     AppStorageHelper appStorageHelper = new AppStorageHelper();
     WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
+    FavouritesHelper favouritesHelper = new FavouritesHelper();
 
     // all wallpapers from a directory
     public ObservableCollection<Wallpaper> AllWallpapers { get; set; } = new ObservableCollection<Wallpaper>();
@@ -51,6 +52,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // list of history wallpapers
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
+
 
 
 
@@ -119,7 +121,7 @@ public partial class MainWindowViewModel : ViewModelBase
         uniVM.SelectedPreviewBackgroundColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedPreviewBackgroundColour"));
         uniVM.changeFluentColour();
 
-
+        uniVM.WallpaperQueue.CollectionChanged += (s, e) => UpdateAutoSetButtonColour();
     }
 
 
@@ -164,6 +166,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool isAutoSetVisible = false;
     public bool IsAutoSetVisible { get => isAutoSetVisible; set => SetProperty(ref isAutoSetVisible, value); }
+
+    private Color autoSetButtonColour = Colors.Transparent;
+    public Color AutoSetButtonColour { get => autoSetButtonColour; set => SetProperty(ref autoSetButtonColour, value); }
+
+    private Color favouriteButtonColour = Colors.Transparent;
+    public Color FavouriteButtonColour { get => favouriteButtonColour; set => SetProperty(ref favouriteButtonColour, value); }
 
     public bool MainGridVisibility { get => uniVM.MainGridVisibility; set { if (uniVM.MainGridVisibility != value) { uniVM.MainGridVisibility = value; OnPropertyChanged(); } } }
     public bool SettingsViewVisibility { get => uniVM.SettingsViewVisibility; set { if (uniVM.SettingsViewVisibility != value) { uniVM.SettingsViewVisibility = value; OnPropertyChanged(); } } }
@@ -278,9 +286,15 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand] public void navigateToParentDirec() => execNavigateToParentDirec();
-    private void execNavigateToParentDirec()
+    private async void execNavigateToParentDirec()
     {
-        if (CurrentSelectedDirectory != "No Directory Selected" || !string.IsNullOrEmpty(CurrentSelectedDirectory))
+        // route back to prev dir if the user clicks back from favs
+        if (CurrentSelectedDirecName == "Favourites" && !string.IsNullOrEmpty(CurrentSelectedDirectory))
+        {
+            selectDirec(Path.TrimEndingDirectorySeparator(CurrentSelectedDirectory));
+        }
+        // route to parent if the user is on any direc that isn't fav/null
+        else if (CurrentSelectedDirectory != "No Directory Selected" || !string.IsNullOrEmpty(CurrentSelectedDirectory))
         {
             string parentDir = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(CurrentSelectedDirectory));
             if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
@@ -484,6 +498,8 @@ public partial class MainWindowViewModel : ViewModelBase
             imageTappedSemaphore.Release();
         }
 
+        UpdateAutoSetButtonColour();
+        UpdateFavouriteButtonColour();
     }
 
 
@@ -519,6 +535,27 @@ public partial class MainWindowViewModel : ViewModelBase
         
 
     }
+
+
+    public void UpdateAutoSetButtonColour()
+    {
+        bool inQueue = LastSelectedWallpaper != null
+                       && uniVM.WallpaperQueue.Any(a => a.FilePath == LastSelectedWallpaper.FilePath);
+
+        AutoSetButtonColour = inQueue
+            ? SelectedPrimaryAccentColour
+            : Colors.Transparent;
+    }
+    public void UpdateFavouriteButtonColour()
+    {
+        bool isFav = LastSelectedWallpaper != null
+                       && favouritesHelper.IsFavourite(LastSelectedWallpaper.FilePath);
+
+        FavouriteButtonColour = isFav
+            ? SelectedPrimaryAccentColour
+            : Colors.Transparent;
+    }
+
 
 
     // image setting to background ============================================================
@@ -603,32 +640,58 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
     public void AddWallpaperToAutoSet()
     {
-        Debug.WriteLine("AUTOSET");
-        // TEMP: should i prevent the same wallpaper from being queued again?
+        // TEMP: should i prevent the same wallpaper from being queued again? prob NO
         if (LastSelectedWallpaper != null)
         {
             uniVM.WallpaperQueue.Add(LastSelectedWallpaper);
-            Debug.WriteLine("added " + lastSelectedWallpaper.Name);
+            Debug.WriteLine("autoset added: " + lastSelectedWallpaper.Name);
+            UpdateAutoSetButtonColour();
         }
     }
-
     [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
     public void AutoSetMenuNav()
     {
         // switch preview for autoset
         // IsPreviewVisible = !IsPreviewVisible;
         IsAutoSetVisible = !IsAutoSetVisible;
-
-        // repeated clicks doesnt infinitely increase memory
-        // GC.Collect();
-        // GC.WaitForPendingFinalizers();
     }
 
 
 
+    // favourite ============================================================
+    [RelayCommand] public void addWallpaperToFavouritesCommand() => addWallpaperToFavourites();
+    public void addWallpaperToFavourites()
+    {
+        if (LastSelectedWallpaper != null)
+        {
+            favouritesHelper.ToggleFavourite(lastSelectedWallpaper.FilePath);
+            Debug.WriteLine("fav added: " + lastSelectedWallpaper.Name);
+            UpdateFavouriteButtonColour();
+        }
+    }
+    [RelayCommand]
+    public async Task viewFavouritesButton() => await LoadFavourites();
+    private async Task LoadFavourites()
+    {
+
+        if (CurrentSelectedDirecName == "Favourites")
+        {
+            execNavigateToParentDirec();
+            return;
+        }
+
+        var favWallpapers = await favouritesHelper.GetFavouriteWallpapers();
+
+        DisplayWallpaperList.Clear();
+        foreach (var wp in favWallpapers)
+            DisplayWallpaperList.Add(wp);
+
+        CurrentSelectedDirecName = "Favourites";
+    }
+
     // monitors ============================================================
 
-    // redetect monitors
+    // redetect monitors 
     [RelayCommand] public void detectMonitorsButton() => DetectMonitors();
     private void DetectMonitors()
     {
