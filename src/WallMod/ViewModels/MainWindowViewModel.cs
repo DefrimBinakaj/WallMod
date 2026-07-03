@@ -682,11 +682,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var favWallpapers = await favouritesHelper.GetFavouriteWallpapers();
 
-        DisplayWallpaperList.Clear();
+        AllWallpapers.Clear();
         foreach (var wp in favWallpapers)
-            DisplayWallpaperList.Add(wp);
+        {
+            AllWallpapers.Add(wp);
+        }
 
         CurrentSelectedDirecName = "Favourites";
+
+        // filter/sort the master into the display list
+        applyAllFilters();
     }
 
     // monitors ============================================================
