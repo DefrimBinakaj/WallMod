@@ -4,7 +4,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 
+// generally used LLM for most of this (since OS background setting is jank), will change soon
 namespace WallMod.Helpers
 {
     // =========================================================
@@ -191,15 +193,8 @@ namespace WallMod.Helpers
 
         private static void SetWallpaperMacOS(string imagePath)
         {
-            var script = $"osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"{imagePath}\"'";
-            var psi = new ProcessStartInfo("bash", $"-c \"{script}\"")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            using var proc = Process.Start(psi);
-            proc.WaitForExit();
+            RunBash("osascript", "-e",
+                $"tell application \"Finder\" to set desktop picture to POSIX file \"{imagePath}\"");
         }
 
         /// <summary>
@@ -269,9 +264,10 @@ namespace WallMod.Helpers
 
         private static void SetWallpaperLinux(string imagePath, string monitorId)
         {
-            // Many DEs won't actually refresh if you reuse the same file path;
-            // create a fresh temporary file each time to guarantee a forced update.
-            string uniqueCopy = CreateUniqueTempCopy(imagePath);
+            // CHANGED: rotating two-slot copy instead of a new GUID copy every time.
+            // Path still changes between consecutive sets (forces DE refresh),
+            // but disk usage is capped at 2 files per monitor instead of growing forever.
+            string uniqueCopy = CreateRotatingCopy(imagePath, monitorId);
 
             var desktopSession = (Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ??
                                   Environment.GetEnvironmentVariable("GDMSESSION") ??
@@ -279,58 +275,51 @@ namespace WallMod.Helpers
                                   "").ToLower();
 
             bool isWayland = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"));
-            // Create a file:// style URI for gsettings calls
             string imageUri = "file://" + uniqueCopy;
 
             try
             {
-                // KDE Plasma (X11 and Wayland)
+                // KDE Plasma (X11 and Wayland) - branch structure UNCHANGED
                 if (desktopSession.Contains("kde") || desktopSession.Contains("plasma"))
                 {
                     if (isWayland)
                     {
-                        // KDE (Wayland) - use connector names like "HDMI-A-1"
-                        // If monitorId is empty, apply to all outputs
-                        string cmd = string.IsNullOrEmpty(monitorId)
-                            ? $"plasma-apply-wallpaperimage '{uniqueCopy}'"
-                            : $"plasma-apply-wallpaperimage --output {monitorId} '{uniqueCopy}'";
-                        RunBash(cmd);
+                        if (string.IsNullOrEmpty(monitorId))
+                            RunBash("plasma-apply-wallpaperimage", uniqueCopy);
+                        else
+                            RunBash("plasma-apply-wallpaperimage", "--output", monitorId, uniqueCopy);
                     }
                     else
                     {
-                        // KDE (X11) - use QDbus approach with a bit of JavaScript
                         int screenIndex = ParseScreenIndex(monitorId);
                         string script = GenerateKdeScript(screenIndex, imageUri);
-                        RunBash($"qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript \"{script}\"");
+                        RunBash("qdbus", "org.kde.plasmashell", "/PlasmaShell",
+                            "org.kde.PlasmaShell.evaluateScript", script);
                     }
                 }
-                // GNOME-based (GNOME, Ubuntu/Unity, Cinnamon, Budgie, etc.)
+                // GNOME-based (GNOME, Ubuntu/Unity, Cinnamon, Budgie) - UNCHANGED commands
                 else if (desktopSession.Contains("gnome") || desktopSession.Contains("ubuntu") ||
                          desktopSession.Contains("unity") || desktopSession.Contains("cinnamon") ||
                          desktopSession.Contains("budgie"))
                 {
-                    // Force picture-uri, picture-uri-dark, and set picture-options
-                    RunBash($"gsettings set org.gnome.desktop.background picture-uri '{imageUri}'");
-                    RunBash($"gsettings set org.gnome.desktop.background picture-uri-dark '{imageUri}'");
-                    // Options: none, wall, centered, scaled, stretched, zoom, spanned
-                    RunBash("gsettings set org.gnome.desktop.background picture-options 'zoom'");
+                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-uri", imageUri);
+                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", imageUri);
+                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-options", "zoom");
                 }
-                // MATE
+                // MATE - UNCHANGED
                 else if (desktopSession.Contains("mate"))
                 {
-                    RunBash($"gsettings set org.mate.background picture-filename '{uniqueCopy}'");
+                    RunBash("gsettings", "set", "org.mate.background", "picture-filename", uniqueCopy);
                 }
-                // Elementary / Pantheon
+                // Elementary / Pantheon - UNCHANGED
                 else if (desktopSession.Contains("pantheon"))
                 {
-                    RunBash($"gsettings set org.pantheon.desktop.gala.background picture-uri '{imageUri}'");
+                    RunBash("gsettings", "set", "org.pantheon.desktop.gala.background", "picture-uri", imageUri);
                 }
-                // Fallback for other environments or unknown
+                // Fallback - UNCHANGED
                 else
                 {
-                    // feh sets the wallpaper immediately on X11
-                    // Add --no-fehbg if you don’t want ~/.fehbg overwritten
-                    RunBash($"feh --bg-scale '{uniqueCopy}'");
+                    RunBash("feh", "--bg-scale", uniqueCopy);
                 }
             }
             catch (Exception ex)
@@ -379,54 +368,72 @@ namespace WallMod.Helpers
         }
 
         /// <summary>
-        /// Creates a unique temp copy of the provided file so that consecutive sets
-        /// with the same file are detected as actual changes by the DE.
+        /// alternates between two fixed filenames per monitor target. The returned path always differs from the
+        /// previous set (same forced-refresh effect as the old GUID copies), but
+        /// only two files ever exist per monitor. Stored in AppData so the file
+        /// referenced by the DE survives reboots (temp may be wiped on boot).
         /// </summary>
-        private static string CreateUniqueTempCopy(string originalPath)
+        private static string CreateRotatingCopy(string originalPath, string monitorId)
         {
             if (!File.Exists(originalPath))
                 throw new FileNotFoundException($"Image file not found: {originalPath}");
 
-            string extension = Path.GetExtension(originalPath);
-            string fileName = "wallmod_temp_" + Guid.NewGuid().ToString("N") + extension;
-            string tempPath = Path.Combine(Path.GetTempPath(), fileName);
+            string dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallMod", "current");
+            Directory.CreateDirectory(dir);
 
-            File.Copy(originalPath, tempPath, overwrite: true);
-            return tempPath;
+            // sanitize monitor id into a filename-safe tag
+            var tag = new StringBuilder("wall");
+            foreach (char c in monitorId ?? "all")
+                tag.Append(char.IsLetterOrDigit(c) ? c : '_');
+
+            string extension = Path.GetExtension(originalPath);
+            string slotA = Path.Combine(dir, tag + "_a" + extension);
+            string slotB = Path.Combine(dir, tag + "_b" + extension);
+
+            // overwrite whichever slot is older (missing files report year 1601, so they get picked first)
+            string target = File.GetLastWriteTimeUtc(slotA) <= File.GetLastWriteTimeUtc(slotB)
+                ? slotA
+                : slotB;
+
+            File.Copy(originalPath, target, overwrite: true);
+            return target;
         }
 
-        private static void RunBash(string script)
+        /// <summary>
+        /// runs the program directly with ArgumentList.
+        /// Same commands, same arguments - but no shell layer, so filenames with
+        /// quotes/spaces/$ can never break the command, and stderr is drained
+        /// concurrently so large error output can't deadlock the process.
+        /// </summary>
+        private static void RunBash(string fileName, params string[] args)
         {
-            try
+            using var process = new Process();
+            process.StartInfo = new ProcessStartInfo
             {
-                using var process = new Process();
-                process.StartInfo = new ProcessStartInfo
-                {
-                    FileName = "bash",
-                    Arguments = $"-c \"{script.Replace("\"", "\\\"")}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                FileName = fileName,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            foreach (var a in args)
+                process.StartInfo.ArgumentList.Add(a);
 
-                process.Start();
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
+            if (!process.Start())
+                throw new Exception("Failed to start " + fileName);
 
-                if (process.ExitCode != 0)
-                {
-                    throw new Exception($"Command failed (exit={process.ExitCode}): {error}");
-                }
+            var errTask = process.StandardError.ReadToEndAsync();
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
 
-                Debug.WriteLine($"Bash output: {output}");
-            }
-            catch (Exception ex)
+            if (process.ExitCode != 0)
             {
-                Debug.WriteLine($"Bash error: {ex.Message}");
-                throw;
+                throw new Exception($"Command failed (exit={process.ExitCode}): {errTask.Result}");
             }
+
+            Debug.WriteLine($"{fileName} output: {output}");
         }
 
         #endregion

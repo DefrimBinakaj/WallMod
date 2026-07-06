@@ -84,6 +84,13 @@ public class ImageHelper
         PixelDatabase colourDB = PixelDatabaseLoader.LoadPixelDatabase(imgResult.Item2, null);
         var imgClass = ImageClassifier.Classify(colourDB);
 
+        // temp file gets deleted, since only PixelDatabase needs it; prevents thumbnail leak (constantly expanding %TEMP% folder)
+        if (imgResult.Item2 != null)
+        {
+            try { File.Delete(imgResult.Item2); } catch(Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+
         return new Wallpaper
         {
             FilePath = imgFilePath,
@@ -178,7 +185,7 @@ public class ImageHelper
                         {
                             byte[] bytes = data.ToArray();
 
-                            using (var memStream = new MemoryStream(data.ToArray()))
+                            using (var memStream = new MemoryStream(bytes))
                             {
                                 var avaloniaBitmap = new Bitmap(memStream);
 
@@ -326,7 +333,6 @@ public class ImageHelper
     }
 
 
-    // kinda useless? idk
     // func for choosing one file with upload button
     public async Task<Wallpaper> chooseOneWallpaperUpload(Window window)
     {
