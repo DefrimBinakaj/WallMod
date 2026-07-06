@@ -479,7 +479,7 @@
 									Command="{Binding updateAppButton}"
 									Background="Transparent"
 									BorderThickness="0"
-									Foreground="Goldenrod"
+									Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 									FontSize="18"
 									FontWeight="Bold"
 									IsVisible="{Binding UpdateAvailableVisible}"/>
