@@ -115,8 +115,8 @@ public partial class AutoSetViewModel : ObservableObject
     private bool randomizeEachMonitor;
     public bool RandomizeEachMonitor { get => randomizeEachMonitor; set => SetProperty(ref randomizeEachMonitor, value); }
 
-    [RelayCommand] public void queueChoiceCommand(string choice) => queueChoiceExec(choice);
-    private void queueChoiceExec(string selectedChoice)
+    [RelayCommand] // in axaml, itll be referenced as queueChoiceCommand
+    private void queueChoice(string selectedChoice)
     {
         if (selectedChoice == "Custom")
         {

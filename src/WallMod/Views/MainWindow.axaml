@@ -436,14 +436,14 @@
 													 IsThreeState="False"
 													 IsChecked="True"
 													 Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-													 Checked="OnSelectOneMonitorToggleChecked"/>
+													 IsCheckedChanged="OnSelectOneMonitorToggleChecked"/>
 										<RadioButton x:Name="SelectAllToggle"
 													 Classes="segmented"
 													 GroupName="MonitorMode"
 													 Content="All"
 													 IsThreeState="False"
 													 Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-													 Checked="OnSelectAllMonitorsToggleChecked"/>
+													 IsCheckedChanged="OnSelectAllMonitorsToggleChecked"/>
 									</StackPanel>
 								</Border>
 

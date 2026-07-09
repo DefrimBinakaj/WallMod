@@ -497,6 +497,8 @@ public partial class MainWindow : Window
 
     private void OnSelectOneMonitorToggleChecked(object? sender, RoutedEventArgs e)
     {
+        if (sender is not RadioButton { IsChecked: true }) return;
+
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel == null) return;
 
@@ -508,6 +510,8 @@ public partial class MainWindow : Window
 
     private async void OnSelectAllMonitorsToggleChecked(object? sender, RoutedEventArgs e)
     {
+        if (sender is not RadioButton { IsChecked: true }) return;
+
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel == null) return;
 

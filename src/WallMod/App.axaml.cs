@@ -37,8 +37,6 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desk)
         {
-            // Prevent double data-validation (Avalonia + CommunityToolkit)
-            BindingPlugins.DataValidators.RemoveAt(0);
 
             // show splash screen
             var splash = new SplashScreen();

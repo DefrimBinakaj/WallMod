@@ -32,7 +32,7 @@ public partial class HistoryView : UserControl
     {
         if (sender is Control control && control.DataContext is Wallpaper wallpaper)
         {
-            var mainWindow = this.GetVisualRoot() as MainWindow;
+            var mainWindow = TopLevel.GetTopLevel(this) as MainWindow;
             if (mainWindow == null) return;
 
             await mainWindow.HandleImageSelected(wallpaper);

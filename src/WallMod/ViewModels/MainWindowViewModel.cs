@@ -334,28 +334,28 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // filter ==============================================================
 
-    [RelayCommand] public void filterClicked() => filterExec();
-    private void filterExec()
+    [RelayCommand] // in axaml, itll be referenced as filterClicked
+    public void filterClicked()
     {
         IsFilterOpen = false;
         IsFilterOpen = true;
     }
 
-    [RelayCommand] public void filterSearchCommand() => filterSearchExec();
-    public void filterSearchExec()
+    [RelayCommand] // in axaml, itll be referenced as filterSearchCommand
+    public void filterSearch()
     {
         applyAllFilters();
     }
 
-    [RelayCommand] public void filterGroupSelectedCommand(string choice) => filterSelectExec(choice);
-    private void filterSelectExec(string selectedChoice)
+    [RelayCommand] // in axaml, itll be referenced as filterGroupSelectedCommand
+    public void filterGroupSelected(string selectedChoice)
     {
         CurrentSortChoice = selectedChoice;
         applyAllFilters();
     }
 
-    [RelayCommand] public void filterAspectRatioCommand(string choice) => filterAspectRatioExec(choice);
-    private void filterAspectRatioExec(string selectedChoice)
+    [RelayCommand] // in axaml, itll be referenced as filterAspectRatioCommand
+    public void filterAspectRatio(string selectedChoice)
     {
         CurrentAspectRatio = selectedChoice;
         applyAllFilters();

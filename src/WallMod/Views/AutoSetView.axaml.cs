@@ -21,6 +21,7 @@ public partial class AutoSetView : UserControl
     private Wallpaper _draggedItem;
     private Point _dragStart;
     private bool _isDragging;
+    private PointerPressedEventArgs? _dragPressArgs;
 
     public AutoSetView()
     {
@@ -54,6 +55,9 @@ public partial class AutoSetView : UserControl
     }
 
 
+    public static readonly DataFormat<Wallpaper> WallpaperDataFormat =
+        DataFormat.CreateInProcessFormat<Wallpaper>("wallmod-wallpaper");
+
     private void Item_PointerPressed(object sender, PointerPressedEventArgs e)
     {
         if (sender is Control c && c.DataContext is Wallpaper wp)
@@ -61,12 +65,13 @@ public partial class AutoSetView : UserControl
             _draggedItem = wp;
             _dragStart = e.GetPosition(null);
             _isDragging = false;
+            _dragPressArgs = e;
         }
     }
 
     private async void Item_PointerMoved(object sender, PointerEventArgs e)
     {
-        if (_draggedItem == null || _isDragging) return;
+        if (_draggedItem == null || _isDragging || _dragPressArgs == null) return;
         
         var currentPos = e.GetPosition(null);
         var distance = Math.Sqrt(Math.Pow(currentPos.X - _dragStart.X, 2) +
@@ -75,9 +80,9 @@ public partial class AutoSetView : UserControl
         if (distance > 5)
         {
             _isDragging = true;
-            var data = new DataObject();
-            data.Set("Wallpaper", _draggedItem);
-            await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+            var data = new DataTransfer();
+            data.Add(DataTransferItem.Create(WallpaperDataFormat, _draggedItem));
+            await DragDrop.DoDragDropAsync(_dragPressArgs, data, DragDropEffects.Move);
         }
     }
 
@@ -95,7 +100,7 @@ public partial class AutoSetView : UserControl
 
     private void ListBox_Drop(object? sender, DragEventArgs e)
     {
-        if (_draggedItem == null || !e.Data.Contains("Wallpaper") || sender is not ListBox lb)
+        if (_draggedItem == null || !e.DataTransfer.Contains(WallpaperDataFormat) || sender is not ListBox lb)
         {
             CleanupDrag();
             return;
