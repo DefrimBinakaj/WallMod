@@ -11,6 +11,12 @@
 
 	<Grid Margin="38">
 
+		<Border Grid.RowSpan="2"
+            Margin="-38"
+            IsHitTestVisible="False"
+            Opacity="0.01"
+            Background="{Binding SelectedBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<!-- Title + Back -->
@@ -242,6 +248,48 @@
 							</Grid>
 
 						</Border>
+
+						<!-- Mini-app theme preview *********** -->
+						<TextBlock Text="(Preview)"
+								   Foreground="LightGray"
+								   FontSize="14"
+								   FontWeight="Bold"
+								   Margin="0,24,0,4"
+								   HorizontalAlignment="Center"/>
+						<!-- background -->
+						<Border CornerRadius="12"
+								Background="{Binding SelectedBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"
+								Padding="12"
+								Width="350"
+								Height="160">
+							<Grid ColumnDefinitions="0.55*, Auto, 0.45*">
+								<!-- left pane (wallpaper collection) -->
+								<Border Grid.Column="0"
+										CornerRadius="8"
+										Background="{Binding SelectedWallpaperCollectionColour, Converter={StaticResource ColorToBrushConverter}}"/>
+								<!-- middle splitter -->
+								<Border Grid.Column="1"
+										Width="6"
+										CornerRadius="3"
+										Margin="8,0"
+										Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+								<!-- preview pane with button overlaid on top -->
+								<Grid Grid.Column="2">
+									<Border CornerRadius="8"
+											Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"/>
+									<!-- "set wallpaper" button -->
+									<Border CornerRadius="6"
+											Height="26"
+											Width="110"
+											Margin="0,0,0,10"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Bottom"
+											Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+								</Grid>
+							</Grid>
+						</Border>
+
+
 					</StackPanel>
 				</Grid>
 			</TabItem>
@@ -271,168 +319,168 @@
 							<StackPanel>
 
 
-							<!-- slider +/- (=/-) -->
-							<TextBlock Text="Image Thumbnail Zoom"
-										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-										FontSize="15"
-										Margin="0,0,0,10"/>
-							<Grid ColumnDefinitions="Auto,*"
-									ColumnSpacing="64"
-									Margin="0,0,0,6">
-
-								<!-- key group -->
-								<Border Grid.Column="0"
-										Background="rgba(45, 45, 45, 180)"
-										CornerRadius="10"
-										Padding="14,10"
-										MinWidth="140"
-										HorizontalAlignment="Left">
-									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="="
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="-"
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-									</StackPanel>
-								</Border>
-
-								<TextBlock Grid.Column="1"
-											Text="Increase / decrease thumbnail size in the image layout (+/-)"
-											Foreground="LightGray"
+								<!-- slider +/- (=/-) -->
+								<TextBlock Text="Image Thumbnail Zoom"
+											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 											FontSize="15"
-											VerticalAlignment="Center"/>
-							</Grid>
+											Margin="0,0,0,10"/>
+								<Grid ColumnDefinitions="Auto,*"
+										ColumnSpacing="64"
+										Margin="0,0,0,6">
+
+									<!-- key group -->
+									<Border Grid.Column="0"
+											Background="rgba(45, 45, 45, 180)"
+											CornerRadius="10"
+											Padding="14,10"
+											MinWidth="140"
+											HorizontalAlignment="Left">
+										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="="
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="-"
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+										</StackPanel>
+									</Border>
+
+									<TextBlock Grid.Column="1"
+												Text="Increase / decrease thumbnail size in the image layout (+/-)"
+												Foreground="LightGray"
+												FontSize="15"
+												VerticalAlignment="Center"/>
+								</Grid>
 
 
-							<!-- divider between sets -->
-							<Border Height="1"
-									Background="rgba(255,255,255,0.10)"
-									Margin="0,18,0,18"/>
+								<!-- divider between sets -->
+								<Border Height="1"
+										Background="rgba(255,255,255,0.10)"
+										Margin="0,18,0,18"/>
 
 
-							<!-- Jump to top/bot -->
-							<TextBlock Text="Jump to Top / Bottom"
-										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-										FontSize="15"
-										Margin="0,0,0,10"/>
-							<Grid ColumnDefinitions="Auto,*"
-									ColumnSpacing="64"
-									Margin="0,0,0,6">
-
-								<Border Grid.Column="0"
-										Background="rgba(45, 45, 45, 180)"
-										CornerRadius="10"
-										Padding="14,10"
-										MinWidth="140"
-										HorizontalAlignment="Left">
-									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="g"
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="G"
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-									</StackPanel>
-								</Border>
-								<TextBlock Grid.Column="1"
-											Text="Jump to the top / bottom of the list of images"
-											Foreground="LightGray"
+								<!-- Jump to top/bot -->
+								<TextBlock Text="Jump to Top / Bottom"
+											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 											FontSize="15"
-											VerticalAlignment="Center"/>
-							</Grid>
+											Margin="0,0,0,10"/>
+								<Grid ColumnDefinitions="Auto,*"
+										ColumnSpacing="64"
+										Margin="0,0,0,6">
+
+									<Border Grid.Column="0"
+											Background="rgba(45, 45, 45, 180)"
+											CornerRadius="10"
+											Padding="14,10"
+											MinWidth="140"
+											HorizontalAlignment="Left">
+										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="g"
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="G"
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+										</StackPanel>
+									</Border>
+									<TextBlock Grid.Column="1"
+												Text="Jump to the top / bottom of the list of images"
+												Foreground="LightGray"
+												FontSize="15"
+												VerticalAlignment="Center"/>
+								</Grid>
 
 
-							<!-- divider between sets -->
-							<Border Height="1"
-									Background="rgba(255,255,255,0.10)"
-									Margin="0,18,0,18"/>
+								<!-- divider between sets -->
+								<Border Height="1"
+										Background="rgba(255,255,255,0.10)"
+										Margin="0,18,0,18"/>
 
 
-							<!-- Vert Splitter Shifting -->
-							<TextBlock Text="Vertical Splitter Shifting"
-										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-										FontSize="15"
-										Margin="0,0,0,10"/>
-
-							<Grid ColumnDefinitions="Auto,*"
-									ColumnSpacing="64">
-
-								<Border Grid.Column="0"
-										Background="rgba(45, 45, 45, 180)"
-										CornerRadius="10"
-										Padding="14,10"
-										MinWidth="140"
-										HorizontalAlignment="Left">
-									<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="["
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-
-										<Border Background="rgba(25, 25, 25, 220)"
-												CornerRadius="8"
-												Padding="16,8"
-												MinWidth="56">
-											<TextBlock Text="]"
-														Foreground="White"
-														FontSize="28"
-														FontWeight="Bold"
-														HorizontalAlignment="Center"
-														VerticalAlignment="Center"/>
-										</Border>
-									</StackPanel>
-								</Border>
-
-								<TextBlock Grid.Column="1"
-											Text="Move the vertical splitter in the main layout left / right"
-											Foreground="LightGray"
+								<!-- Vert Splitter Shifting -->
+								<TextBlock Text="Vertical Splitter Shifting"
+											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 											FontSize="15"
-											VerticalAlignment="Center"/>
-							</Grid>
+											Margin="0,0,0,10"/>
 
-						</StackPanel>
+								<Grid ColumnDefinitions="Auto,*"
+										ColumnSpacing="64">
+
+									<Border Grid.Column="0"
+											Background="rgba(45, 45, 45, 180)"
+											CornerRadius="10"
+											Padding="14,10"
+											MinWidth="140"
+											HorizontalAlignment="Left">
+										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="["
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+
+											<Border Background="rgba(25, 25, 25, 220)"
+													CornerRadius="8"
+													Padding="16,8"
+													MinWidth="56">
+												<TextBlock Text="]"
+															Foreground="White"
+															FontSize="28"
+															FontWeight="Bold"
+															HorizontalAlignment="Center"
+															VerticalAlignment="Center"/>
+											</Border>
+										</StackPanel>
+									</Border>
+
+									<TextBlock Grid.Column="1"
+												Text="Move the vertical splitter in the main layout left / right"
+												Foreground="LightGray"
+												FontSize="15"
+												VerticalAlignment="Center"/>
+								</Grid>
+
+							</StackPanel>
 
 						</Border>
 
@@ -538,7 +586,7 @@
 				</Grid>
 			</TabItem>
 
-			
+
 
 		</TabControl>
 

@@ -227,6 +227,7 @@ public class UniversalAppStore : ViewModelBase
         get => selectedBackgroundColour;
         set
         {
+            if (value == selectedBackgroundColour) return;
             // update it before processing
             settingsHistoryHelper.UpdateSetting("SelectedBackgroundColour", value.ToString());
             SetProperty(ref selectedBackgroundColour, convertBackgroundColour(value));
