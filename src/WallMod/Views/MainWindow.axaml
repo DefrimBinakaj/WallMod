@@ -24,21 +24,37 @@
 	</Design.DataContext>
 
 	<Window.KeyBindings>
-		<!-- + and - for thumbnailzoom -->
-		<KeyBinding Command="{Binding HotkeyPlusClicked}" Gesture="OemPlus" />
-		<KeyBinding Command="{Binding HotkeyMinusClicked}" Gesture="OemMinus" />
-		<!-- [ and ] for vertical slider shifting -->
-		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceLeft}" Gesture="OemOpenBrackets" />
-		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceRight}" Gesture="OemCloseBrackets" />
-		<!-- g and G for jumping to top / bottom -->
-		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyG}" Gesture="G" />
-		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyShiftG}" Gesture="Shift+G" />
+		<!-- selection actions -->
+		<KeyBinding Command="{Binding addWallpaperToAutoSetCommand}"			Gesture="Q"/>
+		<KeyBinding Command="{Binding addWallpaperToFavouritesCommand}"			Gesture="F"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySetBackground}"    Gesture="B"/>
+		<KeyBinding Command="{Binding openImageInExplorerCommand}"				Gesture="O"/>
+		<!-- views / menus -->
+		<KeyBinding Command="{Binding autoSetNavCommand}"						Gesture="Shift+A"/>
+		<KeyBinding Command="{Binding viewHistoryButton}"						Gesture="Shift+H"/>
+		<KeyBinding Command="{Binding viewFavouritesButton}"					Gesture="Shift+F"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyEscape}"           Gesture="Escape"/>
+		<KeyBinding Command="{Binding settingsButton}"							Gesture="Shift+S" />
+		<KeyBinding Command="{Binding filterClicked}"							Gesture="Ctrl+F" />
+		<!-- monitors -->
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyToggleMonitorMode}"	Gesture="M"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.DetectMonitors}"   Gesture="R"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="1" Gesture="D1"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="2" Gesture="D2"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="3" Gesture="D3"/>
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="4" Gesture="D4"/>
+		<!-- thumbnailzoom  -->
+		<KeyBinding Command="{Binding HotkeyPlusClicked}"						 Gesture="OemPlus" />
+		<KeyBinding Command="{Binding HotkeyMinusClicked}"						 Gesture="OemMinus" />
+		<!-- vertical slider shifting -->
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceLeft}"		 Gesture="OemOpenBrackets" />
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceRight}"		 Gesture="OemCloseBrackets" />
+		<!-- jumping to top / bottom -->
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyG}"				 Gesture="G" />
+		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeyShiftG}"			 Gesture="Shift+G" />
 		<!-- Backspace for navigating to parent directory (back) -->
-		<KeyBinding Command="{Binding navigateToParentDirec}" Gesture="Back" />
-		<!-- F for opening filter popup -->
-		<KeyBinding Command="{Binding filterClicked}" Gesture="F" />
-		<!-- S for toggling settings -->
-		<KeyBinding Command="{Binding settingsButton}" Gesture="S" />
+		<KeyBinding Command="{Binding navigateToParentDirec}"					 Gesture="Back" />
+		
 	</Window.KeyBindings>
 
 	<Panel>
@@ -51,6 +67,12 @@
 					MaterialOpacity="0.3" />
 			</ExperimentalAcrylicBorder.Material>
 		</ExperimentalAcrylicBorder>
+
+		<Image Source="avares://Wallmod/Assets/wallmodicon.ico"
+			   Width="18" Height="18"
+			   HorizontalAlignment="Left" VerticalAlignment="Top"
+			   Margin="8,8,0,0"
+			   IsHitTestVisible="False"/>
 
 		<Grid Margin="24" x:Name="MainGrid" IsVisible="{Binding MainGridVisibility}">
 			<Grid.ColumnDefinitions>
@@ -392,7 +414,7 @@
 
 							<!-- wallpaper Info -->
 							<Grid Grid.Row="2" Grid.ColumnSpan="2">
-								<Button Click="OpenImageClicked"
+								<Button Command="{Binding openImageInExplorerCommand}"
 										Margin="2" Background="Gray"
 										HorizontalAlignment="Left" ToolTip.Tip="Go To Image File">
 									<Image Source="avares://Wallmod/Assets/open-icon.png"
@@ -416,7 +438,7 @@
 
 								<!-- refresh monitors (moved here, small, fav-style) -->
 								<!-- command AND click, command used for code behind, click used for resetting UI -->
-								<Button Grid.Column="1" Command="{Binding detectMonitorsButton}" Click="OnRefreshMonitorsClicked"
+								<Button Grid.Column="1" Command="{Binding #MainWindowAxaml.DetectMonitors}"
 										Classes="iconOutline"
 										Width="30" Height="30"
 										Margin="8,0,0,0"

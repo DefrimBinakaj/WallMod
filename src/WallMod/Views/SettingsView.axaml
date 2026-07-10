@@ -297,196 +297,323 @@
 			<!-- TAB 3: HOTKEYS -->
 			<TabItem Header="Hotkeys">
 
-				<Grid HorizontalAlignment="Stretch">
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="0.15*"/>
-						<ColumnDefinition Width="0.7*"/>
-						<ColumnDefinition Width="0.15*"/>
-					</Grid.ColumnDefinitions>
+				<Grid ColumnDefinitions="0.55*,0.45*" Margin="30,10,30,20">
 
-					<!-- SUBTITLE -->
-					<StackPanel Grid.Column="1" Margin="0,30,0,20" Spacing="4">
-						<TextBlock Text="Keyboard Hotkeys/Shortcuts"
-								   Foreground="LightGray"
-								   FontSize="16"
-								   FontWeight="Bold"
-								   Margin="0,32,0,8"/>
+					<!-- ====================== LEFT HALF: ALL KEYBOARD HOTKEYS ====================== -->
+					<ScrollViewer Grid.Column="0" Margin="0,0,12,0" VerticalScrollBarVisibility="Auto">
+						<StackPanel Spacing="10">
 
-						<!-- main border -->
-						<Border CornerRadius="12"
-								Background="rgba(20, 20, 20, 200)"
-								Padding="16">
-							<StackPanel>
+							<TextBlock Classes="hkPageTitle" Text="Keyboard Hotkeys"/>
 
+							<!-- Gallery Navigation -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Gallery Navigation"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
 
-								<!-- slider +/- (=/-) -->
-								<TextBlock Text="Image Thumbnail Zoom"
-											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-											FontSize="15"
-											Margin="0,0,0,10"/>
-								<Grid ColumnDefinitions="Auto,*"
-										ColumnSpacing="64"
-										Margin="0,0,0,6">
-
-									<!-- key group -->
-									<Border Grid.Column="0"
-											Background="rgba(45, 45, 45, 180)"
-											CornerRadius="10"
-											Padding="14,10"
-											MinWidth="140"
-											HorizontalAlignment="Left">
-										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="="
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="← ↑ ↓ →"/>
 											</Border>
-
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="-"
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
+											<Border Classes="keycap">
+												<TextBlock Text="hjkl"/>
 											</Border>
 										</StackPanel>
-									</Border>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Move the selection through the image gallery"/>
+									</Grid>
 
-									<TextBlock Grid.Column="1"
-												Text="Increase / decrease thumbnail size in the image layout (+/-)"
-												Foreground="LightGray"
-												FontSize="15"
-												VerticalAlignment="Center"/>
-								</Grid>
-
-
-								<!-- divider between sets -->
-								<Border Height="1"
-										Background="rgba(255,255,255,0.10)"
-										Margin="0,18,0,18"/>
-
-
-								<!-- Jump to top/bot -->
-								<TextBlock Text="Jump to Top / Bottom"
-											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-											FontSize="15"
-											Margin="0,0,0,10"/>
-								<Grid ColumnDefinitions="Auto,*"
-										ColumnSpacing="64"
-										Margin="0,0,0,6">
-
-									<Border Grid.Column="0"
-											Background="rgba(45, 45, 45, 180)"
-											CornerRadius="10"
-											Padding="14,10"
-											MinWidth="140"
-											HorizontalAlignment="Left">
-										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="g"
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
-											</Border>
-
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="G"
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Enter"/>
 											</Border>
 										</StackPanel>
-									</Border>
-									<TextBlock Grid.Column="1"
-												Text="Jump to the top / bottom of the list of images"
-												Foreground="LightGray"
-												FontSize="15"
-												VerticalAlignment="Center"/>
-								</Grid>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Enter the selected item (folder)"/>
+									</Grid>
 
-
-								<!-- divider between sets -->
-								<Border Height="1"
-										Background="rgba(255,255,255,0.10)"
-										Margin="0,18,0,18"/>
-
-
-								<!-- Vert Splitter Shifting -->
-								<TextBlock Text="Vertical Splitter Shifting"
-											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-											FontSize="15"
-											Margin="0,0,0,10"/>
-
-								<Grid ColumnDefinitions="Auto,*"
-										ColumnSpacing="64">
-
-									<Border Grid.Column="0"
-											Background="rgba(45, 45, 45, 180)"
-											CornerRadius="10"
-											Padding="14,10"
-											MinWidth="140"
-											HorizontalAlignment="Left">
-										<StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="["
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="g"/>
 											</Border>
-
-											<Border Background="rgba(25, 25, 25, 220)"
-													CornerRadius="8"
-													Padding="16,8"
-													MinWidth="56">
-												<TextBlock Text="]"
-															Foreground="White"
-															FontSize="28"
-															FontWeight="Bold"
-															HorizontalAlignment="Center"
-															VerticalAlignment="Center"/>
+											<Border Classes="keycap">
+												<TextBlock Text="G"/>
 											</Border>
 										</StackPanel>
-									</Border>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Jump to the top / bottom of the image gallery"/>
+									</Grid>
 
-									<TextBlock Grid.Column="1"
-												Text="Move the vertical splitter in the main layout left / right"
-												Foreground="LightGray"
-												FontSize="15"
-												VerticalAlignment="Center"/>
-								</Grid>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Backspace"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Navigate to the parent directory"/>
+									</Grid>
 
-							</StackPanel>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="="/>
+											</Border>
+											<Border Classes="keycap">
+												<TextBlock Text="-"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Increase / decrease thumbnail size (+/-)"/>
+									</Grid>
+								</StackPanel>
+							</Border>
 
-						</Border>
+							<!-- Image Actions -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Image Actions"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
 
-					</StackPanel>
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="B"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Set the previewed image as background (when a monitor is selected)"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Q"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Add selected image to custom autoset queue"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="F"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Toggle favourite for a selected image"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="O"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Open selected image in file explorer"/>
+									</Grid>
+								</StackPanel>
+							</Border>
+
+							<!-- Views & Menus -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Views &amp; Menus"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Shift + F"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="View filters"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Shift + S"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="View settings"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Shift + A"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="View Autoset"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Shift + H"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Toggle wallpaper history view"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Ctrl + F"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="View your favourites collection"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="Esc"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Exit current view"/>
+									</Grid>
+								</StackPanel>
+							</Border>
+
+							<!-- Monitors -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Monitors"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="1"/>
+											</Border>
+											<Border Classes="keycap">
+												<TextBlock Text="2"/>
+											</Border>
+											<Border Classes="keycap">
+												<TextBlock Text="3"/>
+											</Border>
+											<Border Classes="keycap">
+												<TextBlock Text="4"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Select monitor 1–4"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="M"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Toggle between One and All monitor mode"/>
+									</Grid>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="R"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Re-detect monitors"/>
+									</Grid>
+								</StackPanel>
+							</Border>
+
+							<!-- Layout -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Layout"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<Grid Classes="hkRow" ColumnDefinitions="185,*">
+										<StackPanel Orientation="Horizontal" Spacing="5">
+											<Border Classes="keycap">
+												<TextBlock Text="["/>
+											</Border>
+											<Border Classes="keycap">
+												<TextBlock Text="]"/>
+											</Border>
+										</StackPanel>
+										<TextBlock Grid.Column="1" Classes="hkDesc" Text="Move the vertical splitter in the main layout left / right"/>
+									</Grid>
+								</StackPanel>
+							</Border>
+
+						</StackPanel>
+					</ScrollViewer>
+
+
+					<!-- ====================== RIGHT HALF: Tips & Tricks ====================== -->
+					<ScrollViewer Grid.Column="1" Margin="12,0,0,0" VerticalScrollBarVisibility="Auto">
+						<StackPanel Spacing="10">
+
+							<TextBlock Classes="hkPageTitle" Text="Tips &amp; Tricks"/>
+
+							<!-- Gallery -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Gallery"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Scroll to zoom"/>
+										<TextBlock Classes="hfDesc" Text="Hover over the zoom slider and scroll the mouse wheel to resize thumbnails."/>
+									</StackPanel>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Folder navigation"/>
+										<TextBlock Classes="hfDesc" Text="Double-click a folder to enter it. Backspace or the back button goes back to its parent."/>
+									</StackPanel>
+
+								</StackPanel>
+							</Border>
+
+							<!-- Preview & Cropping -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="Preview &amp; Cropping"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Pick a monitor"/>
+										<TextBlock Classes="hfDesc" Text="Click a monitor rectangle under the preview to target only that display."/>
+									</StackPanel>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Drag to crop"/>
+										<TextBlock Classes="hfDesc" Text="Drag the gradient rectangle over the preview to choose which part of the image is used."/>
+									</StackPanel>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Resize the crop"/>
+										<TextBlock Classes="hfDesc" Text="Drag the bottom-right corner of the rectangle to resize it while keeping aspect ratio."/>
+									</StackPanel>
+
+								</StackPanel>
+							</Border>
+
+							<!-- AutoSet Queue -->
+							<Border Classes="hkCard">
+								<StackPanel Spacing="3">
+									<TextBlock Classes="hkSection" Text="AutoSet Queue"
+											   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Reorder by dragging"/>
+										<TextBlock Classes="hfDesc" Text="Drag images inside the custom queue to change the order they'll be set in."/>
+									</StackPanel>
+
+									<StackPanel Classes="hfRow">
+										<TextBlock Classes="hfName" Text="Delete from queue"/>
+										<TextBlock Classes="hfDesc" Text="Select an image in the custom queue and press DEL to remove it."/>
+									</StackPanel>
+
+								</StackPanel>
+							</Border>
+
+						</StackPanel>
+					</ScrollViewer>
 
 				</Grid>
+				
 			</TabItem>
 
 			<!-- TAB 4: SYSTEM -->

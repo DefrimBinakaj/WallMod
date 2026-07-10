@@ -50,6 +50,8 @@ public partial class MainWindow : Window
         this.SizeChanged += OnWindowSizeChanged;
 
         this.AddHandler(KeyDownEvent, OnGalleryKeyDown, RoutingStrategies.Tunnel); // fixes arrow key navig
+
+        DetectMonitors();
     }
 
 
@@ -298,19 +300,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // opens file explorer and navigates to image
-    private void OpenImageClicked(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
-        {
-            FileExporerHelper fileExporerHelper = new FileExporerHelper();
-            if (viewModel.LastSelectedWallpaper != null)
-            {
-                fileExporerHelper.OpenFileInExplorer(viewModel.LastSelectedWallpaper.FilePath);
-            }
-        }
-    }
-
 
 
     // draggable rect section ------------------------------------
@@ -459,11 +448,6 @@ public partial class MainWindow : Window
     }
 
 
-    
-
-
-
-
     private async void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Control control && control.DataContext is MonitorInfo monitor)
@@ -519,13 +503,6 @@ public partial class MainWindow : Window
         ResetRectangle();
         viewModel.StyleDropdownEnabled = true;
         await viewModel.AllMonitorsSelected();
-    }
-
-    // click method used just for resetting UI after refresh button is clicked
-    private void OnRefreshMonitorsClicked(object? sender, RoutedEventArgs e)
-    {
-        UnselectAllPreviewMonitors();
-        ResetRectangle();
     }
 
 
@@ -586,6 +563,82 @@ public partial class MainWindow : Window
         int cropHeight = (int)(DragRect.Height * (originalImage.Height / PreviewImage.Bounds.Height));
 
         await viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
+    }
+
+
+
+
+    // HOTKEY STUFF ====================================================================
+
+    // set as background (same flow as clicking the button, incl. anti-spam delay)
+    public void HotkeySetBackground()
+    {
+        if (!uniVM.SetBackgroundButtonEnabled) return;
+        OnSetWallpaperClicked(null, null!);
+    }
+
+    // Esc - close whatever is "on top", in priority order:
+    // enlarged preview -> filter popup -> settings -> autoset tray
+    public void HotkeyEscape()
+    {
+        if (EnlargedPreviewImage.IsVisible)
+        {
+            EnlargedPreviewImage.IsVisible = false;
+            MainGrid.Opacity = 1;
+            return;
+        }
+
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (vm.IsFilterOpen) { vm.IsFilterOpen = false; return; }
+        if (vm.SettingsViewVisibility) { vm.navToSettings(); return; }
+        if (vm.IsAutoSetVisible) { vm.IsAutoSetVisible = false; return; }
+    }
+
+    // toggle between One / All monitor mode
+    public void HotkeyToggleMonitorMode()
+    {
+        if (SelectOneToggle.IsChecked == true) SelectAllToggle.IsChecked = true;
+        else SelectOneToggle.IsChecked = true;
+    }
+
+
+    // 1-4 - select monitor N directly (same flow as tapping its rectangle)
+    public async void HotkeySelectMonitor(object? parameter)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        if (!int.TryParse(parameter?.ToString(), out int idx)) return;
+
+        idx -= 1; // 1-based -> 0-based
+        if (idx < 0 || idx >= vm.MonitorList.Count) return;
+
+        var monitor = vm.MonitorList[idx];
+        SelectOneToggle.IsChecked = true;
+        await vm.MonitorTapped(monitor);
+        ShowDraggableRectangle(monitor);
+        uniVM.SetBackgroundButtonEnabled = true;
+    }
+
+
+    // redetect/refresh monitors 
+    public void DetectMonitors()
+    {
+        Window window = new Window();
+        try
+        {
+            var monitors = MonitorHelper.GetMonitors(window);
+            uniVM.MonitorList.Clear();
+            foreach (var mon in monitors)
+            {
+                uniVM.MonitorList.Add(mon);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("ERROR --" + ex);
+        }
+        UnselectAllPreviewMonitors();
+        ResetRectangle();
     }
 
 

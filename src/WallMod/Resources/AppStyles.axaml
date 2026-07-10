@@ -61,4 +61,88 @@
 		<Setter Property="CornerRadius" Value="8"/>
 	</Style>
 
+
+
+	<!-- hide the mainwindow title text (we draw our own icon in MainWindow instead) -->
+	<Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
+		<Setter Property="IsVisible" Value="False"/>
+	</Style>
+
+	<!-- hide the mainwindow fullscreen caption button that v12 added beside minimize button -->
+	<Style Selector="WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
+		<Setter Property="IsVisible" Value="False"/>
+		<Setter Property="Width" Value="0"/>
+	</Style>
+
+
+	<!-- ============ Hotkeys settings page ============ -->
+
+	<Style Selector="TextBlock.hkPageTitle">
+		<Setter Property="FontSize" Value="15"/>
+		<Setter Property="FontWeight" Value="Bold"/>
+		<Setter Property="Foreground" Value="White"/>
+	</Style>
+
+	<!-- section card -->
+	<Style Selector="Border.hkCard">
+		<Setter Property="Background" Value="#2E000000"/>
+		<Setter Property="CornerRadius" Value="10"/>
+		<Setter Property="Padding" Value="18,14"/>
+	</Style>
+
+	<!-- section title (accent colour is bound inline in the page) -->
+	<Style Selector="TextBlock.hkSection">
+		<Setter Property="FontSize" Value="14"/>
+		<Setter Property="FontWeight" Value="SemiBold"/>
+		<Setter Property="Margin" Value="0,0,0,4"/>
+	</Style>
+
+	<!-- one hotkey row -->
+	<Style Selector="Grid.hkRow">
+		<Setter Property="Margin" Value="0,3"/>
+	</Style>
+
+	<Style Selector="TextBlock.hkDesc">
+		<Setter Property="Foreground" Value="#DDDDDD"/>
+		<Setter Property="FontSize" Value="13"/>
+		<Setter Property="TextWrapping" Value="Wrap"/>
+		<Setter Property="VerticalAlignment" Value="Center"/>
+		<Setter Property="Margin" Value="10,0,0,0"/>
+	</Style>
+
+	<!-- keycap look -->
+	<Style Selector="Border.keycap">
+		<Setter Property="Background" Value="#59000000"/>
+		<Setter Property="BorderBrush" Value="#33FFFFFF"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="CornerRadius" Value="6"/>
+		<Setter Property="Padding" Value="9,4"/>
+		<Setter Property="MinWidth" Value="30"/>
+		<Setter Property="VerticalAlignment" Value="Center"/>
+	</Style>
+	<Style Selector="Border.keycap > TextBlock">
+		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="FontWeight" Value="Bold"/>
+		<Setter Property="FontSize" Value="13"/>
+		<Setter Property="HorizontalAlignment" Value="Center"/>
+	</Style>
+
+	<!-- hidden feature rows -->
+	<Style Selector="StackPanel.hfRow">
+		<Setter Property="Margin" Value="0,4"/>
+		<Setter Property="Spacing" Value="2"/>
+	</Style>
+	<Style Selector="TextBlock.hfName">
+		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="FontWeight" Value="SemiBold"/>
+		<Setter Property="FontSize" Value="13"/>
+	</Style>
+	<Style Selector="TextBlock.hfDesc">
+		<Setter Property="Foreground" Value="#C9C9C9"/>
+		<Setter Property="FontSize" Value="12.5"/>
+		<Setter Property="TextWrapping" Value="Wrap"/>
+	</Style>
+
+
+
 </Styles>

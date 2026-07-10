@@ -72,8 +72,6 @@ public partial class MainWindowViewModel : ViewModelBase
         };
         SelectedWallpaperStyle = WallpaperStyleList[0];
 
-        DetectMonitors();
-
 
         // BANDAID FIX for gallery / history visibility bug
         uniVM.PropertyChanged += (s, e) =>
@@ -451,12 +449,6 @@ public partial class MainWindowViewModel : ViewModelBase
         ThumbnailZoomLevel = Math.Max(ThumbnailZoomLevel - 2.5, 50); // 50 is min zoom value
     }
 
-    // g and G hotkeys (for jumping to top/bottom) are in MainWindow.axaml.cs because its manipulating listview
-
-
-    // [ and ] hotkey (for horizontally shifting vertical divider)
-
-
 
 
 
@@ -636,6 +628,15 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
+    // opens image in explorer
+    [RelayCommand] public void openImageInExplorerCommand() => OpenImageInExplorer();
+    private void OpenImageInExplorer()
+    {
+        if (LastSelectedWallpaper == null || CurrentWallpaperPreview == null) return;
+        FileExporerHelper fileExporerHelper = new FileExporerHelper();
+        fileExporerHelper.OpenFileInExplorer(LastSelectedWallpaper.FilePath);
+    }
+
 
     // auto set wallpaper / "Wallpaper Queue" ============================================================
     [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
@@ -697,25 +698,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // monitors ============================================================
 
-    // redetect monitors 
-    [RelayCommand] public void detectMonitorsButton() => DetectMonitors();
-    private void DetectMonitors()
-    {
-        Window window = new Window();
-        try
-        {
-            var monitors = MonitorHelper.GetMonitors(window);
-            MonitorList.Clear();
-            foreach (var mon in monitors)
-            {
-                MonitorList.Add(mon);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("ERROR --" + ex);
-        }
-    }
 
     // monitor rect tapped in UI - used for selecting monitor to set background of
     public async Task MonitorTapped(MonitorInfo monitor)
