@@ -132,9 +132,10 @@
 									IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"/>
 						</StackPanel>
 
-						<!-- Clear and skip buttons -->
+						<!-- clear / skip / loop buttons -->
 						<StackPanel Orientation="Horizontal" Spacing="4">
-							<Button Content="Clear Queue"
+							
+							<Button Content="Clear"
 									Click="ClearWallpaperQueue"
 									FontSize="11"
 									Background="Red"/>
@@ -143,6 +144,14 @@
 									Command="{Binding skipCustomAutoSetImageButton}">
 								<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
 							</Button>
+
+							<Button Classes="iconOutline"
+									Command="{Binding toggleLoopQueueButton}"
+									Background="{Binding LoopButtonColour, Converter={StaticResource ColorToBrushConverter}}"
+									ToolTip.Tip="Loop: finished wallpapers return to the back of the queue">
+								<Image Source="avares://Wallmod/Assets/queueloop-icon.png" Width="14" Height="14"/>
+							</Button>
+							
 						</StackPanel>
 						
 						

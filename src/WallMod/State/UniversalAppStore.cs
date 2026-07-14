@@ -146,6 +146,8 @@ public class UniversalAppStore : ViewModelBase
             WallpaperQueue.Add(wp);
     }
 
+    private bool loopQueue = false;
+    public bool LoopQueue { get => loopQueue; set => SetProperty(ref loopQueue, value); }
 
 
     // =======================================================

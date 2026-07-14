@@ -45,6 +45,8 @@ public partial class AutoSetViewModel : ObservableObject
             if (e.PropertyName == nameof(uniVM.SelectedPrimaryAccentColour))
                 OnPropertyChanged(nameof(SelectedPrimaryAccentColour));
         };
+
+        UpdateLoopButtonColour();
     }
 
 
@@ -114,6 +116,25 @@ public partial class AutoSetViewModel : ObservableObject
 
     private bool randomizeEachMonitor;
     public bool RandomizeEachMonitor { get => randomizeEachMonitor; set => SetProperty(ref randomizeEachMonitor, value); }
+
+    private Color loopButtonColour = Colors.Transparent;
+    public Color LoopButtonColour { get => loopButtonColour; set => SetProperty(ref loopButtonColour, value); }
+
+    [RelayCommand] public void toggleLoopQueueButton() => ToggleLoopQueue();
+    public void ToggleLoopQueue()
+    {
+        uniVM.LoopQueue = !uniVM.LoopQueue;
+        Debug.WriteLine("loop queue = " + uniVM.LoopQueue);
+        UpdateLoopButtonColour();
+    }
+
+    public void UpdateLoopButtonColour()
+    {
+        LoopButtonColour = uniVM.LoopQueue
+            ? SelectedPrimaryAccentColour
+            : Colors.Transparent;
+    }
+
 
     [RelayCommand] // in axaml, itll be referenced as queueChoiceCommand
     private void queueChoice(string selectedChoice)
@@ -285,11 +306,18 @@ public partial class AutoSetViewModel : ObservableObject
             {
                 Debug.WriteLine("current time interval = " + TotalSeconds.ToString() + "seconds");
                 Debug.WriteLine("current image that is set = " + WallpaperQueue.First().Name);
+
+                var wp = WallpaperQueue.First(); // keep a handle so loop can re-add it after removal
                 foreach (var mon in uniVM.MonitorList)
                 {
-                    SetWallpaperHelper.SetWallpaper(WallpaperQueue.First().FilePath, "Fill", mon.MonitorIdPath);
+                    SetWallpaperHelper.SetWallpaper(wp.FilePath, "Fill", mon.MonitorIdPath);
                 }
                 WallpaperQueue.RemoveAt(0);
+
+                if (uniVM.LoopQueue)
+                {
+                    WallpaperQueue.Add(wp); // finished image goes to the back of the queue
+                }
             }
 
             try
