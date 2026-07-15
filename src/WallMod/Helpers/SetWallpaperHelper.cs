@@ -126,6 +126,33 @@ namespace WallMod.Helpers
             }
         }
 
+        // crop an image then set it; moved out of MainWindowViewModel.SetWallpaperWithCrop
+        // so the autoset queue can apply crops too
+        public static void SetWallpaperCropped(string imagePath, string wallpaperStyle, string monitorId,
+                                               int x, int y, int width, int height)
+        {
+            using var skiaImage = SKBitmap.Decode(imagePath);
+
+            var cropRect = new SKRectI(x, y, x + width, y + height);
+            cropRect.Intersect(new SKRectI(0, 0, skiaImage.Width, skiaImage.Height));
+
+            using var croppedImage = new SKBitmap(cropRect.Width, cropRect.Height);
+            using (var canvas = new SKCanvas(croppedImage))
+            {
+                canvas.DrawBitmap(skiaImage, cropRect, new SKRect(0, 0, cropRect.Width, cropRect.Height));
+            }
+
+            string tempPath = Path.Combine(Path.GetTempPath(), "croppedWallpaper.png");
+            // File.Create, not OpenWrite: OpenWrite doesn't truncate, so a smaller PNG written over
+            // a larger one leaves trailing bytes; autoset rewrites this file constantly
+            using (var stream = File.Create(tempPath))
+            {
+                croppedImage.Encode(stream, SKEncodedImageFormat.Png, 100);
+            }
+
+            SetWallpaper(tempPath, wallpaperStyle, monitorId);
+        }
+
         #region Windows & macOS
 
         private static void SetWallpaperWindows(string imagePath, string wallpaperStyle, string monitorId)

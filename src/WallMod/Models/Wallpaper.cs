@@ -21,7 +21,17 @@ public class Wallpaper
     public string? Name { get; set; }
     public DateTime? Date { get; set; }
     public double? ColourCategory { get; set; }
-    // public QuantizedColor? ColourCategory { get; set; }
 
     public bool? IsDirectory { get; set; }
+
+
+    // crop metadata (original-image pixels) + the monitor it was drawn for; all null = full image
+    public int? CropX { get; set; }
+    public int? CropY { get; set; }
+    public int? CropWidth { get; set; }
+    public int? CropHeight { get; set; }
+    public string? CropMonitorId { get; set; }
+    
+    // tiny monitor-layout badge for the queue (accent = target monitor); built at runtime, never persisted
+    public List<MonitorInfo>? MonitorBadge { get; set; }
 }

@@ -29,10 +29,6 @@ public partial class AutoSetView : UserControl
         DataContext = App.Services!.GetRequiredService<AutoSetViewModel>();
     }
 
-    public void ClearWallpaperQueue(object? sender, RoutedEventArgs e)
-    {
-        uniVM.WallpaperQueue.Clear();
-    }
 
     private void WallpaperQueueItem_Clicked(object? sender, KeyEventArgs e)
     {

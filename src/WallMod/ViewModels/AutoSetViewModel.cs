@@ -1,8 +1,10 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +77,50 @@ public partial class AutoSetViewModel : ObservableObject
 
             return Math.Max(1, TimeValueInput * multiplier);
         }
+    }
+
+
+    // countdown display for the next autoset change (display only - Task.Delay stays the authority)
+    private DispatcherTimer? countdownTimer;
+    private DateTime nextChangeAt;
+
+    private string timeRemainingDisplay = "";
+    public string TimeRemainingDisplay { get => timeRemainingDisplay; set => SetProperty(ref timeRemainingDisplay, value); }
+    
+    private void StartCountdown()
+    {
+        nextChangeAt = DateTime.Now.AddSeconds(TotalSeconds);
+
+        if (countdownTimer == null)
+        {
+            countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            countdownTimer.Tick += (s, e) => UpdateCountdownDisplay();
+        }
+
+        UpdateCountdownDisplay(); // show immediately, don't wait for first tick
+        countdownTimer.Start();
+    }
+
+    private void StopCountdown()
+    {
+        countdownTimer?.Stop();
+        TimeRemainingDisplay = "";
+    }
+
+    private void UpdateCountdownDisplay()
+    {
+        var remaining = nextChangeAt - DateTime.Now;
+        if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
+        TimeRemainingDisplay = "Next in " + FormatRemaining(remaining);
+    }
+
+    // adaptive: your intervals range from seconds to months
+    private static string FormatRemaining(TimeSpan t)
+    {
+        if (t.TotalDays >= 1) return $"{(int)t.TotalDays}d {t.Hours}h";
+        if (t.TotalHours >= 1) return $"{(int)t.TotalHours}h {t.Minutes}m";
+        if (t.TotalMinutes >= 1) return $"{(int)t.TotalMinutes}m {t.Seconds}s";
+        return $"{t.Seconds}s";
     }
 
 
@@ -258,6 +304,7 @@ public partial class AutoSetViewModel : ObservableObject
         CustomAutoSetEnableButtonEnabled = true;
         // do not clear the custom queue
         // WallpaperQueue.Clear();
+        StopCountdown();
     }
 
 
@@ -289,6 +336,7 @@ public partial class AutoSetViewModel : ObservableObject
         // RandDirImageCollection.Clear();
         // RandDirecName = "";
         // RandWallpapersRemaining = "";
+        StopCountdown();
     }
 
 
@@ -307,19 +355,40 @@ public partial class AutoSetViewModel : ObservableObject
                 Debug.WriteLine("current time interval = " + TotalSeconds.ToString() + "seconds");
                 Debug.WriteLine("current image that is set = " + WallpaperQueue.First().Name);
 
-                var wp = WallpaperQueue.First(); // keep a handle so loop can re-add it after removal
-                foreach (var mon in uniVM.MonitorList)
+                var wp = WallpaperQueue.First();
+
+                // cropped item -> apply only to the monitor the crop was drawn for, if it's still connected
+                bool setCropped = false;
+                if (wp.CropX is int cx && wp.CropY is int cy &&
+                    wp.CropWidth is int cw && wp.CropHeight is int ch &&
+                    cw > 0 && ch > 0 && wp.CropMonitorId is string cropMonId)
                 {
-                    SetWallpaperHelper.SetWallpaper(wp.FilePath, "Fill", mon.MonitorIdPath);
+                    var targetMon = uniVM.MonitorList.FirstOrDefault(m => m.MonitorIdPath == cropMonId);
+                    if (targetMon != null)
+                    {
+                        SetWallpaperHelper.SetWallpaperCropped(wp.FilePath, "Fill", targetMon.MonitorIdPath, cx, cy, cw, ch);
+                        setCropped = true;
+                    }
                 }
+
+                // uncropped item, or the crop's monitor is gone -> full image on all monitors as before
+                if (!setCropped)
+                {
+                    foreach (var mon in uniVM.MonitorList)
+                    {
+                        SetWallpaperHelper.SetWallpaper(wp.FilePath, "Fill", mon.MonitorIdPath);
+                    }
+                }
+
                 WallpaperQueue.RemoveAt(0);
 
                 if (uniVM.LoopQueue)
                 {
-                    WallpaperQueue.Add(wp); // finished image goes to the back of the queue
+                    WallpaperQueue.Add(wp); // finished image (crop and all) goes to the back
                 }
             }
 
+            StartCountdown();
             try
             {
                 await Task.Delay(TotalSeconds * 1000, cancelToken.Token);
@@ -331,6 +400,14 @@ public partial class AutoSetViewModel : ObservableObject
             
         }
     }
+
+    [RelayCommand] public void clearWallpaperQueueButton() => ClearWallpaperQueue();
+    public void ClearWallpaperQueue()
+    {
+        uniVM.WallpaperQueue.Clear();
+        disableCustomAutoSet();
+    }
+
     [RelayCommand] public void skipCustomAutoSetImageButton() => SkipCustomAutoSetImage();
     private void SkipCustomAutoSetImage()
     {
@@ -379,6 +456,7 @@ public partial class AutoSetViewModel : ObservableObject
                 }
             }
 
+            StartCountdown();
             try
             {
                 await Task.Delay(TotalSeconds * 1000, cancelToken.Token);

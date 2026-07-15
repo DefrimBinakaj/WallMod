@@ -208,6 +208,52 @@ public class ImageHelper
     }
 
 
+    // makes a small thumbnail of just the cropped region of an image (for queue display);
+    // no temp file needed since no colour classification happens here
+    public static Bitmap? GetCroppedThumbnail(string filePath, int x, int y, int w, int h,
+                                              int thumbnailWidth = 250, int thumbnailHeight = 200)
+    {
+        try
+        {
+            using var inputStream = File.OpenRead(filePath);
+            using var skBitmap = SKBitmap.Decode(inputStream);
+            if (skBitmap == null) return null;
+
+            var cropRect = new SKRectI(x, y, x + w, y + h);
+            cropRect.Intersect(new SKRectI(0, 0, skBitmap.Width, skBitmap.Height));
+            if (cropRect.Width <= 0 || cropRect.Height <= 0) return null;
+
+            // this sizing MUST mirror GetThumbNailFromPath's structure (crop aspect preserved)
+            float aspectRatio = (float)cropRect.Width / cropRect.Height;
+            int targetWidth = thumbnailWidth;
+            int targetHeight = (int)(thumbnailWidth / aspectRatio);
+            if (targetHeight > thumbnailHeight)
+            {
+                targetHeight = thumbnailHeight;
+                targetWidth = (int)(thumbnailHeight * aspectRatio);
+            }
+
+            using var cropped = new SKBitmap(cropRect.Width, cropRect.Height);
+            using (var canvas = new SKCanvas(cropped))
+            {
+                canvas.DrawBitmap(skBitmap, cropRect, new SKRect(0, 0, cropRect.Width, cropRect.Height));
+            }
+
+            using var resized = cropped.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.None);
+            if (resized == null) return null;
+
+            using var image = SKImage.FromBitmap(resized);
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, 60);
+            using var memStream = new MemoryStream(data.ToArray());
+            return new Bitmap(memStream);
+        }
+        catch (Exception ex)
+        {
+            AppStorageHelper.LogCrash(ex);
+            return null;
+        }
+    }
+
     // -----------------------------------------------------------------------------------------------
 
 

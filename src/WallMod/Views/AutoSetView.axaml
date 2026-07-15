@@ -115,6 +115,14 @@
 								VerticalAlignment="Center"
 								Margin="8,0,0,0">
 
+						<Panel Height="15">
+							<TextBlock Text="{Binding TimeRemainingDisplay}"
+									   FontSize="11"
+									   HorizontalAlignment="Center"
+									   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+									   IsVisible="{Binding CustomAutoSetDisableButtonEnabled}"/>
+						</Panel>
+
 						<!-- Enable / Disable buttons -->
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							<Button Content="Enable"
@@ -136,7 +144,7 @@
 						<StackPanel Orientation="Horizontal" Spacing="4">
 							
 							<Button Content="Clear"
-									Click="ClearWallpaperQueue"
+									Command="{Binding clearWallpaperQueueButton}"
 									FontSize="11"
 									Background="Red"/>
 
@@ -191,11 +199,49 @@
 											PointerPressed="Item_PointerPressed"
 											PointerMoved="Item_PointerMoved"
 											PointerReleased="Item_PointerReleased">
-										<Image Source="{Binding ImageThumbnailBitmap}"
-											   Width="120"
-											   Height="72"
-											   Stretch="UniformToFill"
-											   ClipToBounds="True"/>
+
+
+										<!-- thumbnails -->
+										<Panel>
+											<Image Source="{Binding ImageThumbnailBitmap}"
+												   Width="120"
+												   Height="72"
+												   Stretch="UniformToFill"
+												   ClipToBounds="True"/>
+
+											<!-- monitor-layout badge: only visible on cropped items -->
+											<Border Background="{Binding $parent[ListBox].((vm:AutoSetViewModel)DataContext).SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"
+													CornerRadius="4"
+													Padding="3"
+													Margin="0,0,3,0"
+													HorizontalAlignment="Right"
+													VerticalAlignment="Top"
+													IsHitTestVisible="False"
+													IsVisible="{Binding MonitorBadge, Converter={x:Static ObjectConverters.IsNotNull}}">
+												<ItemsControl ItemsSource="{Binding MonitorBadge}">
+													<ItemsControl.ItemsPanel>
+														<ItemsPanelTemplate>
+															<StackPanel Width="30" Height="14"/>
+														</ItemsPanelTemplate>
+													</ItemsControl.ItemsPanel>
+													<ItemsControl.ItemTemplate>
+														<DataTemplate>
+															<Canvas>
+																<Rectangle Fill="{Binding FillColour}"
+																		   Stroke="LightGray"
+																		   StrokeThickness="1"
+																		   Width="{Binding UIBounds.Width}"
+																		   Height="{Binding UIBounds.Height}"
+																		   Canvas.Left="{Binding UIBounds.X}"
+																		   Canvas.Top="{Binding UIBounds.Y}"/>
+															</Canvas>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</Border>
+										</Panel>
+										
+										
 									</Border>
 								</DataTemplate>
 							</ListBox.ItemTemplate>
@@ -236,6 +282,16 @@
 									Orientation="Vertical"
 									Spacing="4"
 									VerticalAlignment="Center">
+
+							<!-- remaining time -->
+							<Panel Height="15">
+								<TextBlock Text="{Binding TimeRemainingDisplay}"
+										   FontSize="11"
+										   HorizontalAlignment="Center"
+										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+										   IsVisible="{Binding RandomAutoSetDisableButtonEnabled}"/>
+							</Panel>
+
 							<StackPanel Orientation="Horizontal"
 										Spacing="4"
 										HorizontalAlignment="Left">

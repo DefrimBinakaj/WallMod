@@ -334,6 +334,7 @@ public partial class MainWindow : Window
         Canvas.SetTop(DragRect, (previewH - finalHeight) / 2);
 
         DragRect.IsVisible = true;
+        UpdatePendingCropInVm();
     }
 
     public void ResetRectangle()
@@ -344,6 +345,7 @@ public partial class MainWindow : Window
         Canvas.SetLeft(DragRect, 0);
         Canvas.SetTop(DragRect, 0);
         _aspectRatio = 1.0;
+        (DataContext as MainWindowViewModel)?.ClearPendingCrop();
     }
 
     // ------------------------------------------------------
@@ -393,6 +395,7 @@ public partial class MainWindow : Window
         if (e.Pointer.Captured == DragRect) e.Pointer.Capture(null);
         _isPointerDown = false;
         _operation = RectOperation.None;
+        UpdatePendingCropInVm();
     }
 
     private void DoDragging(double dx, double dy)
@@ -565,6 +568,34 @@ public partial class MainWindow : Window
         await viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
     }
 
+
+
+    // converts the current DragRect to original-image pixels (plus the monitor it targets)
+    // and stores it in the VM, so add-to-queue can snapshot it without touching controls
+    private void UpdatePendingCropInVm()
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (!DragRect.IsVisible ||
+            vm.LastSelMonitor is not { MonitorIdPath: string monId } ||
+            vm.LastSelectedWallpaper is not { ImageWidth: int imgW, ImageHeight: int imgH } ||
+            imgW <= 0 || imgH <= 0 ||
+            PreviewImage.Bounds.Width <= 0 || PreviewImage.Bounds.Height <= 0)
+        {
+            vm.ClearPendingCrop();
+            return;
+        }
+
+        double sx = imgW / PreviewImage.Bounds.Width;   // same ratios as SetCroppedWallpaper
+        double sy = imgH / PreviewImage.Bounds.Height;
+
+        vm.SetPendingCrop(
+            (int)(Canvas.GetLeft(DragRect) * sx),
+            (int)(Canvas.GetTop(DragRect) * sy),
+            (int)(DragRect.Width * sx),
+            (int)(DragRect.Height * sy),
+            monId);
+    }
 
 
 

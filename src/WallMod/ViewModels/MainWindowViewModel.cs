@@ -37,6 +37,8 @@ public partial class MainWindowViewModel : ViewModelBase
     WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
     FavouritesHelper favouritesHelper = new FavouritesHelper();
+    QueueHistoryHelper queueHistoryHelper = new QueueHistoryHelper();
+    private bool isRestoringQueue;
 
     // all wallpapers from a directory
     public ObservableCollection<Wallpaper> AllWallpapers { get; set; } = new ObservableCollection<Wallpaper>();
@@ -119,7 +121,16 @@ public partial class MainWindowViewModel : ViewModelBase
         uniVM.SelectedPreviewBackgroundColour = Color.Parse(settingsHistoryHelper.GetSettingEntry("SelectedPreviewBackgroundColour"));
         uniVM.changeFluentColour();
 
-        uniVM.WallpaperQueue.CollectionChanged += (s, e) => UpdateAutoSetButtonColour();
+        uniVM.WallpaperQueue.CollectionChanged += (s, e) =>
+        {
+            UpdateAutoSetButtonColour();
+            if (!isRestoringQueue)
+            {
+                queueHistoryHelper.SaveQueue(uniVM.WallpaperQueue); // add/remove/reorder/clear all persist
+            }
+        };
+
+        RestoreQueueFromHistory();
     }
 
 
@@ -589,33 +600,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            // load og img
-            using var skiaImage = SkiaSharp.SKBitmap.Decode(imagePath);
+            SetWallpaperHelper.SetWallpaperCropped(imagePath, SelectedWallpaperStyle, monitorId, x, y, width, height);
 
-            // get rect for area cropping
-            var cropRect = new SkiaSharp.SKRectI(x, y, x + width, y + height);
-
-            // check crop bounds
-            cropRect.Intersect(new SkiaSharp.SKRectI(0, 0, skiaImage.Width, skiaImage.Height));
-
-            // crop img
-            using var croppedImage = new SkiaSharp.SKBitmap(cropRect.Width, cropRect.Height);
-            using (var canvas = new SkiaSharp.SKCanvas(croppedImage))
-            {
-                canvas.DrawBitmap(skiaImage, cropRect, new SkiaSharp.SKRect(0, 0, cropRect.Width, cropRect.Height));
-            }
-
-            // save cropped img to temp file
-            string tempPath = Path.Combine(Path.GetTempPath(), "croppedWallpaper.png");
-            using (var stream = File.OpenWrite(tempPath))
-            {
-                croppedImage.Encode(stream, SkiaSharp.SKEncodedImageFormat.Png, 100);
-            }
-
-            // set background
-            SetWallpaperHelper.SetWallpaper(tempPath, SelectedWallpaperStyle, monitorId);
-
-            // save
             if (uniVM.AllowSaveHistory)
             {
                 wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
@@ -626,6 +612,22 @@ public partial class MainWindowViewModel : ViewModelBase
             Debug.WriteLine($"Error setting cropped wallpaper: {ex.Message}");
         }
     }
+
+    // crop currently outlined by the DragRect, in original-image pixels (null = none)
+    private int? pendingCropX, pendingCropY, pendingCropW, pendingCropH;
+    private string? pendingCropMonitorId;
+
+    public void SetPendingCrop(int x, int y, int w, int h, string monitorId)
+    {
+        pendingCropX = x; pendingCropY = y; pendingCropW = w; pendingCropH = h;
+        pendingCropMonitorId = monitorId;
+    }
+    public void ClearPendingCrop()
+    {
+        pendingCropX = pendingCropY = pendingCropW = pendingCropH = null;
+        pendingCropMonitorId = null;
+    }
+
 
 
     // opens image in explorer
@@ -642,13 +644,45 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
     public void AddWallpaperToAutoSet()
     {
-        // TEMP: should i prevent the same wallpaper from being queued again? prob NO
-        if (LastSelectedWallpaper != null)
+        if (LastSelectedWallpaper == null) return;
+
+        Wallpaper queueItem = LastSelectedWallpaper;
+
+        // a crop is active -> queue a copy carrying the crop, so the gallery object stays untouched
+        if (pendingCropX is int cx && pendingCropY is int cy &&
+            pendingCropW is int cw && pendingCropH is int ch && cw > 0 && ch > 0
+            && pendingCropMonitorId is string cropMonId)
         {
-            uniVM.WallpaperQueue.Add(LastSelectedWallpaper);
-            Debug.WriteLine("autoset added: " + lastSelectedWallpaper.Name);
-            UpdateAutoSetButtonColour();
+            queueItem = new Wallpaper
+            {
+                FilePath = LastSelectedWallpaper.FilePath,
+                Name = LastSelectedWallpaper.Name,
+                Date = LastSelectedWallpaper.Date,
+                IsDirectory = false,
+                ImageWidth = LastSelectedWallpaper.ImageWidth,
+                ImageHeight = LastSelectedWallpaper.ImageHeight,
+                // queue shows what will actually be set; falls back to the full thumb if the crop render fails
+                ImageThumbnailBitmap = ImageHelper.GetCroppedThumbnail(LastSelectedWallpaper.FilePath, cx, cy, cw, ch)
+                                       ?? LastSelectedWallpaper.ImageThumbnailBitmap,
+                ColourCategory = LastSelectedWallpaper.ColourCategory,
+                CropX = cx,
+                CropY = cy,
+                CropWidth = cw,
+                CropHeight = ch,
+                CropMonitorId = cropMonId,
+                MonitorBadge = MonitorHelper.BuildMiniMonitorBadge(uniVM.MonitorList, cropMonId, "#8ccd00"),
+            };
         }
+        else
+        {
+            // uncropped -> autoset applies it to every monitor, so the badge shows all lit
+            queueItem.MonitorBadge = MonitorHelper.BuildMiniMonitorBadge(
+                uniVM.MonitorList, null, "#8ccd00");
+        }
+
+        uniVM.WallpaperQueue.Add(queueItem);
+        Debug.WriteLine("autoset added: " + queueItem.Name);
+        UpdateAutoSetButtonColour();
     }
     [RelayCommand] public void autoSetNavCommand() => AutoSetMenuNav();
     public void AutoSetMenuNav()
@@ -658,6 +692,33 @@ public partial class MainWindowViewModel : ViewModelBase
         IsAutoSetVisible = !IsAutoSetVisible;
     }
 
+
+    private async void RestoreQueueFromHistory()
+    {
+        try
+        {
+            var saved = await Task.Run(() => queueHistoryHelper.LoadQueue()); // thumbnails off the UI thread
+
+            isRestoringQueue = true;
+            foreach (var wp in saved)
+            {
+                var badge = MonitorHelper.BuildMiniMonitorBadge(uniVM.MonitorList, wp.CropMonitorId, "#8ccd00");
+                if (badge.Count > 0)
+                {
+                    wp.MonitorBadge = badge;
+                }
+                uniVM.WallpaperQueue.Add(wp);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppStorageHelper.LogCrash(ex);
+        }
+        finally
+        {
+            isRestoringQueue = false;
+        }
+    }
 
 
     // favourite ============================================================

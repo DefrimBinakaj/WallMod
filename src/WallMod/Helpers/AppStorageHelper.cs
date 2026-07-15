@@ -23,6 +23,8 @@ public class AppStorageHelper
 
     public string? appFavouritesFile;
 
+    public string? appQueueHistoryFile;
+
     public void InitAppStorage()
     {
         // AppData/WallMod
@@ -42,6 +44,8 @@ public class AppStorageHelper
         crashLogFile = Path.Combine(appStorageDirectory, "CrashLog.txt");
 
         appFavouritesFile = Path.Combine(appStorageDirectory, "WallModFavourites.json");
+
+        appQueueHistoryFile = Path.Combine(appStorageDirectory, "WallModQueueHistory.json");
 
     }
 
