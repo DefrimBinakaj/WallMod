@@ -292,7 +292,22 @@
 								<ListBox.ItemTemplate>
 									<DataTemplate>
 										<StackPanel Orientation="Vertical" Margin="4">
-											<Image Source="{Binding ImageThumbnailBitmap}" Width="{Binding Value, ElementName=ThumbnailZoomSlider}"/>
+											<Panel>
+												<Image Source="{Binding ImageThumbnailBitmap}"
+													   Width="{Binding Value, ElementName=ThumbnailZoomSlider}"/>
+
+												<Border IsVisible="{Binding IsDirectory}"
+														CornerRadius="4"
+														HorizontalAlignment="Center"
+														VerticalAlignment="Bottom"
+														Margin="8"
+														Padding="4">
+													<TextBlock Text="{Binding FolderItemCount}"
+															   FontSize="10"
+															   Foreground="White"/>
+												</Border>
+											</Panel>
+
 											<TextBlock
 												Text="{Binding Name}"
 												TextWrapping="Wrap"

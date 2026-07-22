@@ -35,6 +35,7 @@ public class SettingsHistoryHelper
             { "RememberThumbnailZoomLevel", "True" },
             { "AppBackgroundColour", "purpley" },
             { "StayRunningInBackground", "False" },
+            { "FolderCount", "True" },
             { "CPUThreadsAllocated", Math.Round(Environment.ProcessorCount * 0.85).ToString() },
             // filters (used in same dict to avoid simul I/O operations)
             { "SearchFilter", "" },

@@ -301,6 +301,26 @@ public class ImageHelper
             string selectedDirPath = folderChoice;
             foreach (var subDir in Directory.GetDirectories(selectedDirPath))
             {
+                // get items inside
+                int folderImgCount = 0;
+                try
+                {
+                    if (uniVM.FolderCountIncludesFolders == false)
+                    {
+                        // count only images:
+                        folderImgCount = Directory.EnumerateFiles(subDir).Count(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()));
+                    }
+                    else
+                    {
+                        // count all folders and images:
+                        folderImgCount = Directory.EnumerateDirectories(subDir).Count()
+                                            + Directory.EnumerateFiles(subDir).Count(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()));
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // no access to the subfolder itself; leave count at 0
+                }
                 // Create a 'Wallpaper' object for the directory
                 var folderWallpaper = new Wallpaper
                 {
@@ -309,7 +329,8 @@ public class ImageHelper
                     IsDirectory = true,
                     // Use your own folder icon path or resource
                     ImageThumbnailBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))),
-                    Date = Directory.GetLastWriteTime(subDir)
+                    Date = Directory.GetLastWriteTime(subDir),
+                    FolderItemCount = folderImgCount
                 };
                 imgCollec.Add(folderWallpaper);
             }

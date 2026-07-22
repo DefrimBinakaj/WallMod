@@ -43,12 +43,21 @@ public partial class SettingsViewModel : ObservableObject
         {
             if (e.PropertyName == nameof(uniVM.UpdateAvailableVisible))
                 OnPropertyChanged(nameof(UpdateAvailableVisible));
+            if (e.PropertyName == nameof(uniVM.FolderCountIncludesFolders))
+            {
+                OnPropertyChanged(nameof(FolderCountIncludesFolders));
+                OnPropertyChanged(nameof(FolderCountImagesOnly));
+            }
         };
     }
 
 
     public bool AllowSaveHistory { get => uniVM.AllowSaveHistory; set { if (uniVM.AllowSaveHistory != value) { uniVM.AllowSaveHistory = value; OnPropertyChanged(); } } }
     public bool StayRunningInBackground { get => uniVM.StayRunningInBackground; set { if (uniVM.StayRunningInBackground != value) { uniVM.StayRunningInBackground = value; OnPropertyChanged(); } } }
+
+    public bool FolderCountIncludesFolders { get => uniVM.FolderCountIncludesFolders; set { if (uniVM.FolderCountIncludesFolders != value) { uniVM.FolderCountIncludesFolders = value; OnPropertyChanged(); OnPropertyChanged(nameof(FolderCountImagesOnly)); } } }
+    public bool FolderCountImagesOnly { get => !uniVM.FolderCountIncludesFolders; set { if (value) FolderCountIncludesFolders = false; else FolderCountIncludesFolders = true; } }
+
     public bool AutoOpenLastDirectory { get => uniVM.AutoOpenLastDirectory; set { if (uniVM.AutoOpenLastDirectory != value) { uniVM.AutoOpenLastDirectory = value; OnPropertyChanged(); } } }
     public bool RememberFilters { get => uniVM.RememberFilters; set { if (uniVM.RememberFilters != value) { uniVM.RememberFilters = value; OnPropertyChanged(); } } }
     public bool RememberThumbnailZoomLevel { get => uniVM.RememberThumbnailZoomLevel; set { if (uniVM.RememberThumbnailZoomLevel != value) { uniVM.RememberThumbnailZoomLevel = value; OnPropertyChanged(); } } }

@@ -23,6 +23,8 @@ public class Wallpaper
     public double? ColourCategory { get; set; }
 
     public bool? IsDirectory { get; set; }
+    
+    public int? FolderItemCount { get; set; } // null for non-folders; count of supported images directly inside a folder
 
 
     // crop metadata (original-image pixels) + the monitor it was drawn for; all null = full image

@@ -82,6 +82,18 @@ public partial class MainWindowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsHistoryViewVisible));
             if (e.PropertyName == nameof(UniversalAppStore.IsImageGalleryViewVisible))
                 OnPropertyChanged(nameof(IsImageGalleryViewVisible));
+
+
+            // hardcoded re-exec of selectDirec in order to change foldercount for all
+            if (e.PropertyName == nameof(UniversalAppStore.FolderCountIncludesFolders))
+            {
+                if (CurrentSelectedDirecName != "Favourites"
+                    && !string.IsNullOrEmpty(CurrentSelectedDirectory)
+                    && Directory.Exists(CurrentSelectedDirectory))
+                {
+                    selectDirec(CurrentSelectedDirectory);
+                }
+            }
         };
 
 
@@ -93,6 +105,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         uniVM.AllowSaveHistory = bool.Parse(settingsHistoryHelper.GetSettingEntry("AllowSaveHistory"));
         uniVM.StayRunningInBackground = bool.Parse(settingsHistoryHelper.GetSettingEntry("StayRunningInBackground"));
+        uniVM.FolderCountIncludesFolders = bool.Parse(settingsHistoryHelper.GetSettingEntry("FolderCount"));
         uniVM.AutoOpenLastDirectory = bool.Parse(settingsHistoryHelper.GetSettingEntry("AutoOpenLastChosenDirectoryOnAppStart"));
         uniVM.RememberFilters = bool.Parse(settingsHistoryHelper.GetSettingEntry("RememberFilterSettings"));
         uniVM.RememberThumbnailZoomLevel = bool.Parse(settingsHistoryHelper.GetSettingEntry("RememberThumbnailZoomLevel"));
@@ -244,12 +257,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public bool AllowSaveHistory { get => uniVM.AllowSaveHistory; set { if (uniVM.AllowSaveHistory != value) { uniVM.AllowSaveHistory = value; OnPropertyChanged(); } } }
     public bool StayRunningInBackground { get => uniVM.StayRunningInBackground; set { if (uniVM.StayRunningInBackground != value) { uniVM.StayRunningInBackground = value; OnPropertyChanged(); } } }
-    public bool AutoOpenLastDirectory { get => uniVM.AutoOpenLastDirectory; set { if (uniVM.AutoOpenLastDirectory != value) { uniVM.AutoOpenLastDirectory = value; OnPropertyChanged(); } } }
-    public bool RememberFilters { get => uniVM.RememberFilters; set { if (uniVM.RememberFilters != value) { uniVM.RememberFilters = value; OnPropertyChanged(); } } }
-    public int CPUThreadsAllocated { get => uniVM.CPUThreadsAllocated; set { if (uniVM.CPUThreadsAllocated != value) { uniVM.CPUThreadsAllocated = value; OnPropertyChanged(); } } }
-    public int MaxCPUThreads { get; } = Environment.ProcessorCount;
     public Color SelectedBackgroundColour { get => uniVM.SelectedBackgroundColour; set { if (uniVM.SelectedBackgroundColour != value) { uniVM.SelectedBackgroundColour = value; OnPropertyChanged(); } } }
     public Color SelectedPrimaryAccentColour { get => uniVM.SelectedPrimaryAccentColour; set { if (uniVM.SelectedPrimaryAccentColour != value) { uniVM.SelectedPrimaryAccentColour = value; OnPropertyChanged(); } } }
     public Color SelectedWallpaperCollectionColour { get => uniVM.SelectedWallpaperCollectionColour; set { if (uniVM.SelectedWallpaperCollectionColour != value) { uniVM.SelectedWallpaperCollectionColour = value; OnPropertyChanged(); } } }
@@ -419,7 +427,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 result = folderList.Concat(imageList); // combine
                 break;
             case "Size":
-                folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                folderList = folderList.OrderByDescending(wp => wp.FolderItemCount);
                 imageList = imageList.OrderByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
                 result = folderList.Concat(imageList); // combine
                 break;

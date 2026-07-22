@@ -176,6 +176,21 @@ public class UniversalAppStore : ViewModelBase
         }
     }
 
+    private bool folderCountIncludesFolders;
+    public bool FolderCountIncludesFolders
+    {
+        get => folderCountIncludesFolders;
+        set
+        {
+            if (SetProperty(ref folderCountIncludesFolders, value))
+            {
+                // save to json file
+                settingsHistoryHelper.UpdateSetting("FolderCount", folderCountIncludesFolders.ToString());
+            }
+        }
+    }
+
+
     private bool autoOpenLastDirectory;
     public bool AutoOpenLastDirectory
     {
