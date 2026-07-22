@@ -204,6 +204,20 @@ public class UniversalAppStore : ViewModelBase
         }
     }
 
+    private bool rememberThumbnailZoomLevel;
+    public bool RememberThumbnailZoomLevel
+    {
+        get => rememberThumbnailZoomLevel;
+        set
+        {
+            if (SetProperty(ref rememberThumbnailZoomLevel, value))
+            {
+                // save to json file
+                settingsHistoryHelper.UpdateSetting("RememberThumbnailZoomLevel", RememberThumbnailZoomLevel.ToString());
+            }
+        }
+    }
+
     private int cpuThreadsAllocated;
     public int CPUThreadsAllocated
     {

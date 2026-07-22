@@ -32,6 +32,7 @@ public class SettingsHistoryHelper
             { "AutoOpenLastChosenDirectoryOnAppStart", "False" },
             { "LastChosenDirectory", "" },
             { "RememberFilterSettings", "False" },
+            { "RememberThumbnailZoomLevel", "True" },
             { "AppBackgroundColour", "purpley" },
             { "StayRunningInBackground", "False" },
             { "CPUThreadsAllocated", Math.Round(Environment.ProcessorCount * 0.85).ToString() },

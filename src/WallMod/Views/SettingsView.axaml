@@ -124,6 +124,8 @@
 									<RowDefinition Height="40"/>
 									<RowDefinition Height="8"/>
 									<RowDefinition Height="40"/>
+									<RowDefinition Height="8"/>
+									<RowDefinition Height="40"/>
 								</Grid.RowDefinitions>
 								<!-- Auto Open Last Directory -->
 								<TextBlock Grid.Row="0" Grid.Column="0"
@@ -142,6 +144,15 @@
 										   Foreground="White"/>
 								<ToggleSwitch Grid.Row="2" Grid.Column="1"
 											  IsChecked="{Binding RememberFilters}"
+											  HorizontalAlignment="Right"/>
+								<!-- Remember Thumbnail Zoom -->
+								<TextBlock Grid.Row="4" Grid.Column="0"
+										   Text="Remember thumbnail zoom level on startup:"
+										   VerticalAlignment="Center"
+										   Margin="12,0,0,0"
+										   Foreground="White"/>
+								<ToggleSwitch Grid.Row="4" Grid.Column="1"
+											  IsChecked="{Binding RememberThumbnailZoomLevel}"
 											  HorizontalAlignment="Right"/>
 							</Grid>
 

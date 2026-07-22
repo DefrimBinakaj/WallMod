@@ -25,6 +25,8 @@ public class AppStorageHelper
 
     public string? appQueueHistoryFile;
 
+    public string? appUIStateHistoryFile;
+
     public void InitAppStorage()
     {
         // AppData/WallMod
@@ -47,6 +49,7 @@ public class AppStorageHelper
 
         appQueueHistoryFile = Path.Combine(appStorageDirectory, "WallModQueueHistory.json");
 
+        appUIStateHistoryFile = Path.Combine(appStorageDirectory, "WallModUIStateHistory.json");
     }
 
 

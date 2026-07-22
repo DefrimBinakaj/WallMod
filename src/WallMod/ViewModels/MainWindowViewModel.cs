@@ -95,6 +95,7 @@ public partial class MainWindowViewModel : ViewModelBase
         uniVM.StayRunningInBackground = bool.Parse(settingsHistoryHelper.GetSettingEntry("StayRunningInBackground"));
         uniVM.AutoOpenLastDirectory = bool.Parse(settingsHistoryHelper.GetSettingEntry("AutoOpenLastChosenDirectoryOnAppStart"));
         uniVM.RememberFilters = bool.Parse(settingsHistoryHelper.GetSettingEntry("RememberFilterSettings"));
+        uniVM.RememberThumbnailZoomLevel = bool.Parse(settingsHistoryHelper.GetSettingEntry("RememberThumbnailZoomLevel"));
         uniVM.CPUThreadsAllocated = int.Parse(settingsHistoryHelper.GetSettingEntry("CPUThreadsAllocated"));
 
         if (uniVM.AutoOpenLastDirectory == true)

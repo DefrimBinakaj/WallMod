@@ -41,6 +41,8 @@ public partial class MainWindow : Window
 
     public Wallpaper lastTapImage = new();
 
+    public UIHistoryHelper uiHistoryHelper = new();
+
     public MainWindow(MainWindowViewModel vm)
     {
         InitializeComponent();
@@ -54,12 +56,65 @@ public partial class MainWindow : Window
         DetectMonitors();
     }
 
-
+    // app window section ---------------------------------------------------------
     private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         ResetRectangle();
         UnselectAllPreviewMonitors();
     }
+
+    // UI state persistence according to Avalonia docs
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        var state = uiHistoryHelper.Load();
+        Debug.WriteLine($">>> Loaded: W={state.WindowWidth} H={state.WindowHeight} L={state.LeftColumnStars} Zoom={state.ThumbnailZoomLevel}");
+
+        // size -> position -> window state (order matters in Avalonia)
+        Width = state.WindowWidth;
+        Height = state.WindowHeight;
+
+        if (state.WindowLeft is int left && state.WindowTop is int top)
+        {
+            var pt = new PixelPoint(left, top);
+            if (Screens.All.Any(s => s.Bounds.Contains(pt)))   // monitor may have been unplugged
+                Position = pt;
+        }
+
+        if (state.IsMaximized)
+            WindowState = WindowState.Maximized;
+
+        MainGrid.ColumnDefinitions[0].Width = new GridLength(state.LeftColumnStars, GridUnitType.Star);
+        MainGrid.ColumnDefinitions[2].Width = new GridLength(state.RightColumnStars, GridUnitType.Star);
+
+        if (DataContext is MainWindowViewModel vm && uniVM.RememberThumbnailZoomLevel == true)
+            vm.ThumbnailZoomLevel = state.ThumbnailZoomLevel;
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        var state = uiHistoryHelper.Load();
+
+        state.IsMaximized = WindowState == WindowState.Maximized;
+
+        if (WindowState == WindowState.Normal)
+        {
+            state.WindowWidth = Width;
+            state.WindowHeight = Height;
+            state.WindowLeft = Position.X;
+            state.WindowTop = Position.Y;
+            state.LeftColumnStars = MainGrid.ColumnDefinitions[0].Width.Value;
+            state.RightColumnStars = MainGrid.ColumnDefinitions[2].Width.Value;
+        }
+
+        if (DataContext is MainWindowViewModel vm)
+            state.ThumbnailZoomLevel = vm.ThumbnailZoomLevel;
+
+        uiHistoryHelper.Save(state);
+        Debug.WriteLine($">>> Saving: W={state.WindowWidth} H={state.WindowHeight} L={state.LeftColumnStars} Zoom={state.ThumbnailZoomLevel}");
+        base.OnClosing(e);
+    }
+
 
 
     // gallery section ---------------------------------------------------------
