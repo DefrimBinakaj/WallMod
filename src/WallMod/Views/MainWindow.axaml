@@ -435,6 +435,13 @@
 											</LinearGradientBrush>
 										</Rectangle.Stroke>
 									</Rectangle>
+									<!-- resize handle indicator: purely visual, sticks to DragRect's bottom-right -->
+									<Path x:Name="DragRectHandle"
+										  Data="M 0,14 L 14,14 L 14,0 Z"
+										  Fill="White"
+										  Opacity="0.85"
+										  IsHitTestVisible="False"
+										  IsVisible="False"/>
 								</Canvas>
 							</Grid>
 

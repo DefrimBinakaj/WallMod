@@ -389,6 +389,7 @@ public partial class MainWindow : Window
         Canvas.SetTop(DragRect, (previewH - finalHeight) / 2);
 
         DragRect.IsVisible = true;
+        UpdateDragRectHandle();
         UpdatePendingCropInVm();
     }
 
@@ -397,10 +398,27 @@ public partial class MainWindow : Window
         if (DragRect == null) return;
         DragRect.IsVisible = false;
         DragRect.Width = DragRect.Height = 0;
+        UpdateDragRectHandle();
         Canvas.SetLeft(DragRect, 0);
         Canvas.SetTop(DragRect, 0);
         _aspectRatio = 1.0;
         (DataContext as MainWindowViewModel)?.ClearPendingCrop();
+    }
+    // keeps the visual corner triangle glued to DragRect's bottom-right
+    private void UpdateDragRectHandle()
+    {
+        if (DragRect == null || DragRectHandle == null) return;
+
+        if (!DragRect.IsVisible)
+        {
+            DragRectHandle.IsVisible = false;
+            return;
+        }
+
+        const double handleSize = 14;
+        Canvas.SetLeft(DragRectHandle, Canvas.GetLeft(DragRect) + DragRect.Width - handleSize);
+        Canvas.SetTop(DragRectHandle, Canvas.GetTop(DragRect) + DragRect.Height - handleSize);
+        DragRectHandle.IsVisible = true;
     }
 
     // ------------------------------------------------------
@@ -463,6 +481,7 @@ public partial class MainWindow : Window
 
         Canvas.SetLeft(DragRect, newX);
         Canvas.SetTop(DragRect, newY);
+        UpdateDragRectHandle();
     }
 
 
@@ -503,6 +522,7 @@ public partial class MainWindow : Window
 
         DragRect.Width = newWidth;
         DragRect.Height = newHeight;
+        UpdateDragRectHandle();
     }
 
 
