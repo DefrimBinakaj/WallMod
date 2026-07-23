@@ -113,9 +113,10 @@
 								Orientation="Vertical"
 								Spacing="6"
 								VerticalAlignment="Center"
-								Margin="8,0,0,0">
+								Margin="8,0,12,0">
 
-						<Panel Height="15">
+						<!-- countdown (fixed slot so buttons dont shift when it appears) -->
+						<Panel Height="12">
 							<TextBlock Text="{Binding TimeRemainingDisplay}"
 									   FontSize="11"
 									   HorizontalAlignment="Center"
@@ -123,46 +124,39 @@
 									   IsVisible="{Binding CustomAutoSetDisableButtonEnabled}"/>
 						</Panel>
 
-						<!-- Enable / Disable buttons -->
-						<StackPanel Orientation="Horizontal" Spacing="4">
+						<!-- primary row: enable / disable -->
+						<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
 							<Button Content="Enable"
 									Background="DarkGreen"
-									Foreground="White"
-									FontSize="11"
 									Command="{Binding ExecEnableCustomAutoSet}"
 									IsEnabled="{Binding CustomAutoSetEnableButtonEnabled}"/>
-
 							<Button Content="Disable"
 									Background="DarkRed"
-									Foreground="White"
-									FontSize="11"
 									Command="{Binding ExecDisableCustomAutoSet}"
 									IsEnabled="{Binding CustomAutoSetDisableButtonEnabled}"/>
 						</StackPanel>
 
-						<!-- clear / skip / loop buttons -->
-						<StackPanel Orientation="Horizontal" Spacing="4">
-							
-							<Button Content="Clear"
-									Command="{Binding clearWallpaperQueueButton}"
-									FontSize="11"
-									Background="Red"/>
-
+						<!-- secondary row: skip / loop / clear -->
+						<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
 							<Button Background="Transparent"
-									Command="{Binding skipCustomAutoSetImageButton}">
+									Command="{Binding skipCustomAutoSetImageButton}"
+									ToolTip.Tip="Skip">
 								<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
 							</Button>
-
 							<Button Classes="iconOutline"
-									Command="{Binding toggleLoopQueueButton}"
-									Background="{Binding LoopButtonColour, Converter={StaticResource ColorToBrushConverter}}"
+									Command="{Binding toggleLoopCustomQueueButton}"
+									Background="{Binding LoopCustomButtonColour, Converter={StaticResource ColorToBrushConverter}}"
 									ToolTip.Tip="Loop: finished wallpapers return to the back of the queue">
 								<Image Source="avares://Wallmod/Assets/queueloop-icon.png" Width="14" Height="14"/>
 							</Button>
-							
+							<Button Content="🗑️"
+									FontSize="11"
+									Background="Red"
+									Margin="8,0,0,0"
+									Command="{Binding clearWallpaperQueueButton}"
+									ToolTip.Tip="Clear the entire queue"/>
 						</StackPanel>
-						
-						
+
 					</StackPanel>
 
 					<!-- Custom queue thumbnails (outer ScrollViewer owns the scrolling) -->
@@ -270,87 +264,89 @@
 							  VerticalScrollBarVisibility="Disabled"
 							  IsVisible="{Binding RandomQueueViewVisible}"
 							  VerticalAlignment="Center">
-					<Grid	RowDefinitions="Auto,4,Auto"
-							ColumnDefinitions="Auto,24,Auto,48,*"
-							Margin="8,0,0,0"
-							VerticalAlignment="Center">
 
-						<!-- RANDOM controls: Enable/Disable + Browse -->
-						<StackPanel	Grid.Row="0"
-									Grid.RowSpan="3"
-									Grid.Column="0"
+					<!-- RANDOM: controls | browse | directory info -->
+					<Grid ColumnDefinitions="Auto,24,Auto,24,*" Margin="8,0,0,0">
+
+						<!-- RANDOM controls: countdown on top, enable/disable row, then skip/loop/checkbox row -->
+						<StackPanel Grid.Column="0"
 									Orientation="Vertical"
-									Spacing="4"
+									Spacing="6"
 									VerticalAlignment="Center">
 
-							<!-- remaining time -->
-							<Panel Height="15">
+							<!-- countdown (fixed slot so buttons dont shift when it appears) -->
+							<Panel Height="12">
 								<TextBlock Text="{Binding TimeRemainingDisplay}"
-										   FontSize="11"
-										   HorizontalAlignment="Center"
-										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-										   IsVisible="{Binding RandomAutoSetDisableButtonEnabled}"/>
+											FontSize="11"
+											HorizontalAlignment="Center"
+											Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+											IsVisible="{Binding RandomAutoSetDisableButtonEnabled}"/>
 							</Panel>
 
-							<StackPanel Orientation="Horizontal"
-										Spacing="4"
-										HorizontalAlignment="Left">
+							<!-- primary row: enable / disable -->
+							<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
 								<Button Content="Enable"
 										Background="DarkGreen"
-										Foreground="White"
 										Command="{Binding ExecEnableRandomAutoSet}"
-										IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"
-										FontSize="11"/>
-
+										IsEnabled="{Binding RandomAutoSetEnableButtonEnabled}"/>
 								<Button Content="Disable"
 										Background="DarkRed"
-										Foreground="White"
 										Command="{Binding ExecDisableRandomAutoSet}"
-										IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"
-										FontSize="11"/>
+										IsEnabled="{Binding RandomAutoSetDisableButtonEnabled}"/>
 							</StackPanel>
 
-
-
-							<CheckBox Height="12" FontSize="12" IsChecked="{Binding RandomizeEachMonitor, Mode=TwoWay}">
-								Randomize All Monitors
-							</CheckBox>
-								
+							<!-- secondary row: skip / loop / per-monitor toggle -->
+							<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+								<Button Background="Transparent"
+										Command="{Binding skipRandomAutoSetImageButton}"
+										ToolTip.Tip="Skip">
+									<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
+								</Button>
+								<Button Classes="iconOutline"
+										Command="{Binding toggleLoopRandomQueueButton}"
+										Background="{Binding LoopRandomButtonColour, Converter={StaticResource ColorToBrushConverter}}"
+										ToolTip.Tip="Loop: when the directory runs out, restart it from the beginning">
+									<Image Source="avares://Wallmod/Assets/queueloop-icon.png" Width="14" Height="14"/>
+								</Button>
+								<CheckBox FontSize="12"
+											VerticalAlignment="Center"
+											Margin="6,0,0,0"
+											IsChecked="{Binding RandomizeEachMonitor, Mode=TwoWay}"
+											ToolTip.Tip="Set a different random wallpaper on each monitor">
+									RNG Each Monitor
+								</CheckBox>
+							</StackPanel>
 
 						</StackPanel>
 
-						<Button Grid.Row="0"
-								Grid.Column="2"
+						<!-- browse -->
+						<Button Grid.Column="2"
 								Content="Browse…"
-								Command="{Binding execBrowseDirectory}"
+								FontSize="11"
 								VerticalAlignment="Center"
-								FontSize="11"/>
-						
-						<Button Grid.Row="2"
-								Grid.Column="2"
-								Background="Transparent"
-								VerticalAlignment="Top"
-								HorizontalAlignment="Center"
-								Command="{Binding skipRandomAutoSetImageButton}">
-							<Image Source="avares://Wallmod/Assets/skip-icon.png" Width="14" Height="14"/>
-						</Button>
-						
-						<!-- Random Queue Info -->
-						<TextBlock Grid.Row="0"
-								   Grid.Column="4"
-								   FontSize="14"
-								   Text="{Binding RandDirecName}"
-								   Foreground="White"
-								   VerticalAlignment="Center"/>
+								Command="{Binding execBrowseDirectory}"/>
 
-						<!-- Random Queue Info -->
-						<TextBlock Grid.Row="2"
-								   Grid.Column="4"
-								   Text="{Binding RandWallpapersRemaining}"
-								   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-								   VerticalAlignment="Top"/>
-						
+						<!-- directory info: path over remaining count, one centered block -->
+						<StackPanel Grid.Column="4"
+									Orientation="Vertical"
+									Spacing="2"
+									VerticalAlignment="Center"
+									HorizontalAlignment="Left">
+							<TextBlock Text="{Binding RandDirecName}"
+										FontSize="16"
+										Foreground="White"
+										HorizontalAlignment="Left"
+										MaxWidth="340"
+										TextTrimming="CharacterEllipsis"
+										ToolTip.Tip="{Binding RandDirecName}"/>
+							<TextBlock Text="{Binding RandWallpapersRemaining}"
+										FontSize="14"
+										HorizontalAlignment="Left"
+										Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+						</StackPanel>
+
 					</Grid>
+					
 				</ScrollViewer>
 
 

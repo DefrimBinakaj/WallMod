@@ -48,7 +48,8 @@ public partial class AutoSetViewModel : ObservableObject
                 OnPropertyChanged(nameof(SelectedPrimaryAccentColour));
         };
 
-        UpdateLoopButtonColour();
+        UpdateLoopCustomButtonColour();
+        UpdateLoopRandomButtonColour();
     }
 
 
@@ -163,20 +164,36 @@ public partial class AutoSetViewModel : ObservableObject
     private bool randomizeEachMonitor;
     public bool RandomizeEachMonitor { get => randomizeEachMonitor; set => SetProperty(ref randomizeEachMonitor, value); }
 
-    private Color loopButtonColour = Colors.Transparent;
-    public Color LoopButtonColour { get => loopButtonColour; set => SetProperty(ref loopButtonColour, value); }
+    private Color loopCustomButtonColour = Colors.Transparent;
+    public Color LoopCustomButtonColour { get => loopCustomButtonColour; set => SetProperty(ref loopCustomButtonColour, value); }
 
-    [RelayCommand] public void toggleLoopQueueButton() => ToggleLoopQueue();
-    public void ToggleLoopQueue()
+    private Color loopRandomButtonColour = Colors.Transparent;
+    public Color LoopRandomButtonColour { get => loopRandomButtonColour; set => SetProperty(ref loopRandomButtonColour, value); }
+
+    [RelayCommand] public void toggleLoopCustomQueueButton() => ToggleLoopCustomQueue();
+    public void ToggleLoopCustomQueue()
     {
-        uniVM.LoopQueue = !uniVM.LoopQueue;
-        Debug.WriteLine("loop queue = " + uniVM.LoopQueue);
-        UpdateLoopButtonColour();
+        uniVM.LoopCustomQueue = !uniVM.LoopCustomQueue;
+        Debug.WriteLine("loop queue = " + uniVM.LoopCustomQueue);
+        UpdateLoopCustomButtonColour();
+    }
+    public void UpdateLoopCustomButtonColour()
+    {
+        LoopCustomButtonColour = uniVM.LoopCustomQueue
+            ? SelectedPrimaryAccentColour
+            : Colors.Transparent;
     }
 
-    public void UpdateLoopButtonColour()
+    [RelayCommand] public void toggleLoopRandomQueueButton() => ToggleLoopRandomQueue();
+    public void ToggleLoopRandomQueue()
     {
-        LoopButtonColour = uniVM.LoopQueue
+        uniVM.LoopRandomQueue = !uniVM.LoopRandomQueue;
+        Debug.WriteLine("loop random queue = " + uniVM.LoopRandomQueue);
+        UpdateLoopRandomButtonColour();
+    }
+    public void UpdateLoopRandomButtonColour()
+    {
+        LoopRandomButtonColour = uniVM.LoopRandomQueue
             ? SelectedPrimaryAccentColour
             : Colors.Transparent;
     }
@@ -231,6 +248,11 @@ public partial class AutoSetViewModel : ObservableObject
         if (!folderOpenPick.Any()) return; // if cancel is clicked, don't crash
         RandDirecName = folderOpenPick.Last().Path.LocalPath;
 
+        getRandomImageQueue(RandDirecName);
+    }
+
+    private async Task getRandomImageQueue(string direcName)
+    {
 
         List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp" };
         var files = Directory.EnumerateFiles(RandDirecName)
@@ -274,7 +296,6 @@ public partial class AutoSetViewModel : ObservableObject
         }
 
         await Task.WhenAll(tasks);
-        
     }
 
 
@@ -382,7 +403,7 @@ public partial class AutoSetViewModel : ObservableObject
 
                 WallpaperQueue.RemoveAt(0);
 
-                if (uniVM.LoopQueue)
+                if (uniVM.LoopCustomQueue)
                 {
                     WallpaperQueue.Add(wp); // finished image (crop and all) goes to the back
                 }
@@ -424,10 +445,15 @@ public partial class AutoSetViewModel : ObservableObject
         {
             if (RandDirImageCollection.Count == 0)
             {
-                disableRandomAutoSet();
-                return;
+                if (uniVM.LoopRandomQueue == true) await getRandomImageQueue(RandDirecName);
+                else
+                {
+                    disableRandomAutoSet();
+                    return;
+                }
             }
-            else if (RandDirImageCollection.Count > 0 && TotalSeconds >= 1)
+
+            if (RandDirImageCollection.Count > 0 && TotalSeconds >= 1)
             {
                 // choose between one rand image for all monitors, or diff rand for each monitor
                 if (RandomizeEachMonitor == true)
