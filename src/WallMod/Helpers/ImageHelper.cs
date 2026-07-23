@@ -18,6 +18,7 @@ using DataJuggler.PixelDatabase;
 using ColorThiefDotNet;
 using Microsoft.Extensions.DependencyInjection;
 using WallMod.State;
+using System.Security.Cryptography;
 
 namespace WallMod.Helpers;
 
@@ -515,5 +516,94 @@ public class ImageHelper
     }
 
 
+
+    // gen horizontally mirrored copy of image
+    // re-flipping the same image reuses the file and two same-named files from different folders can't collide
+    public static string? GetMirroredCopy(string filePath)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return null;
+
+            string dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallMod", "mirrored");
+            Directory.CreateDirectory(dir);
+
+            string pathHash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(filePath)))[..8];
+            string target = Path.Combine(dir,
+                Path.GetFileNameWithoutExtension(filePath) + "_" + pathHash + "_mirrored.png");
+
+            if (File.Exists(target)) return target; // already generated this session or earlier
+
+            using var src = SKBitmap.Decode(filePath);
+            if (src == null) return null;
+
+            using var dst = new SKBitmap(src.Width, src.Height);
+            using (var canvas = new SKCanvas(dst))
+            {
+                canvas.Scale(-1, 1);
+                canvas.DrawBitmap(src, -src.Width, 0);
+            }
+
+            using var image = SKImage.FromBitmap(dst);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var stream = File.Create(target);
+            data.SaveTo(stream);
+            return target;
+        }
+        catch (Exception ex)
+        {
+            AppStorageHelper.LogCrash(ex);
+            return null;
+        }
+    }
+
+
+
+    // clears temp image files WallMod generates (besides those needed for autoset or etc
+    public static void ClearTempImageFiles(IEnumerable<string> referencedPaths)
+    {
+        // mirrored copies - keep anything still referenced
+        try
+        {
+            string mirrorDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WallMod", "mirrored");
+
+            if (Directory.Exists(mirrorDir))
+            {
+                var keep = new HashSet<string>(referencedPaths ?? Enumerable.Empty<string>(),
+                                               StringComparer.OrdinalIgnoreCase);
+
+                foreach (var file in Directory.EnumerateFiles(mirrorDir, "*_mirrored.png"))
+                {
+                    if (keep.Contains(file)) continue;
+                    try { File.Delete(file); }
+                    catch (Exception ex) { Debug.WriteLine("temp clear skip: " + ex.Message); }
+                }
+            }
+        }
+        catch (Exception ex) { AppStorageHelper.LogCrash(ex); }
+
+        // leftover thumbnails + resized wallpapers in %TEMP% (only ones we created);
+        // nothing persists these paths, so they're always safe to delete
+        try
+        {
+            string tempDir = Path.GetTempPath();
+            var patterns = new[] { "thumb_*.jpg", "wallmod_resized_*.jpg" };
+
+            foreach (var pattern in patterns)
+            {
+                foreach (var file in Directory.EnumerateFiles(tempDir, pattern))
+                {
+                    try { File.Delete(file); }
+                    catch (Exception ex) { Debug.WriteLine("temp clear skip: " + ex.Message); }
+                }
+            }
+        }
+        catch (Exception ex) { AppStorageHelper.LogCrash(ex); }
+    }
 
 }

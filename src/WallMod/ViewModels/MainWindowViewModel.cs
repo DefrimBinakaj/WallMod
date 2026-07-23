@@ -55,7 +55,8 @@ public partial class MainWindowViewModel : ViewModelBase
     // list of history wallpapers
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
 
-
+    // holds the untouched gallery object while the mirrored copy is selected (null = not mirrored)
+    private Wallpaper? originalBeforeMirror;
 
 
     public MainWindowViewModel(UniversalAppStore universalVM)
@@ -195,6 +196,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private Color favouriteButtonColour = Colors.Transparent;
     public Color FavouriteButtonColour { get => favouriteButtonColour; set => SetProperty(ref favouriteButtonColour, value); }
+
+    private Color mirrorButtonColour = Colors.Transparent;
+    public Color MirrorButtonColour { get => mirrorButtonColour; set => SetProperty(ref mirrorButtonColour, value); }
+
 
     public bool MainGridVisibility { get => uniVM.MainGridVisibility; set { if (uniVM.MainGridVisibility != value) { uniVM.MainGridVisibility = value; OnPropertyChanged(); } } }
     public bool SettingsViewVisibility { get => uniVM.SettingsViewVisibility; set { if (uniVM.SettingsViewVisibility != value) { uniVM.SettingsViewVisibility = value; OnPropertyChanged(); } } }
@@ -496,6 +501,10 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
                 Debug.WriteLine(wallpaper.Name + " image tapped");
                 LastSelectedWallpaper = wallpaper;
+                
+                originalBeforeMirror = null;
+                UpdateMirrorButtonColour(); // selecting from the gallery always exits mirror mode
+
                 CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(LastSelectedWallpaper.FilePath);
                 CurrentWallpaperName = wallpaper.Name;
                 if (CurrentWallpaperPreview != null)
@@ -649,6 +658,58 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 
+
+
+    // mirror preview img ============================================================
+
+    [RelayCommand] public void mirrorPreviewCommand() => MirrorPreview();
+    public void MirrorPreview()
+    {
+        if (LastSelectedWallpaper == null || LastSelectedWallpaper.IsDirectory == true) return;
+
+        // currently mirrored -> restore the original gallery object
+        if (originalBeforeMirror != null)
+        {
+            var orig = originalBeforeMirror;
+            originalBeforeMirror = null;
+            LastSelectedWallpaper = orig;
+            CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(orig.FilePath);
+        }
+        else
+        {
+            string? mirroredPath = ImageHelper.GetMirroredCopy(LastSelectedWallpaper.FilePath);
+            if (mirroredPath == null) return;
+
+            // build the mirrored stand-in; same dims/name/date so UI text stays identical
+            ImageHelper imgHelper = new ImageHelper();
+            var thumb = imgHelper.GetThumbNailFromPath(mirroredPath);
+            if (thumb.Item2 != null) { try { File.Delete(thumb.Item2); } catch (Exception ex) { Debug.WriteLine(ex.Message); } }
+
+            originalBeforeMirror = LastSelectedWallpaper;
+            LastSelectedWallpaper = new Wallpaper
+            {
+                FilePath = mirroredPath,
+                Name = originalBeforeMirror.Name,
+                Date = originalBeforeMirror.Date,
+                IsDirectory = false,
+                ImageWidth = originalBeforeMirror.ImageWidth,
+                ImageHeight = originalBeforeMirror.ImageHeight,
+                ImageThumbnailBitmap = thumb.Item1 ?? originalBeforeMirror.ImageThumbnailBitmap,
+                ColourCategory = originalBeforeMirror.ColourCategory,
+            };
+            CurrentWallpaperPreview = ImageHelper.GetBitmapFromPath(mirroredPath);
+        }
+
+        UpdateMirrorButtonColour();
+    }
+
+    public void UpdateMirrorButtonColour()
+    {
+        MirrorButtonColour = originalBeforeMirror != null ? SelectedPrimaryAccentColour : Colors.Transparent;
+    }
+
+
+
     // auto set wallpaper / "Wallpaper Queue" ============================================================
     [RelayCommand] public void addWallpaperToAutoSetCommand() => AddWallpaperToAutoSet();
     public void AddWallpaperToAutoSet()
@@ -726,6 +787,7 @@ public partial class MainWindowViewModel : ViewModelBase
         finally
         {
             isRestoringQueue = false;
+            await ClearTempImages();
         }
     }
 
@@ -832,5 +894,23 @@ public partial class MainWindowViewModel : ViewModelBase
         MainGridVisibility = !MainGridVisibility;
     }
 
+
+
+    // clear temp imgs ============================================================
+    private async Task ClearTempImages()
+    {
+        try
+        {
+            var referenced = uniVM.WallpaperQueue.Select(w => w.FilePath).ToList();
+            referenced.AddRange((await favouritesHelper.GetFavouriteWallpapers()).Select(w => w.FilePath));
+            referenced.AddRange((await wallpaperHistoryHelper.GetHistoryWallpapers()).Select(w => w.FilePath));
+
+            ImageHelper.ClearTempImageFiles(referenced);
+        }
+        catch (Exception ex)
+        {
+            AppStorageHelper.LogCrash(ex);
+        }
+    }
 
 }
