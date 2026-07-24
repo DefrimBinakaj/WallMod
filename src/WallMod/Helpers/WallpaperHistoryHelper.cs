@@ -129,32 +129,6 @@ public class WallpaperHistoryHelper
     }
 
 
-    // NOT CURRENTLY USED [OPTIONAL]
-    // get windows wallpaper history (NOT used in app; used in windows settings)
-    public void ViewWindowsHistory()
-    {
-        string registryPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers";
-        using (var wallpkey = Registry.CurrentUser.OpenSubKey(registryPath))
-        {
-            if (wallpkey != null)
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    string valueName = $"BackgroundHistoryPath{i}";
-                    var path = wallpkey.GetValue(valueName) as string;
-
-                    if (!string.IsNullOrEmpty(path))
-                    {
-                        // WallpaperHistoryList.Add(path);
-                        Debug.WriteLine(path);
-                    }
-                }
-            }
-        }
-
-    }
-
-
     public void RemoveHistoryEntry(string wallpaperPath)
     {
         var history = LoadHistoryJson();

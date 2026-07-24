@@ -139,13 +139,6 @@ public class UniversalAppStore : ViewModelBase
     // AUTOSET QUEUE
     public ObservableCollection<Wallpaper> WallpaperQueue { get; set; } = new ObservableCollection<Wallpaper>();
 
-    // MAYBE?: Convenience helper (avoids duplicates)
-    public void AddToQueue(Wallpaper wp)
-    {
-        if (WallpaperQueue.Any(w => w.FilePath == wp.FilePath) == false)
-            WallpaperQueue.Add(wp);
-    }
-
     private bool loopCustomQueue = false;
     public bool LoopCustomQueue { get => loopCustomQueue; set => SetProperty(ref loopCustomQueue, value); }
 

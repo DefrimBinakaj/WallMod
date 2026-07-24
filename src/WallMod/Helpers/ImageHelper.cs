@@ -285,10 +285,7 @@ public class ImageHelper
                 AllowMultiple = false
             });
 
-            if (folderOpenPick == null || !folderOpenPick.Any())
-            {
-                return null;
-            }
+            if (folderOpenPick == null || !folderOpenPick.Any()) return null;
             folderChoice = folderOpenPick.Last().Path.LocalPath;
         }
         
@@ -399,40 +396,6 @@ public class ImageHelper
         return imgCollec;
 
     }
-
-
-    // func for choosing one file with upload button
-    public async Task<Wallpaper> chooseOneWallpaperUpload(Window window)
-    {
-        var result = await window.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
-        {
-            Title = window.Title,
-            FileTypeFilter = new List<FilePickerFileType> { FilePickerFileTypes.ImageAll },
-            AllowMultiple = false
-        });
-
-        if (result == null || !result.Any())
-        {
-            return null;
-        }
-
-        try
-        {
-            string selectedFilePath = result.Last().Path.LocalPath;
-            Debug.WriteLine("selected file path: " + selectedFilePath);
-            return getWallpaperObjectFromPath(selectedFilePath);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("!!!!! error uploading file - " + ex.Message);
-            return null;
-        }
-
-
-    }
-
-
-
 
     // func for choosing a file with upload button
     public async Task<ObservableCollection<Wallpaper>> chooseMultipleWallpaperUpload(Window window)

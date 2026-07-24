@@ -67,14 +67,4 @@ public class AppStorageHelper
         }
     }
 
-    // NOT USED YET: get all contents from crashlog file
-    public static string GetCrashLog()
-    {
-        if (!File.Exists(crashLogFile))
-        {
-            return "";
-        }
-        return File.ReadAllText(crashLogFile);
-    }
-
 }

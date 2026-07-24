@@ -487,41 +487,18 @@ public partial class MainWindow : Window
 
     private void DoResizing(double dx, double dy)
     {
-        double newWidth = _rectStartWidth + dx;
-        double newHeight = _rectStartHeight + dy;
+        double maxW = OverlayCanvas.Bounds.Width - _rectStartX;
+        double maxH = OverlayCanvas.Bounds.Height - _rectStartY;
 
-        // 1) Enforce aspect ratio: newHeight is derived from newWidth
-        newHeight = newWidth / _aspectRatio;
+        // requested width from the drag, then the aspect-locked height
+        double w = Math.Clamp(_rectStartWidth + dx, 10, maxW);
+        double h = w / _aspectRatio;
 
-        // 2) Minimum size
-        if (newWidth < 10) newWidth = 10;
-        if (newHeight < 10) newHeight = 10;
+        // if that height overflows, height is the binding constraint instead
+        if (h > maxH) { h = maxH; w = h * _aspectRatio; }
 
-        // 3) Clamp to canvas edges
-        double maxWidth = OverlayCanvas.Bounds.Width - _rectStartX;
-        double maxHeight = OverlayCanvas.Bounds.Height - _rectStartY;
-
-        if (newWidth > maxWidth) newWidth = maxWidth;
-        if (newHeight > maxHeight) newHeight = maxHeight;
-
-        // 4) If we hit the bottom edge (vertical clamp), re-calc width so aspect ratio holds
-        if (newHeight == maxHeight)
-        {
-            newWidth = newHeight * _aspectRatio;
-            if (newWidth > maxWidth)
-                newWidth = maxWidth;
-        }
-
-        // 5) If we hit the right edge (horizontal clamp), re-calc height so aspect ratio holds
-        if (newWidth == maxWidth)
-        {
-            newHeight = newWidth / _aspectRatio;
-            if (newHeight > maxHeight)
-                newHeight = maxHeight;
-        }
-
-        DragRect.Width = newWidth;
-        DragRect.Height = newHeight;
+        DragRect.Width = w;
+        DragRect.Height = h;
         UpdateDragRectHandle();
     }
 
