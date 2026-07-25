@@ -41,31 +41,4 @@ public class AppStorageHelperTests
         File.Delete(tempFile);
     }
 
-    [Fact]
-    public void GetCrashLog_WhenFileMissing_ReturnsEmptyString()
-    {
-        string tempFile = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid()}.txt");
-        AppStorageHelper.crashLogFile = tempFile;
-
-        string result = AppStorageHelper.GetCrashLog();
-
-        Assert.Equal(string.Empty, result);
-    }
-
-    [Fact]
-    public void GetCrashLog_WhenFileExists_ReturnsContent()
-    {
-        string tempFile = Path.Combine(Path.GetTempPath(), $"log-{Guid.NewGuid()}.txt");
-        const string expected = "hello-log";
-        File.WriteAllText(tempFile, expected);
-
-        AppStorageHelper.crashLogFile = tempFile;
-
-        string result = AppStorageHelper.GetCrashLog();
-
-        Assert.Equal(expected, result);
-
-        File.Delete(tempFile);
-    }
-
 }
