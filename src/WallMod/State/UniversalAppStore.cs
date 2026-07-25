@@ -339,7 +339,7 @@ public class UniversalAppStore : ViewModelBase
     }
 
     // version ===================================================
-    private string appNameVersion = "v0.2.1";
+    private string appNameVersion = "v0.3.2";
     public string AppNameVersion
     {
         get => appNameVersion;
