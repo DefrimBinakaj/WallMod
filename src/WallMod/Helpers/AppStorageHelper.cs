@@ -11,60 +11,29 @@ namespace WallMod.Helpers;
 /**
  * Class for creating AppData json/txt files where history/settings/logs are saved after app is closed
  */
-public class AppStorageHelper
+public static class AppStorageHelper
 {
-    public string? appStorageDirectory;
+    public static readonly string appStorageDirectory = Directory.CreateDirectory(
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallMod")).FullName;
 
-    public string? appWallpaperHistoryFile;
-
-    public string? appSettingsHistoryFile;
-
-    public static string? crashLogFile;
-
-    public string? appFavouritesFile;
-
-    public string? appQueueHistoryFile;
-
-    public string? appUIStateHistoryFile;
-
-    public void InitAppStorage()
-    {
-        // AppData/WallMod
-        appStorageDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "WallMod"
-        );
-        Directory.CreateDirectory(appStorageDirectory);
-
-        // AppData/WallMod/WallModWallpaperHistory.json
-        appWallpaperHistoryFile = Path.Combine(appStorageDirectory, "WallModWallpaperHistory.json");
-
-        // AppData/WallMod/WallModSettingsHistory.json
-        appSettingsHistoryFile = Path.Combine(appStorageDirectory, "WallModSettingsHistory.json");
-
-        // AppData/WallMod/WallModCrashLog.txt
-        crashLogFile = Path.Combine(appStorageDirectory, "CrashLog.txt");
-
-        appFavouritesFile = Path.Combine(appStorageDirectory, "WallModFavourites.json");
-
-        appQueueHistoryFile = Path.Combine(appStorageDirectory, "WallModQueueHistory.json");
-
-        appUIStateHistoryFile = Path.Combine(appStorageDirectory, "WallModUIStateHistory.json");
-    }
-
+    // AppData/WallMod/***.json
+    public static readonly string appWallpaperHistoryFile = Path.Combine(appStorageDirectory, "WallModWallpaperHistory.json");
+    public static readonly string appSettingsHistoryFile = Path.Combine(appStorageDirectory, "WallModSettingsHistory.json");
+    public static readonly string appFavouritesFile = Path.Combine(appStorageDirectory, "WallModFavourites.json");
+    public static readonly string appQueueHistoryFile = Path.Combine(appStorageDirectory, "WallModQueueHistory.json");
+    public static readonly string appUIStateHistoryFile = Path.Combine(appStorageDirectory, "WallModUIStateHistory.json");
+    public static string crashLogFile = Path.Combine(appStorageDirectory, "CrashLog.txt"); // not readonly so tests can redirect it
 
     // add error logs to crashlog file
     public static void LogCrash(Exception ex)
     {
         try
         {
-            string currLogOutput = DateTime.Now + " ---->> " + ex.ToString() + "\n";
-            File.AppendAllText(crashLogFile, currLogOutput);
+            File.AppendAllText(crashLogFile, DateTime.Now + " ---->> " + ex + "\n");
         }
         catch
         {
             Debug.WriteLine("error logging crash!");
         }
     }
-
 }

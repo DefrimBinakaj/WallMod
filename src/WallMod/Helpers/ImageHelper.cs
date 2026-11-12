@@ -1,24 +1,27 @@
-﻿using Avalonia.Controls;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform.Storage;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using ColorThiefDotNet;
+using DataJuggler.PixelDatabase;
+using Microsoft.Extensions.DependencyInjection;
 using SkiaSharp;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using WallMod.ViewModels;
-using WallMod.Models;
-using DataJuggler.PixelDatabase;
-using ColorThiefDotNet;
-using Microsoft.Extensions.DependencyInjection;
-using WallMod.State;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using WallMod.Models;
+using WallMod.State;
+using WallMod.ViewModels;
 
 namespace WallMod.Helpers;
 
@@ -30,15 +33,105 @@ public class ImageHelper
 
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
-    // -----------------------------------------------------------------------------------------------
-    // funcs for converting resizedSkiaImg to bitmap
+    public static HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".bmp" };
 
+    private const int MaxCachedImages = 10000; // ~10-20 KB each
+    private const int ThumbnailWidth = 250, ThumbnailHeight = 200;
+
+    // decoded once and shared by every tile
+    private static readonly Lazy<Bitmap> folderIcon = new(() => new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))));
+
+    private static readonly string MirrorDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallMod", "mirrored");
+
+    // everything one decode of an image produces; Thumbnail is null if the file couldn't be decoded
+    private sealed record ImageData(byte[]? Thumbnail, int Width, int Height, double Hue);
+    private static readonly ImageData unreadableImage = new(null, 0, 0, 0);
+    private static readonly ConcurrentDictionary<string, ImageData> imageCache = new();
+
+    private int allocCPUThreads => Math.Max(1, uniVM.CPUThreadsAllocated);
+
+
+    // ===== wallpaper objects ======================================================================
+
+    // complete wallpaper for one file (gallery, favourites, history, queue, uploads, random autoset, mirror)
+    public Wallpaper getWallpaperObjectFromPath(string imgFilePath)
+    {
+        var file = new FileInfo(imgFilePath);
+        var imgData = GetImageData(file);
+
+        return new Wallpaper
+        {
+            FilePath = imgFilePath,
+            ImageBitmap = null, // WE DO NOT NEED THIS IN ORDER TO SET BACKGROUND - uses filepath
+            ImageWidth = imgData.Width,
+            ImageHeight = imgData.Height,
+            ImageThumbnailBitmap = ToBitmap(imgData.Thumbnail),
+            ColourCategory = imgData.Hue,
+            Name = file.Name,
+            Date = file.LastWriteTime,
+            IsDirectory = false,
+        };
+    }
+
+    // folder tiles (ready to show) + the supported image files in a folder; null = folder can't be opened
+    public (List<Wallpaper> folderTiles, List<FileInfo> imgFiles)? getDirecContents(string folderChoice)
+    {
+        try
+        {
+            var folderTiles = Directory.GetDirectories(folderChoice).Select(subDir => new Wallpaper
+            {
+                FilePath = subDir,
+                Name = Path.GetFileName(subDir),
+                IsDirectory = true,
+                ImageThumbnailBitmap = folderIcon.Value,
+                Date = Directory.GetLastWriteTime(subDir),
+                FolderItemCount = CountFolderItems(subDir)
+            }).ToList();
+
+            var imgFiles = new DirectoryInfo(folderChoice).EnumerateFiles()
+                                                          .Where(file => SupportedExtensions.Contains(file.Extension))
+                                                          .ToList();
+            return (folderTiles, imgFiles);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException)
+        {
+            Debug.WriteLine($"!!!  Access denied to {folderChoice} - Skipping loading func");
+            return null;
+        }
+    }
+
+    // decodes in parallel (allocCPUThreads at a time) but hands wallpapers back in the given order,
+    // each one as soon as it and everything before it is ready -> the gallery fills left to right, line by line
+    public async IAsyncEnumerable<Wallpaper> LoadWallpapersInOrder(IEnumerable<string> imgFilePaths, [EnumeratorCancellation] CancellationToken token = default)
+    {
+        var semaphore = new SemaphoreSlim(allocCPUThreads);
+
+        // starts every load now; the semaphore keeps only allocCPUThreads decoding at once
+        var tasks = imgFilePaths.Select(filePath => Task.Run(async () =>
+        {
+            await semaphore.WaitAsync(token);
+            try { return getWallpaperObjectFromPath(filePath); }
+            finally { semaphore.Release(); }
+        }, token)).ToList();
+
+        foreach (var task in tasks)
+        {
+            yield return await task;
+        }
+    }
+
+    // queue tile showing only the cropped region (crop in original-image pixels)
+    public static Bitmap? GetCroppedThumbnail(string filePath, int x, int y, int w, int h)
+    {
+        var (resizedBitmap, _, _) = GetThumbNailFromPath(filePath, new SKRectI(x, y, x + w, y + h));
+        using (resizedBitmap) return resizedBitmap == null ? null : ToBitmap(EncodeJpeg(resizedBitmap));
+    }
+
+    // full-resolution image for the preview pane
     public static Bitmap GetBitmapFromPath(string filePath)
     {
-        if (File.Exists(filePath))
-        {
-            return new Bitmap(filePath);
-        }
+        if (File.Exists(filePath)) return new Bitmap(filePath);
         else
         {
             Debug.WriteLine("!!!!! " + filePath + " doesnt exist");
@@ -46,64 +139,185 @@ public class ImageHelper
         }
     }
 
-    public static Bitmap LoadFromResource(Uri resourceUri)
+
+    // ===== decoding + cache =======================================================================
+
+    private static string CacheKey(FileInfo file) => file.FullName + "|" + file.LastWriteTimeUtc.Ticks + "|" + file.Length;
+
+    // cached decode: thumbnail jpeg + full size + average colour
+    private static ImageData GetImageData(FileInfo file)
     {
-        return new Bitmap(AssetLoader.Open(resourceUri));
+        if (!file.Exists) return unreadableImage;
+
+        string key = CacheKey(file);
+        if (imageCache.TryGetValue(key, out var cached)) return cached;
+
+        var (resizedBitmap, width, height) = GetThumbNailFromPath(file.FullName);
+        if (resizedBitmap == null) return unreadableImage; // not cached, so eg. a locked file is retried next time
+
+        using (resizedBitmap)
+        {
+            if (imageCache.Count >= MaxCachedImages) imageCache.Clear();
+            return imageCache[key] = new ImageData(EncodeJpeg(resizedBitmap), width, height, AverageHue(resizedBitmap));
+        }
     }
 
-    public static async Task<Bitmap?> LoadFromWeb(Uri url)
+    // the one decode pipeline (gallery + cropped queue thumbnails):
+    // decodes only as much of the file as a thumbnail needs (jpegs decode straight at 1/2, 1/4 or 1/8 size),
+    // cuts out cropRect (original-image pixels, null = whole image) and fits it into the thumbnail box.
+    // returns the thumbnail (caller disposes; null if unreadable) + the image's full size
+    private static (SKBitmap? resizedBitmap, int width, int height) GetThumbNailFromPath(string origImgPath, SKRectI? cropRect = null)
     {
-        using var httpClient = new HttpClient();
         try
         {
-            var response = await httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-            var data = await response.Content.ReadAsByteArrayAsync();
-            return new Bitmap(new MemoryStream(data));
+            using var codec = SKCodec.Create(origImgPath);
+            if (codec == null)
+            {
+                Debug.WriteLine("!!!!! failed to load img at " + origImgPath);
+                return (null, 0, 0);
+            }
+
+            int width = codec.Info.Width, height = codec.Info.Height;
+            var area = cropRect ?? new SKRectI(0, 0, width, height);
+            area.Intersect(new SKRectI(0, 0, width, height));
+            if (area.Width <= 0 || area.Height <= 0) return (null, width, height);
+
+            var (targetWidth, targetHeight) = ScaleToThumbnail(area.Width, area.Height);
+            var decodeSize = codec.GetScaledDimensions(Math.Min(1f, Math.Max((float)targetWidth / area.Width, (float)targetHeight / area.Height)));
+            var decodeInfo = new SKImageInfo(decodeSize.Width, decodeSize.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+            using var skBitmap = new SKBitmap(decodeInfo);
+            var result = codec.GetPixels(decodeInfo, skBitmap.GetPixels());
+            if (result != SKCodecResult.Success && result != SKCodecResult.IncompleteInput) return (null, width, height);
+
+            // the area, converted into the (possibly smaller) decoded image's pixels
+            float sx = (float)decodeSize.Width / width, sy = (float)decodeSize.Height / height;
+            var decodedArea = new SKRectI((int)(area.Left * sx), (int)(area.Top * sy),
+                                          (int)Math.Ceiling(area.Right * sx), (int)Math.Ceiling(area.Bottom * sy));
+            decodedArea.Intersect(new SKRectI(0, 0, decodeSize.Width, decodeSize.Height));
+
+            using var cropped = new SKBitmap();
+            if (!skBitmap.ExtractSubset(cropped, decodedArea)) return (null, width, height);
+
+            // Medium = bilinear + mipmaps (None/nearest aliased badly at these ratios)
+            var resizedBitmap = cropped.Resize(new SKImageInfo(targetWidth, targetHeight, SKColorType.Bgra8888, SKAlphaType.Premul), SKFilterQuality.Medium);
+            return (resizedBitmap, width, height);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            Console.WriteLine("!!!!! error downloading resizedSkiaImg " + url + " -- " + ex.Message);
-            return null;
+            Debug.WriteLine($"!!!!! failed to load image at {origImgPath}: {ex.Message}");
+            return (null, 0, 0);
         }
     }
 
-    // -----------------------------------------------------------------------------------------------
-
-
-
-
-
-    // -----------------------------------------------------------------------------------------------
-    // funcs for converting path to wallpaper object
-
-    public Wallpaper getWallpaperObjectFromPath(string imgFilePath)
+    // fit inside the thumbnail box keeping aspect ratio
+    // (the aspectRatio line MUST have this exact structure in order to ensure height scaling in UI)
+    private static (int, int) ScaleToThumbnail(int width, int height)
     {
-        var imgResult = GetThumbNailFromPath(imgFilePath);
+        float aspectRatio = (float)width / height;
 
-        // perform colour classification using thumbnail
-        PixelDatabase colourDB = PixelDatabaseLoader.LoadPixelDatabase(imgResult.Item2, null);
-        var imgClass = ImageClassifier.Classify(colourDB);
+        int targetWidth = ThumbnailWidth;
+        int targetHeight = (int)(ThumbnailWidth / aspectRatio);
 
-        // temp file gets deleted, since only PixelDatabase needs it; prevents thumbnail leak (constantly expanding %TEMP% folder)
-        if (imgResult.Item2 != null)
+        if (targetHeight > ThumbnailHeight)
         {
-            try { File.Delete(imgResult.Item2); } catch(Exception ex) { Debug.WriteLine(ex.Message); }
+            targetHeight = ThumbnailHeight;
+            targetWidth = (int)(ThumbnailHeight * aspectRatio);
         }
 
+        return (Math.Max(1, targetWidth), Math.Max(1, targetHeight));
+    }
 
-        return new Wallpaper
+    // same maths as PixelDatabase's ImageClassifier.Classify: whole-number average of every pixel's R, G, B
+    private static double AverageHue(SKBitmap resizedBitmap)
+    {
+        ReadOnlySpan<byte> pixels = resizedBitmap.GetPixelSpan(); // B, G, R, A per pixel
+        long r = 0, g = 0, b = 0;
+        for (int i = 0; i < pixels.Length; i += 4)
         {
-            FilePath = imgFilePath,
-            ImageBitmap = null, // WE DO NOT NEED THIS IN ORDER TO SET BACKGROUND - uses filepath
-            ImageWidth = imgResult.Item3,
-            ImageHeight = imgResult.Item4,
-            ImageThumbnailBitmap = imgResult.Item1,
-            ColourCategory = RgbToHue(imgClass.AverageRed, imgClass.AverageGreen, imgClass.AverageBlue),
-            Name = Path.GetFileName(imgFilePath),
-            Date = File.GetLastWriteTime(imgFilePath),
-            IsDirectory = false,
-        };
+            b += pixels[i];
+            g += pixels[i + 1];
+            r += pixels[i + 2];
+        }
+
+        long count = pixels.Length / 4;
+        return RgbToHue(r / count, g / count, b / count);
+    }
+
+    private static byte[] EncodeJpeg(SKBitmap resizedBitmap)
+    {
+        using var image = SKImage.FromBitmap(resizedBitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
+        return data.ToArray();
+    }
+
+    private static Bitmap? ToBitmap(byte[]? jpegBytes)
+    {
+        if (jpegBytes == null) return null;
+        using var memStream = new MemoryStream(jpegBytes);
+        return new Bitmap(memStream);
+    }
+
+    private int CountFolderItems(string subDir)
+    {
+        try
+        {
+            int folderImgCount = Directory.EnumerateFiles(subDir).Count(f => SupportedExtensions.Contains(Path.GetExtension(f)));
+            if (uniVM.FolderCountIncludesFolders) folderImgCount += Directory.EnumerateDirectories(subDir).Count();
+            return folderImgCount;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return 0; // no access to the subfolder itself
+        }
+    }
+
+
+
+    // ===== utilities ==============================================================================
+
+
+    // get aspect ratio of an image with room for error
+    public static string GetAspectRatio(int? width, int? height)
+    {
+        if (width == 0 || height == 0 || width == null || height == null)
+        {
+            return "none";
+        }
+
+        double aspectVal = (double)width / (double)height;
+
+        // use a different error percentage for each aspect ratio
+        if (Math.Abs(aspectVal - 4.00 / 3.00) < 0.07)
+        {
+            return "4:3";
+        }
+        else if (aspectVal <= 1.00)
+        {
+            return "Vertical";
+        }
+        else if (Math.Abs(aspectVal - 16.00 / 9.00) < 0.075)
+        {
+            return "16:9";
+        }
+        else if (Math.Abs(aspectVal - 16.00 / 10.00) < 0.075)
+        {
+            return "16:10";
+        }
+
+        else if (Math.Abs(aspectVal - 21.00 / 9.00) < 0.25)
+        {
+            return "21:9";
+        }
+        else if (Math.Abs(aspectVal - 32.00 / 9.00) < 0.55)
+        {
+            return "32:9";
+        }
+        else
+        {
+            return "none";
+        }
+
     }
 
     public static double RgbToHue(double r, double g, double b)
@@ -143,343 +357,6 @@ public class ImageHelper
         return hue;
     }
 
-    // thumbnail size hardcoded in arg
-    public (Bitmap, string, int, int) GetThumbNailFromPath(string origImgPath, int thumbnailWidth = 250, int thumbnailHeight = 200)
-    {
-
-        using (var inputStream = File.OpenRead(origImgPath))
-        {
-            using (var skBitmap = SKBitmap.Decode(inputStream))
-            {
-                if (skBitmap == null)
-                {
-                    Debug.WriteLine("!!!!! failed to load img at " + origImgPath);
-                    return (null, null, 0, 0);
-                }
-
-                int width = skBitmap.Width;
-                int height = skBitmap.Height;
-
-                // this line MUST have this exact structure in order to ensure height scaling in UI
-                float aspectRatio = (float)width / height;
-
-                int targetWidth = thumbnailWidth;
-                int targetHeight = (int) (thumbnailWidth / aspectRatio);
-
-                if (targetHeight > thumbnailHeight)
-                {
-                    targetHeight = thumbnailHeight;
-                    targetWidth = (int) (thumbnailHeight * aspectRatio);
-                }
-
-                using (var resizedBitmap = skBitmap.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.None))
-                {
-                    if (resizedBitmap == null)
-                    {
-                        Debug.WriteLine("!!!!! failed to resize image at " + origImgPath);
-                        return (null, null, 0, 0);
-                    }
-
-                    using (var image = SKImage.FromBitmap(resizedBitmap))
-                    {
-                        using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 60))
-                        {
-                            byte[] bytes = data.ToArray();
-
-                            using (var memStream = new MemoryStream(bytes))
-                            {
-                                var avaloniaBitmap = new Bitmap(memStream);
-
-                                // 2) also write these bytes to a temp file
-                                string tempFile = Path.Combine(
-                                    Path.GetTempPath(),
-                                    "thumb_" + Guid.NewGuid().ToString("N") + ".jpg");
-
-                                File.WriteAllBytes(tempFile, bytes);
-
-                                // return both the Avalonia Bitmap & the temp file path
-                                return (avaloniaBitmap, tempFile, width, height);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-
-    // makes a small thumbnail of just the cropped region of an image (for queue display);
-    // no temp file needed since no colour classification happens here
-    public static Bitmap? GetCroppedThumbnail(string filePath, int x, int y, int w, int h,
-                                              int thumbnailWidth = 250, int thumbnailHeight = 200)
-    {
-        try
-        {
-            using var inputStream = File.OpenRead(filePath);
-            using var skBitmap = SKBitmap.Decode(inputStream);
-            if (skBitmap == null) return null;
-
-            var cropRect = new SKRectI(x, y, x + w, y + h);
-            cropRect.Intersect(new SKRectI(0, 0, skBitmap.Width, skBitmap.Height));
-            if (cropRect.Width <= 0 || cropRect.Height <= 0) return null;
-
-            // this sizing MUST mirror GetThumbNailFromPath's structure (crop aspect preserved)
-            float aspectRatio = (float)cropRect.Width / cropRect.Height;
-            int targetWidth = thumbnailWidth;
-            int targetHeight = (int)(thumbnailWidth / aspectRatio);
-            if (targetHeight > thumbnailHeight)
-            {
-                targetHeight = thumbnailHeight;
-                targetWidth = (int)(thumbnailHeight * aspectRatio);
-            }
-
-            using var cropped = new SKBitmap(cropRect.Width, cropRect.Height);
-            using (var canvas = new SKCanvas(cropped))
-            {
-                canvas.DrawBitmap(skBitmap, cropRect, new SKRect(0, 0, cropRect.Width, cropRect.Height));
-            }
-
-            using var resized = cropped.Resize(new SKImageInfo(targetWidth, targetHeight), SKFilterQuality.None);
-            if (resized == null) return null;
-
-            using var image = SKImage.FromBitmap(resized);
-            using var data = image.Encode(SKEncodedImageFormat.Jpeg, 60);
-            using var memStream = new MemoryStream(data.ToArray());
-            return new Bitmap(memStream);
-        }
-        catch (Exception ex)
-        {
-            AppStorageHelper.LogCrash(ex);
-            return null;
-        }
-    }
-
-    // -----------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-    // func for returning a list of wallpaper objects
-    public async Task<ObservableCollection<Wallpaper?>> getWallpaperListFromDirec(Window window, string folderSpecified)
-    {
-
-        List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp" };
-
-        var imgCollec = new ObservableCollection<Wallpaper>();
-
-        string folderChoice = ""; // init
-        if (folderSpecified != null)
-        {
-            folderChoice = folderSpecified;
-        }
-        else if (folderSpecified == null)
-        {
-            // open folder picker
-            var folderOpenPick = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-            {
-                Title = "Select an Image Directory",
-                AllowMultiple = false
-            });
-
-            if (folderOpenPick == null || !folderOpenPick.Any()) return null;
-            folderChoice = folderOpenPick.Last().Path.LocalPath;
-        }
-        
-
-        uniVM.CurrentSelectedDirectory = " Loading...";
-
-
-        // populate directories (if no access to folder, quit func)
-        try
-        {
-            string selectedDirPath = folderChoice;
-            foreach (var subDir in Directory.GetDirectories(selectedDirPath))
-            {
-                // get items inside
-                int folderImgCount = 0;
-                try
-                {
-                    if (uniVM.FolderCountIncludesFolders == false)
-                    {
-                        // count only images:
-                        folderImgCount = Directory.EnumerateFiles(subDir).Count(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()));
-                    }
-                    else
-                    {
-                        // count all folders and images:
-                        folderImgCount = Directory.EnumerateDirectories(subDir).Count()
-                                            + Directory.EnumerateFiles(subDir).Count(f => SupportedExtensions.Contains(Path.GetExtension(f).ToLower()));
-                    }
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // no access to the subfolder itself; leave count at 0
-                }
-                // Create a 'Wallpaper' object for the directory
-                var folderWallpaper = new Wallpaper
-                {
-                    FilePath = subDir,
-                    Name = Path.GetFileName(subDir),
-                    IsDirectory = true,
-                    // Use your own folder icon path or resource
-                    ImageThumbnailBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/folderimg.png"))),
-                    Date = Directory.GetLastWriteTime(subDir),
-                    FolderItemCount = folderImgCount
-                };
-                imgCollec.Add(folderWallpaper);
-            }
-        }
-        catch (UnauthorizedAccessException)
-        {
-            Debug.WriteLine($"!!!  Access denied to {folderChoice} - Skipping loading func");
-            return null;
-        }
-
-
-
-
-        // use Last() since folderChoice is technically a list, but AllowMultiple restricts to one element
-        // enumerate files in the folder
-        var files = Directory.EnumerateFiles(folderChoice)
-                             .Where(file => SupportedExtensions.Contains(Path.GetExtension(file).ToLower()));
-
-        int totalFiles = files.Count();
-        int processedFiles = 0;
-
-        // IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // hardcoded amount of processors used to retrieve all images in a directory
-        int allocCPUThreads = uniVM.CPUThreadsAllocated;
-        Debug.WriteLine("processors used: " + allocCPUThreads);
-        var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
-        var tasks = new List<Task>();
-
-        foreach (var filePath in files)
-        {
-            await semaphore.WaitAsync();
-
-            var task = Task.Run(async () =>
-            {
-                try
-                {
-                    var wallpaper = getWallpaperObjectFromPath(filePath);
-
-                    // add wallpaper to collec on main thread
-                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        imgCollec.Add(wallpaper);
-                        processedFiles++;
-                        uniVM.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"!!!!! failed to load image at {filePath}: {ex.Message}");
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
-
-            tasks.Add(task);
-        }
-
-        await Task.WhenAll(tasks);
-
-        uniVM.CurrentSelectedDirectory = folderChoice;
-
-
-        return imgCollec;
-
-    }
-
-    // func for choosing a file with upload button
-    public async Task<ObservableCollection<Wallpaper>> chooseMultipleWallpaperUpload(Window window)
-    {
-
-        var wallpaperCollec = new ObservableCollection<Wallpaper>();
-
-        var result = await window.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
-        {
-            Title = window.Title,
-            FileTypeFilter = new List<FilePickerFileType> { FilePickerFileTypes.ImageAll },
-            AllowMultiple = true
-        });
-
-        if (result == null || !result.Any())
-        {
-            return null;
-        }
-
-        foreach (var img in result)
-        {
-            try
-            {
-                string selectedFilePath = img.Path.LocalPath;
-                Debug.WriteLine("selected file path: " + selectedFilePath);
-                wallpaperCollec.Add(getWallpaperObjectFromPath(selectedFilePath));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("!!!!! error uploading file - " + ex.Message);
-            }
-        }
-
-        return wallpaperCollec;
-
-    }
-
-
-
-    // get aspect ratio of an image with room for error
-    public string GetAspectRatio(int? width, int? height)
-    {
-        if (width == 0 || height == 0 || width == null || height == null)
-        {
-            return "none";
-        }
-
-        double aspectVal = (double)width / (double)height;
-
-        // use a different error percentage for each aspect ratio
-        if (Math.Abs(aspectVal - 4.00 / 3.00) < 0.07)
-        {
-            return "4:3";
-        }
-        else if (aspectVal <= 1.00)
-        {
-            return "Vertical";
-        }
-        else if ( Math.Abs(aspectVal - 16.00 / 9.00) < 0.075)
-        {
-            return "16:9";
-        }
-        else if (Math.Abs(aspectVal - 16.00 / 10.00) < 0.075)
-        {
-            return "16:10";
-        }
-
-        else if (Math.Abs(aspectVal - 21.00 / 9.00) < 0.25)
-        {
-            return "21:9";
-        }
-        else if (Math.Abs(aspectVal - 32.00 / 9.00) < 0.55)
-        {
-            return "32:9";
-        }
-        else
-        {
-            return "none";
-        }
-
-    }
-
-
-
     // gen horizontally mirrored copy of image
     // re-flipping the same image reuses the file and two same-named files from different folders can't collide
     public static string? GetMirroredCopy(string filePath)
@@ -487,17 +364,10 @@ public class ImageHelper
         try
         {
             if (!File.Exists(filePath)) return null;
+            Directory.CreateDirectory(MirrorDir);
 
-            string dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "WallMod", "mirrored");
-            Directory.CreateDirectory(dir);
-
-            string pathHash = Convert.ToHexString(
-                SHA256.HashData(Encoding.UTF8.GetBytes(filePath)))[..8];
-            string target = Path.Combine(dir,
-                Path.GetFileNameWithoutExtension(filePath) + "_" + pathHash + "_mirrored.png");
-
+            string pathHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(filePath)))[..8];
+            string target = Path.Combine(MirrorDir, Path.GetFileNameWithoutExtension(filePath) + "_" + pathHash + "_mirrored.png");
             if (File.Exists(target)) return target; // already generated this session or earlier
 
             using var src = SKBitmap.Decode(filePath);
@@ -523,50 +393,31 @@ public class ImageHelper
         }
     }
 
-
-
-    // clears temp image files WallMod generates (besides those needed for autoset or etc
+    // deletes mirrored copies nothing references anymore + leftover temp jpgs (thumb_* are from older versions)
     public static void ClearTempImageFiles(IEnumerable<string> referencedPaths)
     {
-        // mirrored copies - keep anything still referenced
         try
         {
-            string mirrorDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "WallMod", "mirrored");
-
-            if (Directory.Exists(mirrorDir))
-            {
-                var keep = new HashSet<string>(referencedPaths ?? Enumerable.Empty<string>(),
-                                               StringComparer.OrdinalIgnoreCase);
-
-                foreach (var file in Directory.EnumerateFiles(mirrorDir, "*_mirrored.png"))
-                {
-                    if (keep.Contains(file)) continue;
-                    try { File.Delete(file); }
-                    catch (Exception ex) { Debug.WriteLine("temp clear skip: " + ex.Message); }
-                }
-            }
-        }
-        catch (Exception ex) { AppStorageHelper.LogCrash(ex); }
-
-        // leftover thumbnails + resized wallpapers in %TEMP% (only ones we created);
-        // nothing persists these paths, so they're always safe to delete
-        try
-        {
+            var keep = new HashSet<string>(referencedPaths, StringComparer.OrdinalIgnoreCase);
             string tempDir = Path.GetTempPath();
             var patterns = new[] { "thumb_*.jpg", "wallmod_resized_*.jpg" };
 
-            foreach (var pattern in patterns)
+            var mirroredFiles = Directory.Exists(MirrorDir)
+                ? Directory.EnumerateFiles(MirrorDir, "*_mirrored.png").Where(file => !keep.Contains(file))
+                : Enumerable.Empty<string>();
+            var tempFiles = patterns.SelectMany(pattern => Directory.EnumerateFiles(tempDir, pattern));
+
+            foreach (var file in mirroredFiles.Concat(tempFiles).ToList())
             {
-                foreach (var file in Directory.EnumerateFiles(tempDir, pattern))
-                {
-                    try { File.Delete(file); }
-                    catch (Exception ex) { Debug.WriteLine("temp clear skip: " + ex.Message); }
-                }
+                try { File.Delete(file); }
+                catch (Exception ex) { Debug.WriteLine("temp clear skip: " + ex.Message); }
             }
         }
         catch (Exception ex) { AppStorageHelper.LogCrash(ex); }
     }
+
+
+
+
 
 }

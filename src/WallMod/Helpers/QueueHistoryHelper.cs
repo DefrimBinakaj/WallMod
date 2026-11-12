@@ -21,17 +21,7 @@ public class QueueHistoryHelper
         public string? CropMonitorId { get; set; }
     }
 
-    private readonly string queueFile;
-
-    public QueueHistoryHelper()
-    {
-        AppStorageHelper appStorageHelper = new AppStorageHelper();
-        appStorageHelper.InitAppStorage();
-        queueFile = appStorageHelper.appQueueHistoryFile
-                    ?? Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "WallMod", "WallModQueueHistory.json");
-    }
+    private readonly string queueFile = AppStorageHelper.appQueueHistoryFile;
 
     public void SaveQueue(IEnumerable<Wallpaper> queue)
     {

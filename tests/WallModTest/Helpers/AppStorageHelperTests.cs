@@ -12,16 +12,9 @@ public class AppStorageHelperTests
     [Fact]
     public void InitAppStorage_CreatesDirectoryAndSetsPaths()
     {
-        var helper = new AppStorageHelper();
-
-        helper.InitAppStorage();
-
-        // directory is created
-        Assert.True(Directory.Exists(helper.appStorageDirectory));
-
-        // paths end with the expected filenames
-        Assert.EndsWith("WallModWallpaperHistory.json", helper.appWallpaperHistoryFile);
-        Assert.EndsWith("WallModSettingsHistory.json", helper.appSettingsHistoryFile);
+        Assert.True(Directory.Exists(AppStorageHelper.appStorageDirectory));
+        Assert.EndsWith("WallModWallpaperHistory.json", AppStorageHelper.appWallpaperHistoryFile);
+        Assert.EndsWith("WallModSettingsHistory.json", AppStorageHelper.appSettingsHistoryFile);
         Assert.EndsWith("CrashLog.txt", AppStorageHelper.crashLogFile);
     }
 
@@ -29,16 +22,22 @@ public class AppStorageHelperTests
     public void LogCrash_WritesExceptionLine()
     {
         // redirect the crash log to a temp file so we don't touch real AppData
+        string originalCrashLogFile = AppStorageHelper.crashLogFile;
         string tempFile = Path.Combine(Path.GetTempPath(), $"crash-{Guid.NewGuid()}.txt");
         AppStorageHelper.crashLogFile = tempFile;
 
-        var ex = new InvalidOperationException("unit-test crash");
+        try
+        {
+            AppStorageHelper.LogCrash(new InvalidOperationException("unit-test crash"));
 
-        AppStorageHelper.LogCrash(ex);
-
-        Assert.Contains("unit-test crash", File.ReadAllText(tempFile), StringComparison.OrdinalIgnoreCase);
-
-        File.Delete(tempFile);
+            Assert.Contains("unit-test crash", File.ReadAllText(tempFile), StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            // always put the real path back, so the other test still sees CrashLog.txt
+            AppStorageHelper.crashLogFile = originalCrashLogFile;
+            File.Delete(tempFile);
+        }
     }
 
 }

@@ -22,10 +22,7 @@ public class SettingsHistoryHelperTests
 
         _helper = new SettingsHistoryHelper();
 
-        var storageField = typeof(SettingsHistoryHelper)
-            .GetField("appStorageHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var storageObj = (AppStorageHelper)storageField.GetValue(_helper)!;
-        _settingsFile = storageObj.appSettingsHistoryFile;
+        _settingsFile = AppStorageHelper.appSettingsHistoryFile;
     }
 
     [Fact]

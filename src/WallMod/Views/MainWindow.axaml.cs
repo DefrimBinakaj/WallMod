@@ -144,7 +144,7 @@ public partial class MainWindow : Window
 
         if (e.Key == Key.Enter || e.Key == Key.Space)
         {
-            if (lb.SelectedItem is Wallpaper wp) await vm.ImageDoubleTapped(wp);
+            if (lb.SelectedItem is Wallpaper wp) vm.ImageDoubleTapped(wp);
             e.Handled = true;
             return;
         }
@@ -206,7 +206,7 @@ public partial class MainWindow : Window
         var viewModel = DataContext as MainWindowViewModel;
         if (viewModel != null)
         {
-            await viewModel.ImageDoubleTapped(wallpaper);
+            viewModel.ImageDoubleTapped(wallpaper);
         }
     }
 
@@ -267,74 +267,24 @@ public partial class MainWindow : Window
 
 
     // horizontally shift vertical splitter hotkeys
-    public void HotkeySqBraceLeft()
-    {
-        double shiftAmount = 10;
+    public void HotkeySqBraceLeft() => ShiftSplitter(10);
+    public void HotkeySqBraceRight() => ShiftSplitter(-10);
 
+    private void ShiftSplitter(double shiftAmount)
+    {
         ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
         ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
 
+        // shift, but never below either column's min width
+        double newLeftPixels = Math.Max(leftCol.ActualWidth - shiftAmount, leftCol.MinWidth);
+        double newRightPixels = Math.Max(rightCol.ActualWidth + shiftAmount, rightCol.MinWidth);
 
-        double leftColPixels = leftCol.ActualWidth;
-        double rightColPixels = rightCol.ActualWidth;
-        double totalPixels = leftColPixels + rightColPixels;
-
-
-        double newLeftPixels = leftColPixels - shiftAmount; // shift
-        double newRightPixels = rightColPixels + shiftAmount; // shift
-
-        // enforce mid width
-        if (newLeftPixels < leftCol.MinWidth)
-            newLeftPixels = leftCol.MinWidth;
-        if (newRightPixels < rightCol.MinWidth)
-            newRightPixels = rightCol.MinWidth;
-
-
-        double clampedTotalPixels = newLeftPixels + newRightPixels;
         // derive new star values based on the new pixel ratio
         double totalStars = leftCol.Width.Value + rightCol.Width.Value;
-        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
-        double newRightColStars = totalStars - newLeftColStars;
+        double newLeftColStars = newLeftPixels / (newLeftPixels + newRightPixels) * totalStars;
 
-
-        // apply calcd values to UI
         leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
-        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
-
-    }
-    public void HotkeySqBraceRight()
-    {
-        double shiftAmount = -10;
-
-        ColumnDefinition leftCol = MainGrid.ColumnDefinitions[0];
-        ColumnDefinition rightCol = MainGrid.ColumnDefinitions[2];
-
-
-        double leftColPixels = leftCol.ActualWidth;
-        double rightColPixels = rightCol.ActualWidth;
-        double totalPixels = leftColPixels + rightColPixels;
-
-
-        double newLeftPixels = leftColPixels - shiftAmount; // shift
-        double newRightPixels = rightColPixels + shiftAmount; // shift
-
-        // enforce mid width
-        if (newLeftPixels < leftCol.MinWidth)
-            newLeftPixels = leftCol.MinWidth;
-        if (newRightPixels < rightCol.MinWidth)
-            newRightPixels = rightCol.MinWidth;
-
-
-        double clampedTotalPixels = newLeftPixels + newRightPixels;
-        // derive new star values based on the new pixel ratio
-        double totalStars = leftCol.Width.Value + rightCol.Width.Value;
-        double newLeftColStars = (newLeftPixels / clampedTotalPixels) * totalStars;
-        double newRightColStars = totalStars - newLeftColStars;
-
-
-        // apply calcd values to UI
-        leftCol.Width = new GridLength(newLeftColStars, GridUnitType.Star);
-        rightCol.Width = new GridLength(newRightColStars, GridUnitType.Star);
+        rightCol.Width = new GridLength(totalStars - newLeftColStars, GridUnitType.Star);
     }
 
 
@@ -503,21 +453,18 @@ public partial class MainWindow : Window
     }
 
 
-    private async void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
+    private void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is Control control && control.DataContext is MonitorInfo monitor)
-        {
-            var viewModel = DataContext as MainWindowViewModel;
-            if (viewModel != null)
-            {
-                Debug.WriteLine("monitor tapped = " + monitor.MonitorIdPath);
-                SelectOneToggle.IsChecked = true; // flip first
+        if (sender is Control { DataContext: MonitorInfo monitor }) SelectMonitor(monitor);
+    }
 
-                await viewModel.MonitorTapped(monitor);
-                ShowDraggableRectangle(monitor); // size rect specific monitors real aspect ratio
-                uniVM.SetBackgroundButtonEnabled = true;
-            }
-        }
+    // one-monitor mode + highlight it + size the drag rect to its real aspect ratio
+    private void SelectMonitor(MonitorInfo monitor)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+        SelectOneToggle.IsChecked = true; // flip first
+        vm.MonitorTapped(monitor);        // also enables the set button
+        ShowDraggableRectangle(monitor);
     }
 
     private void UnselectAllPreviewMonitors()
@@ -557,7 +504,7 @@ public partial class MainWindow : Window
         uniVM.SetBackgroundButtonEnabled = true;
         ResetRectangle();
         viewModel.StyleDropdownEnabled = true;
-        await viewModel.AllMonitorsSelected();
+        viewModel.AllMonitorsSelected();
     }
 
 
@@ -581,45 +528,24 @@ public partial class MainWindow : Window
 
     private async void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
     {
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel == null) return;
+        if (DataContext is not MainWindowViewModel viewModel) return;
 
         uniVM.SetBackgroundButtonEnabled = false; // disable button to ensure no spamming
 
-        // delay button enable by a second (Task.Delay) ; helps users intuitively understand that the button worked
-        if (viewModel.StyleDropdownEnabled == true)
+        if (viewModel.StyleDropdownEnabled)
         {
-            await viewModel.SetWallpaperWithoutCrop();
-            await Task.Delay(1000);
-            uniVM.SetBackgroundButtonEnabled = true;
+            viewModel.SetWallpaperWithoutCrop();
         }
         else
         {
-            await SetCroppedWallpaper();
-            await Task.Delay(1000);
-            uniVM.SetBackgroundButtonEnabled = true;
+            UpdatePendingCropInVm(); // DragRect -> original-image pixels
+            viewModel.SetWallpaperWithCrop();
         }
+
+        // delay button enable by a second ; helps users intuitively understand that the button worked
+        await Task.Delay(1000);
+        uniVM.SetBackgroundButtonEnabled = true;
     }
-
-    public async Task SetCroppedWallpaper()
-    {
-        if (DragRect == null || OverlayCanvas == null || PreviewImage == null) return;
-
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel?.LastSelectedWallpaper == null || viewModel.LastSelMonitor == null) return;
-
-        var monitor = viewModel.LastSelMonitor;
-        var wallpaper = viewModel.LastSelectedWallpaper;
-
-        using var originalImage = SkiaSharp.SKBitmap.Decode(wallpaper.FilePath);
-        int cropX = (int)(Canvas.GetLeft(DragRect) * (originalImage.Width / PreviewImage.Bounds.Width));
-        int cropY = (int)(Canvas.GetTop(DragRect) * (originalImage.Height / PreviewImage.Bounds.Height));
-        int cropWidth = (int)(DragRect.Width * (originalImage.Width / PreviewImage.Bounds.Width));
-        int cropHeight = (int)(DragRect.Height * (originalImage.Height / PreviewImage.Bounds.Height));
-
-        await viewModel.SetWallpaperWithCrop(wallpaper.FilePath, monitor.MonitorIdPath, cropX, cropY, cropWidth, cropHeight);
-    }
-
 
 
     // converts the current DragRect to original-image pixels (plus the monitor it targets)
@@ -690,16 +616,10 @@ public partial class MainWindow : Window
     public async void HotkeySelectMonitor(object? parameter)
     {
         if (DataContext is not MainWindowViewModel vm) return;
-        if (!int.TryParse(parameter?.ToString(), out int idx)) return;
-
-        idx -= 1; // 1-based -> 0-based
-        if (idx < 0 || idx >= vm.MonitorList.Count) return;
-
-        var monitor = vm.MonitorList[idx];
-        SelectOneToggle.IsChecked = true;
-        await vm.MonitorTapped(monitor);
-        ShowDraggableRectangle(monitor);
-        uniVM.SetBackgroundButtonEnabled = true;
+        if (int.TryParse(parameter?.ToString(), out int idx) && idx >= 1 && idx <= vm.MonitorList.Count)
+        {
+            SelectMonitor(vm.MonitorList[idx - 1]);
+        }
     }
 
 

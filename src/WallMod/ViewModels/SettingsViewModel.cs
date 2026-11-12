@@ -23,7 +23,6 @@ public partial class SettingsViewModel : ObservableObject
 
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
-    AppStorageHelper appStorageHelper = new AppStorageHelper();
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
     WallpaperHistoryHelper wallpaperHistoryHelper = new WallpaperHistoryHelper();
     UpdateVersionHelper updateVersionHelper = new UpdateVersionHelper();
@@ -36,8 +35,6 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(UniversalAppStore universalVM)
     {
         uniVM = universalVM;
-
-        appStorageHelper.InitAppStorage();
 
         uniVM.PropertyChanged += (s, e) =>
         {
@@ -126,10 +123,10 @@ public partial class SettingsViewModel : ObservableObject
     // open AppData/WallMod
     public void OpenStorageFiles()
     {
-        FileExporerHelper fileExporerHelper = new FileExporerHelper();
-        fileExporerHelper.OpenFolderInExplorer(appStorageHelper.appStorageDirectory);
+        FileExplorerHelper fileExporerHelper = new FileExplorerHelper();
+        fileExporerHelper.OpenFolderInExplorer(AppStorageHelper.appStorageDirectory);
 
-        Console.WriteLine("Going to => " + appStorageHelper.appStorageDirectory.ToString());
+        Console.WriteLine("Going to => " + AppStorageHelper.appStorageDirectory.ToString());
     }
 
 

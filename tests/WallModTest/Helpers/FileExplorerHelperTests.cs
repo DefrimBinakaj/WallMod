@@ -10,7 +10,7 @@ namespace WallModTest.Helpers;
 
 public class FileExplorerHelperTests
 {
-    private readonly FileExporerHelper _helper = new();
+    private readonly FileExplorerHelper _helper = new();
 
     [Theory]
     [InlineData(null)]

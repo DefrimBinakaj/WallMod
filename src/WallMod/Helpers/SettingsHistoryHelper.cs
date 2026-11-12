@@ -14,11 +14,8 @@ namespace WallMod.Helpers;
 public class SettingsHistoryHelper
 {
 
-    AppStorageHelper appStorageHelper;
     public SettingsHistoryHelper()
     {
-        appStorageHelper = new AppStorageHelper();
-        appStorageHelper.InitAppStorage();
         initSettingsFileDict();
     }
 
@@ -51,9 +48,9 @@ public class SettingsHistoryHelper
 
         Dictionary<string, string> currSettings;
 
-        if (File.Exists(appStorageHelper.appSettingsHistoryFile))
+        if (File.Exists(AppStorageHelper.appSettingsHistoryFile))
         {
-            string json = File.ReadAllText(appStorageHelper.appSettingsHistoryFile);
+            string json = File.ReadAllText(AppStorageHelper.appSettingsHistoryFile);
             currSettings = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
         }
         else
@@ -69,17 +66,17 @@ public class SettingsHistoryHelper
 
 
         string newJson = JsonSerializer.Serialize(currSettings, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(appStorageHelper.appSettingsHistoryFile, newJson);
+        File.WriteAllText(AppStorageHelper.appSettingsHistoryFile, newJson);
 
     }
 
     public Dictionary<string, string> LoadSettingsJson()
     {
-        if (!File.Exists(appStorageHelper.appSettingsHistoryFile))
+        if (!File.Exists(AppStorageHelper.appSettingsHistoryFile))
             return null;
 
         // read + deserialize JSON to string list
-        string json = File.ReadAllText(appStorageHelper.appSettingsHistoryFile);
+        string json = File.ReadAllText(AppStorageHelper.appSettingsHistoryFile);
         return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
     }
 
@@ -100,7 +97,7 @@ public class SettingsHistoryHelper
 
         // save updated history
         string json = JsonSerializer.Serialize(historyDict);
-        File.WriteAllText(appStorageHelper.appSettingsHistoryFile, json);
+        File.WriteAllText(AppStorageHelper.appSettingsHistoryFile, json);
     }
 
 

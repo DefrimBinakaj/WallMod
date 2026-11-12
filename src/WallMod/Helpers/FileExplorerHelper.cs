@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Avalonia.Controls;
+using Avalonia.Platform.Storage;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,8 +14,20 @@ namespace WallMod.Helpers;
 /**
  * Class for opening image in file explorer
  */
-public class FileExporerHelper
+public class FileExplorerHelper
 {
+
+    // folder picker shared by the gallery + random autoset; null = cancelled
+    public static async Task<string?> PickFolder(string title)
+    {
+        var folderOpenPick = await new Window().StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false
+        });
+
+        return folderOpenPick.Count > 0 ? folderOpenPick[0].Path.LocalPath : null;
+    }
 
     public void OpenFileInExplorer(string filePath)
     {

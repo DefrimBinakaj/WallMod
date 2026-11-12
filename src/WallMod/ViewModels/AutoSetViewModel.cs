@@ -222,80 +222,29 @@ public partial class AutoSetViewModel : ObservableObject
     }
     private async void browseDirec()
     {
-
         // clear previous choice
         RandDirImageCollection.Clear();
         RandDirecName = "";
         RandWallpapersRemaining = "";
 
+        // open folder picker (null = cancelled)
+        string? folderChoice = await FileExplorerHelper.PickFolder("Select a directory to randomly autoset images");
+        if (folderChoice == null) return;
 
-        Window window = new Window();
-        ImageHelper imgHelper = new ImageHelper();
-
-        // open folder picker
-        var folderOpenPick = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Select a directory to randomly autoset images",
-            AllowMultiple = false
-        });
-
-        if (folderOpenPick == null || !folderOpenPick.Any())
-        {
-            RandDirecName = "";
-            return;
-        }
-
-        if (!folderOpenPick.Any()) return; // if cancel is clicked, don't crash
-        RandDirecName = folderOpenPick.Last().Path.LocalPath;
-
-        getRandomImageQueue(RandDirecName);
+        RandDirecName = folderChoice;
+        await getRandomImageQueue(RandDirecName);
     }
 
     private async Task getRandomImageQueue(string direcName)
     {
 
-        List<string> SupportedExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".bmp" };
-        var files = Directory.EnumerateFiles(RandDirecName)
-                             .Where(file => SupportedExtensions.Contains(Path.GetExtension(file).ToLower()));
-        int totalFiles = files.Count();
+        var imgFilePaths = Directory.EnumerateFiles(direcName).Where(file => ImageHelper.SupportedExtensions.Contains(Path.GetExtension(file)));
 
-        // IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // hardcoded amount of processors used to retrieve all images in a directory
-        int allocCPUThreads = uniVM.CPUThreadsAllocated;
-        var semaphore = new System.Threading.SemaphoreSlim(allocCPUThreads);
-        var tasks = new List<Task>();
-
-        foreach (var filePath in files)
+        await foreach (var wallpaper in imageHelper.LoadWallpapersInOrder(imgFilePaths))
         {
-            await semaphore.WaitAsync();
-
-            var task = Task.Run(async () =>
-            {
-                try
-                {
-                    var wallpaper = imageHelper.getWallpaperObjectFromPath(filePath);
-
-                    // add wallpaper to collec on main thread
-                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        RandDirImageCollection.Add(wallpaper);
-                        RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"!!!!! failed to load image at {filePath}: {ex.Message}");
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
-
-            tasks.Add(task);
+            RandDirImageCollection.Add(wallpaper);
+            RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count;
         }
-
-        await Task.WhenAll(tasks);
     }
 
 

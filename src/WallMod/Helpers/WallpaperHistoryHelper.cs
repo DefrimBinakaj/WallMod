@@ -24,21 +24,17 @@ public class WallpaperHistoryHelper
 
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
-    AppStorageHelper appStorageHelper;
-
     public WallpaperHistoryHelper()
     {
-        appStorageHelper = new AppStorageHelper();
-        appStorageHelper.InitAppStorage();
     }
 
     public List<string> LoadHistoryJson()
     {
-        if (!File.Exists(appStorageHelper.appWallpaperHistoryFile))
+        if (!File.Exists(AppStorageHelper.appWallpaperHistoryFile))
             return new List<string>();
 
         // read + deserialize JSON to string list
-        string json = File.ReadAllText(appStorageHelper.appWallpaperHistoryFile);
+        string json = File.ReadAllText(AppStorageHelper.appWallpaperHistoryFile);
         return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
     }
 
@@ -60,7 +56,7 @@ public class WallpaperHistoryHelper
 
         // save updated history
         string json = JsonSerializer.Serialize(history);
-        File.WriteAllText(appStorageHelper.appWallpaperHistoryFile, json);
+        File.WriteAllText(AppStorageHelper.appWallpaperHistoryFile, json);
 
     }
 
@@ -136,7 +132,7 @@ public class WallpaperHistoryHelper
         if (history.Remove(wallpaperPath))
         {
             string json = JsonSerializer.Serialize(history);
-            File.WriteAllText(appStorageHelper.appWallpaperHistoryFile, json);
+            File.WriteAllText(AppStorageHelper.appWallpaperHistoryFile, json);
         }
     }
 

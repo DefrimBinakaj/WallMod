@@ -20,14 +20,6 @@ public class FavouritesHelper
 {
     private readonly UniversalAppStore uniVM = App.Services!.GetRequiredService<UniversalAppStore>();
 
-    AppStorageHelper appStorageHelper;
-
-    public FavouritesHelper()
-    {
-        appStorageHelper = new AppStorageHelper();
-        appStorageHelper.InitAppStorage();
-    }
-
     public async Task<ObservableCollection<Wallpaper>> GetFavouriteWallpapers()
     {
         List<string> favList = GetFavouritePaths();
@@ -93,8 +85,8 @@ public class FavouritesHelper
     {
         try
         {
-            if (!File.Exists(appStorageHelper.appFavouritesFile)) return new List<string>();
-            var json = File.ReadAllText(appStorageHelper.appFavouritesFile);
+            if (!File.Exists(AppStorageHelper.appFavouritesFile)) return new List<string>();
+            var json = File.ReadAllText(AppStorageHelper.appFavouritesFile);
             return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
         }
         catch (Exception ex)
@@ -110,7 +102,7 @@ public class FavouritesHelper
         try
         {
             var json = JsonSerializer.Serialize(paths);
-            File.WriteAllText(appStorageHelper.appFavouritesFile, json);
+            File.WriteAllText(AppStorageHelper.appFavouritesFile, json);
         }
         catch (Exception ex)
         {

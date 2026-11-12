@@ -10,21 +10,14 @@ namespace WallMod.Helpers;
 
 public class UIHistoryHelper
 {
-    
-    AppStorageHelper appStorageHelper;
-    public UIHistoryHelper()
-    {
-        appStorageHelper = new AppStorageHelper();
-        appStorageHelper.InitAppStorage();
-    }
 
     public UIStateDTO Load()
     {
         try
         {
-            if (File.Exists(appStorageHelper.appUIStateHistoryFile))
+            if (File.Exists(AppStorageHelper.appUIStateHistoryFile))
             {
-                var state = JsonSerializer.Deserialize<UIStateDTO>(File.ReadAllText(appStorageHelper.appUIStateHistoryFile));
+                var state = JsonSerializer.Deserialize<UIStateDTO>(File.ReadAllText(AppStorageHelper.appUIStateHistoryFile));
                 if (state != null) return state;
             }
         }
@@ -36,8 +29,7 @@ public class UIHistoryHelper
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(appStorageHelper.appUIStateHistoryFile)!);
-            File.WriteAllText(appStorageHelper.appUIStateHistoryFile, JsonSerializer.Serialize(state));
+            File.WriteAllText(AppStorageHelper.appUIStateHistoryFile, JsonSerializer.Serialize(state));
         }
         catch (Exception ex) { AppStorageHelper.LogCrash(ex); }
     }
