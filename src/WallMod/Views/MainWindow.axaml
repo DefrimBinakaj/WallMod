@@ -513,7 +513,8 @@
 															PointerPressed="OnPreviewMonitorTapped">
 														<Panel>
 															<TextBlock Classes="outlinedText" Text="{Binding DisplayNumber}"/>
-															<Ellipse Classes="primaryDot" IsVisible="{Binding IsPrimary}"/>
+															<Border IsVisible="{Binding IsPrimary}" Height="1" CornerRadius="1" Background="#E0B84D"
+																	HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="4,0,4,3"/>
 														</Panel>
 													</Border>
 												</Canvas>
