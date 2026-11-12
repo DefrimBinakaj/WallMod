@@ -20,6 +20,10 @@ public class MonitorInfo: INotifyPropertyChanged
     public bool IsPrimary { get; set; }
     public Wallpaper? CurrWallpaper { get; set; }
     public PixelRect UIBounds { get; set; }
+    // 1-based, matches the 1-4 hotkeys (MonitorList order)
+    public int DisplayNumber { get; set; }
+    public string Description => $"Monitor {DisplayNumber}{(IsPrimary ? " (Primary)" : "")}  ·  {Bounds.Width} x {Bounds.Height}";
+
 
     private string? fillColour;
     public string? FillColour { 

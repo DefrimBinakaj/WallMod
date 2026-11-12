@@ -14,33 +14,135 @@
 	</Style>
 
 	<!-- segmented One/All toggle ===== -->
-	<Style Selector="RadioButton.segmented">
-		<Setter Property="FontSize" Value="14"/>
-		<Setter Property="Padding" Value="12,5"/>
+	<!-- track (background = gallery colour, bound in MainWindow) -->
+	<Style Selector="Border.segmentTrack">
 		<Setter Property="CornerRadius" Value="6"/>
-		<Setter Property="Foreground" Value="#C8C4CD"/>
-		<Setter Property="BorderThickness" Value="0"/>
+		<Setter Property="Padding" Value="2"/>
+		<Setter Property="BorderBrush" Value="#26FFFFFF"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="VerticalAlignment" Value="Center"/>
+	</Style>
+	<Style Selector="RadioButton.segmented">
+		<Setter Property="FontSize" Value="13"/>
+		<Setter Property="Padding" Value="14,4"/>
+		<Setter Property="CornerRadius" Value="4"/>
+		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="Cursor" Value="Hand"/>
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Border Background="{TemplateBinding Background}"
-						CornerRadius="{TemplateBinding CornerRadius}"
-						Padding="{TemplateBinding Padding}">
+				<Panel>
+					<!-- accent fill is its own layer so it can be dimmed without dimming the text -->
+					<Border Name="PART_Fill"
+							Background="{TemplateBinding Background}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Opacity="0.55"/>
 					<ContentPresenter Content="{TemplateBinding Content}"
-										Foreground="{TemplateBinding Foreground}"
-										HorizontalAlignment="Center"
-										VerticalAlignment="Center"/>
-				</Border>
+									  Foreground="{TemplateBinding Foreground}"
+									  Padding="{TemplateBinding Padding}"
+									  HorizontalAlignment="Center"
+									  VerticalAlignment="Center">
+						<ContentPresenter.Effect>
+							<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
+						</ContentPresenter.Effect>
+					</ContentPresenter>
+				</Panel>
 			</ControlTemplate>
 		</Setter>
 	</Style>
-	<!-- unchecked = hide the accent background -->
-	<Style Selector="RadioButton.segmented:unchecked /template/ Border">
+	<!-- unchecked = no accent; faint tint on hover -->
+	<Style Selector="RadioButton.segmented:unchecked /template/ Border#PART_Fill">
 		<Setter Property="Background" Value="Transparent"/>
 	</Style>
-	<!-- checked = white text (accent background comes from the button itself) -->
-	<Style Selector="RadioButton.segmented:checked">
+	<Style Selector="RadioButton.segmented:unchecked:pointerover /template/ Border#PART_Fill">
+		<Setter Property="Background" Value="#40FFFFFF"/>
+	</Style>
+
+	<!-- white text on accent: super thin grey outline so it stays readable -->
+	<Style Selector="TextBlock.outlinedText">
+		<Setter Property="Effect">
+			<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
+		</Setter>
+	</Style>
+
+	<!-- monitors card (preview panel): flat panel, 1px outline ===== -->
+	<Style Selector="Border.monitorCard">
+		<Setter Property="Background" Value="#26000000"/>
+		<Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="CornerRadius" Value="6"/>
+		<Setter Property="Padding" Value="10,8"/>
+	</Style>
+	<Style Selector="TextBlock.monitorHeader">
+		<Setter Property="FontSize" Value="11"/>
+		<Setter Property="FontWeight" Value="SemiBold"/>
+		<Setter Property="LetterSpacing" Value="1.5"/>
+		<Setter Property="Foreground" Value="#B3FFFFFF"/>
+		<Setter Property="VerticalAlignment" Value="Center"/>
+	</Style>
+
+	<!-- borderless icon button; icon spins half a turn on hover -->
+	<Style Selector="Button.ghostIcon">
+		<Setter Property="Background" Value="Transparent"/>
+		<Setter Property="BorderThickness" Value="0"/>
+		<Setter Property="Width" Value="24"/>
+		<Setter Property="Height" Value="24"/>
+		<Setter Property="Padding" Value="0"/>
+		<Setter Property="HorizontalContentAlignment" Value="Center"/>
+		<Setter Property="VerticalContentAlignment" Value="Center"/>
+		<Setter Property="Cursor" Value="Hand"/>
+	</Style>
+	<Style Selector="Button.ghostIcon Image">
+		<Setter Property="RenderTransform" Value="rotate(0deg)"/>
+		<Setter Property="Transitions">
+			<Transitions>
+				<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35" Easing="CubicEaseOut"/>
+			</Transitions>
+		</Setter>
+	</Style>
+	<Style Selector="Button.ghostIcon:pointerover Image">
+		<Setter Property="RenderTransform" Value="rotate(180deg)"/>
+	</Style>
+
+	<!-- monitor tile: flat fill (bound per monitor), 1px border that lights up on hover -->
+	<Style Selector="Border.monitorTile">
+		<Setter Property="BorderBrush" Value="#55506A"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="CornerRadius" Value="4"/>
+		<Setter Property="Cursor" Value="Hand"/>
+		<Setter Property="Transitions">
+			<Transitions>
+				<BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+			</Transitions>
+		</Setter>
+	</Style>
+	<Style Selector="Border.monitorTile:pointerover">
+		<Setter Property="BorderBrush" Value="#E6FFFFFF"/>
+	</Style>
+	<Style Selector="Border.monitorTile TextBlock">
+		<Setter Property="FontSize" Value="11"/>
+		<Setter Property="FontWeight" Value="SemiBold"/>
 		<Setter Property="Foreground" Value="White"/>
-		<Setter Property="Opacity" Value="0.75"/>
+		<Setter Property="HorizontalAlignment" Value="Center"/>
+		<Setter Property="VerticalAlignment" Value="Center"/>
+	</Style>
+	<!-- primary monitor marker (tooltip also says "Primary") -->
+	<Style Selector="Ellipse.primaryDot">
+		<Setter Property="Width" Value="4"/>
+		<Setter Property="Height" Value="4"/>
+		<Setter Property="Fill" Value="#CCFFFFFF"/>
+		<Setter Property="HorizontalAlignment" Value="Right"/>
+		<Setter Property="VerticalAlignment" Value="Top"/>
+		<Setter Property="Margin" Value="0,3,3,0"/>
+	</Style>
+
+	<!-- gallery thumbnail corner badges (fill = accent, bound in MainWindow) ===== -->
+	<Style Selector="Path.tileBadge">
+		<Setter Property="Width" Value="15"/>
+		<Setter Property="Height" Value="15"/>
+		<Setter Property="Stretch" Value="Uniform"/>
+		<Setter Property="Stroke" Value="#2B2B2B"/>
+		<Setter Property="StrokeThickness" Value="1.5"/>
+		<Setter Property="StrokeJoin" Value="Round"/>
 	</Style>
 
 	<!-- translucent dark colour ===== -->
@@ -51,6 +153,7 @@
 	<Style Selector="ComboBox.translucentDark">
 		<Setter Property="Background" Value="#99000000"/>
 		<Setter Property="Foreground" Value="White"/>
+		<Setter Property="CornerRadius" Value="6"/>
 	</Style>
 
 	<!-- outlined icon buttons ===== -->
@@ -143,6 +246,14 @@
 		<Setter Property="TextWrapping" Value="Wrap"/>
 	</Style>
 
-
+	<!-- accent-coloured button: keep the accent on hover/press (Fluent swaps in grey), just darken it slightly -->
+	<Style Selector="Button.accentButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{Binding $parent[Button].Background}"/>
+		<Setter Property="BoxShadow" Value="inset 0 0 0 100 #26000000"/>
+	</Style>
+	<Style Selector="Button.accentButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+		<Setter Property="Background" Value="{Binding $parent[Button].Background}"/>
+		<Setter Property="BoxShadow" Value="inset 0 0 0 100 #40000000"/>
+	</Style>
 
 </Styles>

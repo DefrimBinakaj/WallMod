@@ -127,6 +127,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (!isRestoringQueue)
             {
                 queueHistoryHelper.SaveQueue(uniVM.WallpaperQueue); // add/remove/reorder/clear all persist
+                RefreshTileBadges();
             }
         };
 
@@ -279,6 +280,7 @@ public partial class MainWindowViewModel : ViewModelBase
             AllWallpapers.Add(await Task.Run(() => imgHelper.getWallpaperObjectFromPath(selectedFilePath))); // decode off the UI thread
         }
 
+        RefreshTileBadges();
         applyAllFilters();
     }
 
@@ -344,6 +346,8 @@ public partial class MainWindowViewModel : ViewModelBase
             var revealClock = Stopwatch.StartNew();
             long nextRevealAt = 0;
 
+            RefreshTileBadges(); // favourites file read once per load, not once per tile
+
             await foreach (var wallpaper in imgHelper.LoadWallpapersInOrder(imgFilePaths, token))
             {
                 // wait for this tile's turn (hidden tiles skip the wait)
@@ -357,12 +361,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 if (token.IsCancellationRequested) return; // another folder / favourites owns the gallery now
 
+                SetTileBadges(wallpaper);
                 AllWallpapers.Add(wallpaper);
                 if (PassesFilters(wallpaper)) DisplayWallpaperList.Add(wallpaper); // re-checked: filters may have changed during the wait
 
                 processedFiles++;
                 uniVM.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
             }
+
+            // tiles streamed in loadOrder; Size/Colour (or a sort picked mid-load) need the full set -> sort once now
+            if (CurrentSortChoice != loadOrder) applyAllFilters();
         }
         catch (OperationCanceledException) { } // user moved to another folder mid-load
         catch (Exception ex)
@@ -526,6 +534,25 @@ public partial class MainWindowViewModel : ViewModelBase
         MirrorButtonColour = originalBeforeMirror != null ? SelectedPrimaryAccentColour : Colors.Transparent;
     }
 
+
+    // gallery tile corner badges (favourite / queued) ============================================================
+
+    // path lookups, rebuilt by RefreshTileBadges; tiles streaming in mid-load read these per tile
+    private HashSet<string> favouritePaths = new HashSet<string>();
+    private HashSet<string> queuedPaths = new HashSet<string>();
+
+    private void SetTileBadges(Wallpaper wp)
+    {
+        wp.IsFavourite = favouritePaths.Contains(wp.FilePath);
+        wp.IsQueued = queuedPaths.Contains(wp.FilePath);
+    }
+
+    public void RefreshTileBadges()
+    {
+        favouritePaths = favouritesHelper.GetFavouritePaths().ToHashSet();
+        queuedPaths = uniVM.WallpaperQueue.Select(w => w.FilePath).ToHashSet();
+        foreach (var wp in AllWallpapers) SetTileBadges(wp);
+    }
 
 
     // image setting to background ============================================================
@@ -710,6 +737,7 @@ public partial class MainWindowViewModel : ViewModelBase
         finally
         {
             isRestoringQueue = false;
+            RefreshTileBadges();
             ClearTempImages();
         }
     }
@@ -725,6 +753,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         favouritesHelper.ToggleFavourite(LastSelectedWallpaper.FilePath);
         UpdateFavouriteButtonColour();
+        RefreshTileBadges();
     }
 
     [RelayCommand]
@@ -743,6 +772,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         AllWallpapers = favWallpapers.ToList();
         CurrentSelectedDirecName = "Favourites";
+        RefreshTileBadges();
 
         // filter/sort the master into the display list
         applyAllFilters();
@@ -752,13 +782,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // monitors ============================================================
 
+    // selected monitor tile = accent at ~55% so the number on it stays readable
+    private string SelectedMonitorFill => Color.FromArgb(140, SelectedPrimaryAccentColour.R, SelectedPrimaryAccentColour.G, SelectedPrimaryAccentColour.B).ToString();
+
     // monitor rect tapped in UI - used for selecting monitor to set background of
     public void MonitorTapped(MonitorInfo monitor)
     {
         LastSelMonitor = monitor;
         foreach (MonitorInfo mon in MonitorList)
         {
-            mon.FillColour = mon == monitor ? "#8ccd00" : "Navy";
+            mon.FillColour = mon == monitor ? SelectedMonitorFill : MonitorHelper.IdleFill;
         }
         StyleDropdownEnabled = false;
         SetBackgroundButtonEnabled = true;
@@ -769,7 +802,7 @@ public partial class MainWindowViewModel : ViewModelBase
         LastSelMonitor = null;
         foreach (MonitorInfo mon in MonitorList)
         {
-            mon.FillColour = "#8ccd00";
+            mon.FillColour = SelectedMonitorFill;
         }
     }
 

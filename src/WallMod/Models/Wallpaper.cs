@@ -2,7 +2,9 @@
 using ColorThiefDotNet;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,7 +13,7 @@ namespace WallMod.Models;
 /*
  * Model for wallpaper object
  */
-public class Wallpaper
+public class Wallpaper : INotifyPropertyChanged
 {
     public string FilePath { get; set; }
     public Bitmap? ImageBitmap { get; set; }
@@ -36,4 +38,18 @@ public class Wallpaper
     
     // tiny monitor-layout badge for the queue (accent = target monitor); built at runtime, never persisted
     public List<MonitorInfo>? MonitorBadge { get; set; }
+
+    // gallery corner badges (runtime only; kept in sync by MainWindowViewModel.RefreshTileBadges)
+    private bool isFavourite;
+    public bool IsFavourite { get => isFavourite; set { if (value != isFavourite) { isFavourite = value; OnPropertyChanged(); } } }
+
+    private bool isQueued;
+    public bool IsQueued { get => isQueued; set { if (value != isQueued) { isQueued = value; OnPropertyChanged(); } } }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+    }
+
 }

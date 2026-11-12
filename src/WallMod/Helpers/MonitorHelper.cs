@@ -15,6 +15,16 @@ namespace WallMod.Helpers;
  */
 public class MonitorHelper
 {
+
+    // preview-canvas monitor colours (selected monitors use the accent colour instead of IdleFill)
+    public const string IdleFill = "#2E2A3A";
+    public const string PrimaryStroke = "#E0B84D";
+    public const string SecondaryStroke = "#B3FFFFFF";
+
+    // monitor canvas size in the preview panel (must match the ItemsPanel size in MainWindow.axaml)
+    public static readonly double CanvasWidth = 180;
+    public static readonly double CanvasHeight = 60;
+
     // used to get monitors on the pc and also scale them down for use in ui
     public static IEnumerable<MonitorInfo> GetMonitors(Window mainWindow)
     {
@@ -62,8 +72,8 @@ public class MonitorHelper
                         WorkingArea = screen.WorkingArea,
                         IsPrimary = screen.IsPrimary ? true : false,
                         CurrWallpaper = new Wallpaper(),
-                        FillColour = "Navy",
-                        StrokeColour = screen.IsPrimary ? "Gold" : "White",
+                        FillColour = IdleFill,
+                        StrokeColour = screen.IsPrimary ? PrimaryStroke : SecondaryStroke,
                     });
 
                     Debug.WriteLine("windows monitor => id=" + matchedId +
@@ -81,6 +91,9 @@ public class MonitorHelper
 
         if (monitors.Count == 0)
             return monitors;
+
+        for (int i = 0; i < monitors.Count; i++)
+            monitors[i].DisplayNumber = i + 1;
 
         // do the ui scaling for bounding rectangles
         scaleUIBounds(monitors);
@@ -139,8 +152,8 @@ public class MonitorHelper
                 WorkingArea = screen.WorkingArea,
                 IsPrimary = screen.IsPrimary ? true : false,
                 CurrWallpaper = new Wallpaper(),
-                FillColour = "Navy",
-                StrokeColour = screen.IsPrimary ? "Gold" : "White",
+                FillColour = IdleFill,
+                StrokeColour = screen.IsPrimary ? PrimaryStroke : SecondaryStroke,
             };
 
             list.Add(info);
@@ -156,6 +169,8 @@ public class MonitorHelper
     // scales each monitor's bounds so they fit in a small ui region (e.g. 240x100)
     private static void scaleUIBounds(List<MonitorInfo> monitors)
     {
+        const int gap = 2; // px shaved off each side -> 4px between touching monitors
+
         double minX = monitors.Min(m => m.Bounds.X);
         double minY = monitors.Min(m => m.Bounds.Y);
         double maxX = monitors.Max(m => m.Bounds.X + m.Bounds.Width);
@@ -164,22 +179,18 @@ public class MonitorHelper
         double totalWidth = maxX - minX;
         double totalHeight = maxY - minY;
 
-        double targetWidth = 240;
-        double targetHeight = 100;
+        double scaleFactor = Math.Min(CanvasWidth / totalWidth, CanvasHeight / totalHeight);
 
-        double scaleX = targetWidth / totalWidth;
-        double scaleY = targetHeight / totalHeight;
-        double scaleFactor = Math.Min(scaleX, scaleY);
+        // leftover space split evenly -> layout sits in the middle of the canvas
+        double centreX = (CanvasWidth - totalWidth * scaleFactor) / 2;
+        double centreY = (CanvasHeight - totalHeight * scaleFactor) / 2;
 
         foreach (var mon in monitors)
         {
-            double offsetX = mon.Bounds.X - minX;
-            double offsetY = mon.Bounds.Y - minY;
-
-            int uiX = (int)(offsetX * scaleFactor);
-            int uiY = (int)(offsetY * scaleFactor) + 5;
-            int uiW = (int)(mon.Bounds.Width * scaleFactor);
-            int uiH = (int)(mon.Bounds.Height * scaleFactor);
+            int uiX = (int)(centreX + (mon.Bounds.X - minX) * scaleFactor) + gap;
+            int uiY = (int)(centreY + (mon.Bounds.Y - minY) * scaleFactor) + gap;
+            int uiW = Math.Max(4, (int)(mon.Bounds.Width * scaleFactor) - gap * 2);
+            int uiH = Math.Max(4, (int)(mon.Bounds.Height * scaleFactor) - gap * 2);
 
             mon.UIBounds = new PixelRect(uiX, uiY, uiW, uiH);
 
@@ -188,7 +199,7 @@ public class MonitorHelper
     }
 
     // builds a miniature copy of the monitor layout for a queue-item badge;
-    // the target monitor is filled with the accent colour, the rest navy
+    // the target monitor is filled with the accent colour, the rest other colour
     public static List<MonitorInfo> BuildMiniMonitorBadge(IEnumerable<MonitorInfo> monitors,
                                                           string? targetMonitorId,
                                                           string accentColour,

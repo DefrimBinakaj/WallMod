@@ -475,7 +475,7 @@ public partial class MainWindow : Window
             // manipulate monitor UI
             foreach (MonitorInfo mon in vm.MonitorList)
             {
-                mon.FillColour = "Navy";
+                mon.FillColour = MonitorHelper.IdleFill;
             }
             uniVM.SetBackgroundButtonEnabled = false;
         }
