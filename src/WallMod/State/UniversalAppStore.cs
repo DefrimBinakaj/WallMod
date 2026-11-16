@@ -244,7 +244,7 @@ public class UniversalAppStore : ViewModelBase
             }
         }
     }
-    public int MaxCPUThreads { get; } = Environment.ProcessorCount;
+    public static int MaxCPUThreads { get; } = Math.Max(1, Environment.ProcessorCount - 2); // leave 2 threads for UI & rendering
 
 
     // doesnt actually work like argb since it is being modified - decr rgb values in order to incr opacity

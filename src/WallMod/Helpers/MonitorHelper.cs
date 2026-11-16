@@ -21,9 +21,9 @@ public class MonitorHelper
     public const string PrimaryStroke = "#E0B84D";
     public const string SecondaryStroke = "#B3FFFFFF";
 
-    // monitor canvas size in the preview panel (must match the ItemsPanel size in MainWindow.axaml)
-    public static readonly double CanvasWidth = 180;
-    public static readonly double CanvasHeight = 60;
+    // monitor canvas size in the preview panel
+    public static readonly double CanvasWidth = 200;
+    public static readonly double CanvasHeight = 80;
 
     // used to get monitors on the pc and also scale them down for use in ui
     public static IEnumerable<MonitorInfo> GetMonitors(Window mainWindow)
@@ -169,7 +169,7 @@ public class MonitorHelper
     // scales each monitor's bounds so they fit in a small ui region (e.g. 240x100)
     private static void scaleUIBounds(List<MonitorInfo> monitors)
     {
-        const int gap = 2; // px shaved off each side -> 4px between touching monitors
+        const int gap = 1; // px shaved off each side
 
         double minX = monitors.Min(m => m.Bounds.X);
         double minY = monitors.Min(m => m.Bounds.Y);

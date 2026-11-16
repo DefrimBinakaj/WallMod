@@ -113,107 +113,91 @@
 							   IsOpen="{Binding IsFilterOpen}">
 
 							<!-- Filter Popup -->
-							<Border Background="rgba(20, 20, 20, 20)"
-									CornerRadius="5"
-									Padding="10"
-									MinWidth="200">
-								<StackPanel Spacing="8">
+							<Border Background="rgba(20, 20, 20, 15)" CornerRadius="8" Padding="12">
+								<Border.Styles>
+									<Style Selector="Border.segmentTrack" x:DataType="vm:MainWindowViewModel">
+										<Setter Property="Background" Value="{Binding SelectedWallpaperCollectionColour, Converter={StaticResource ColorToBrushConverter}}"/>
+										<Setter Property="HorizontalAlignment" Value="Left"/>
+									</Style>
+									<Style Selector="RadioButton.segmented" x:DataType="vm:MainWindowViewModel">
+										<Setter Property="Background" Value="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+									</Style>
+									<Style Selector="TextBlock.filterLabel">
+										<Setter Property="FontSize" Value="10"/>
+										<Setter Property="LetterSpacing" Value="2.5"/>
+										<Setter Property="Foreground" Value="#80FFFFFF"/>
+										<Setter Property="Margin" Value="1,10,0,2"/>
+									</Style>
+									<Style Selector=":is(ToggleButton).segmented" x:DataType="vm:MainWindowViewModel">
+										<Setter Property="Background" Value="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
+									</Style>
+								</Border.Styles>
 
-									<!-- Title -->
-									<TextBlock Text="Filter by:"
-											   Foreground="White"
-											   FontWeight="Bold" />
+								<StackPanel Spacing="6">
+									<TextBox x:Name="FilterSearchBox" Text="{Binding FilterSearchText}" Watermark="Search by name" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
 
-									<!-- Search bar -->
-									<StackPanel Orientation="Horizontal" Spacing="4">
-										<TextBox x:Name="FilterSearchBox"
-												 Text="{Binding FilterSearchText}"
-												 Width="180"
-												 Watermark="Search..."
-												 Foreground="White"
-												 Background="rgba(52, 52, 52, 1)"/>
+									<TextBlock Classes="filterLabel" Text="SORT BY"/>
+									<Border Classes="segmentTrack">
+										<StackPanel Orientation="Horizontal" Spacing="2">
+											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Name" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Name}"/>
+											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Date" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Date}"/>
+											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Size" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Size}"/>
+											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Colour" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Colour}"/>
+											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Width" ToolTip.Tip="Widest images first" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Width}"/>
+										</StackPanel>
+									</Border>
+
+									<TextBlock Classes="filterLabel" Text="ASPECT RATIO"/>
+									<Border Classes="segmentTrack">
+										<StackPanel Orientation="Horizontal" Spacing="2">
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="All" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="Portrait" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Vertical}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="4:3" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=4:3}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="16:9" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:9}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="16:10" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:10}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="21:9" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=21:9}"/>
+											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="32:9" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=32:9}"/>
+										</StackPanel>
+									</Border>
+
+									<TextBlock Classes="filterLabel" Text="COLOUR (avg)"/>
+									<Border Classes="segmentTrack">
+										<StackPanel Orientation="Horizontal" Spacing="2">
+											<RadioButton Classes="segmented" GroupName="ColourGroup" Content="Any" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"/>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Red" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Red}">
+												<Ellipse Width="12" Height="12" Fill="#E24B4A"/>
+											</RadioButton>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Orange / yellow" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=OrangeYellow}">
+												<Ellipse Width="12" Height="12" Fill="#F2A93B"/>
+											</RadioButton>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Green" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Green}">
+												<Ellipse Width="12" Height="12" Fill="#4FAE5B"/>
+											</RadioButton>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Blue" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Blue}">
+												<Ellipse Width="12" Height="12" Fill="#3A7FDB"/>
+											</RadioButton>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Violet" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Violet}">
+												<Ellipse Width="12" Height="12" Fill="#8B6BDB"/>
+											</RadioButton>
+											<RadioButton Classes="segmented" GroupName="ColourGroup" ToolTip.Tip="Grey" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Grey}">
+												<Ellipse Width="12" Height="12" Fill="#8A8A8A"/>
+											</RadioButton>
+										</StackPanel>
+									</Border>
+
+									<TextBlock Classes="filterLabel" Text="SHOW"/>
+									<StackPanel Orientation="Horizontal" Spacing="6">
+										<Border Classes="segmentTrack">
+											<ToggleButton Classes="segmented" Content="Folders" IsChecked="{Binding ShowFolders}"/>
+										</Border>
+										<Border Classes="segmentTrack">
+											<ToggleButton Classes="segmented" Content="Favourites only" IsChecked="{Binding OnlyFavourites}"/>
+										</Border>
+										<Border Classes="segmentTrack">
+											<ToggleButton Classes="segmented" Content="High-res only" ToolTip.Tip="Only images that have equal or higher resolution than your highest-resolution monitor" IsChecked="{Binding OnlyHighRes}"/>
+										</Border>
 									</StackPanel>
-
-									<!-- Folder Filter -->
-									<CheckBox Content="Show Folders"
-											  Foreground="White"
-											  Margin="0,8,0,0"
-											  IsChecked="{Binding ShowFolders}"/>
-
-									<!-- Image Property -->
-									<StackPanel Orientation="Vertical" Spacing="4">
-										<RadioButton Content="Name"
-													 GroupName="FilterGroup"
-													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Name"
-													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Name}"
-													 Foreground="White"/>
-										<RadioButton Content="Date"
-													 GroupName="FilterGroup"
-													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Date"
-													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Date}"
-													 Foreground="White"/>
-										<RadioButton Content="Size"
-													 GroupName="FilterGroup"
-													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Size"
-													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Size}"
-													 Foreground="White"/>
-										<RadioButton Content="Colour"
-													 GroupName="FilterGroup"
-													 Command="{Binding filterGroupSelectedCommand}"
-													 CommandParameter="Colour"
-													 IsChecked="{Binding CurrentSortChoice, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Colour}"
-													 Foreground="White"/>
-									</StackPanel>
-
-									<!-- Image Aspect Ratio -->
-									<StackPanel Orientation="Horizontal" Spacing="4">
-										<RadioButton Content="All"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="All"
-													 Foreground="White"/>
-										<RadioButton Content="Vertical"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Vertical}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="Vertical"
-													 Foreground="White"/>
-										<RadioButton Content="4:3"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=4:3}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="4:3"
-													 Foreground="White"/>
-										<RadioButton Content="16:9"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:9}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="16:9"
-													 Foreground="White"/>
-										<RadioButton Content="16:10"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=16:10}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="16:10"
-													 Foreground="White"/>
-										<RadioButton Content="21:9"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=21:9}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="21:9"
-													 Foreground="White"/>
-										<RadioButton Content="32:9"
-													 IsChecked="{Binding CurrentAspectRatio, Mode=TwoWay, Converter={StaticResource BoolToStrConverter}, ConverterParameter=32:9}"
-													 GroupName="AspectRatioGroup"
-													 Command="{Binding filterAspectRatioCommand}"
-													 CommandParameter="32:9"
-													 Foreground="White"/>
-									</StackPanel>
-
+									
 								</StackPanel>
 							</Border>
 
@@ -243,8 +227,14 @@
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 
-						<TextBlock Grid.Row="1" Text="{Binding CurrentSelectedDirecName}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0" MaxWidth="260" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-
+						<StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+									HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0">
+							<TextBlock Text="{Binding CurrentSelectedDirecName}" FontSize="17" Foreground="White" VerticalAlignment="Center"
+									   MaxWidth="260" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+							<TextBlock Text="{Binding DisplayWallpaperList.Count}" FontSize="12" Foreground="#99FFFFFF" VerticalAlignment="Center"
+									   ToolTip.Tip="Images in view"/>
+						</StackPanel>
+						
 						<Grid Grid.Row="3" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom">
 							<Grid.RowDefinitions>
 								<RowDefinition Height="Auto"/>

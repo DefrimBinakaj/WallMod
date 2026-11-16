@@ -27,6 +27,6 @@ public class BoolToStrConverter: IValueConverter
     {
         if (value is bool boolValue && boolValue)
             return parameter?.ToString();
-        return null;
+        return BindingOperations.DoNothing; // dont write back
     }
 }

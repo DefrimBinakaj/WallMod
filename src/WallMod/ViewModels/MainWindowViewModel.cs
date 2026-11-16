@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -195,6 +196,22 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool isFilterOpen;
     public bool IsFilterOpen { get => isFilterOpen; set => SetProperty(ref isFilterOpen, value); }
 
+
+    private bool onlyHighRes;
+    public bool OnlyHighRes { get => onlyHighRes; set { if (SetProperty(ref onlyHighRes, value)) applyAllFilters(); } }
+
+    private bool onlyFavourites;
+    public bool OnlyFavourites { get => onlyFavourites; set { if (SetProperty(ref onlyFavourites, value)) applyAllFilters(); } }
+
+    // at least as big as the largest monitor -> never upscaled anywhere
+    private bool IsHighRes(Wallpaper wp) =>
+        uniVM.MonitorList.Count == 0
+        || (wp.ImageWidth >= uniVM.MonitorList.Max(m => m.Bounds.Width) && wp.ImageHeight >= uniVM.MonitorList.Max(m => m.Bounds.Height));
+
+    private string colourFilter = "All";
+    public string ColourFilter { get => colourFilter; set { if (SetProperty(ref colourFilter, value)) applyAllFilters(); } }
+
+
     // filter setters re-run applyAllFilters whenever they actually change
     public string FilterSearchText
     {
@@ -363,7 +380,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 SetTileBadges(wallpaper);
                 AllWallpapers.Add(wallpaper);
-                if (PassesFilters(wallpaper)) DisplayWallpaperList.Add(wallpaper); // re-checked: filters may have changed during the wait
+                if (PassesFilters(wallpaper)) // re-checked: filters may have changed during the wait
+                {
+                    while (!galleryFill.IsCompleted) await galleryFill; // a refill is mid-way: land after it, not inside it
+                    DisplayWallpaperList.Add(wallpaper);
+                }
 
                 processedFiles++;
                 uniVM.ImgLoadProgress = (double)processedFiles / totalFiles * 100;
@@ -409,15 +430,14 @@ public partial class MainWindowViewModel : ViewModelBase
         IsFilterOpen = true;
     }
 
-    // in axaml: filterGroupSelectedCommand / filterAspectRatioCommand (the setters re-filter)
-    [RelayCommand] public void filterGroupSelected(string selectedChoice) => CurrentSortChoice = selectedChoice;
-    [RelayCommand] public void filterAspectRatio(string selectedChoice) => CurrentAspectRatio = selectedChoice;
-
-    // search / show-folders / aspect-ratio filters for one tile (folders always pass the aspect filter)
+    // search / show-folders / aspect-ratio / colour filters for one tile (folders always pass the aspect + colour filters)
     private bool PassesFilters(Wallpaper wp) =>
         (ShowFolders || wp.IsDirectory == false)
-        && (string.IsNullOrEmpty(FilterSearchText) || (wp.Name != null && wp.Name.StartsWith(FilterSearchText, StringComparison.OrdinalIgnoreCase)))
-        && (CurrentAspectRatio == "All" || wp.IsDirectory == true || ImageHelper.GetAspectRatio(wp.ImageWidth, wp.ImageHeight) == CurrentAspectRatio);
+        && (string.IsNullOrEmpty(FilterSearchText) || (wp.Name != null && wp.Name.Contains(FilterSearchText, StringComparison.OrdinalIgnoreCase)))
+        && (CurrentAspectRatio == "All" || wp.IsDirectory == true || ImageHelper.GetAspectRatio(wp.ImageWidth, wp.ImageHeight) == CurrentAspectRatio)
+        && (ColourFilter == "All" || wp.IsDirectory == true || ImageHelper.GetColourName(wp.ColourCategory) == ColourFilter)
+        && (!OnlyFavourites || wp.IsDirectory == true || wp.IsFavourite)
+        && (!OnlyHighRes || wp.IsDirectory == true || IsHighRes(wp));
 
     public void applyAllFilters()
     {
@@ -444,10 +464,38 @@ public partial class MainWindowViewModel : ViewModelBase
                 folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
                 imageList = imageList.OrderBy(wp => wp.ColourCategory);
                 break;
+            case "Width": // widest (x divided by y); tiebreak by sorting by resolution afterwards
+                folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
+                imageList = imageList.OrderByDescending(wp => Math.Round((double)(wp.ImageWidth ?? 0) / Math.Max(1, wp.ImageHeight ?? 1), 2))
+                .ThenByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
+                break;
         }
 
-        // swap the whole list in at once: one reset for the ListBox instead of a Clear() plus an Add() per tile
-        DisplayWallpaperList = new ObservableCollection<Wallpaper>(folderList.Concat(imageList));
+        galleryFill = FillGallery(folderList.Concat(imageList).ToList());
+    }
+
+    // the gallery refill running right now (tiles streaming in wait for it, so their order stays right)
+    private Task galleryFill = Task.CompletedTask;
+    private int galleryFillVersion;
+
+    // every Add builds a tile on the UI thread, so do ~8ms of them per frame, then let input + drawing run.
+    // building them all in one go is what froze the window; a newer call stops an older fill
+    private async Task FillGallery(List<Wallpaper> ordered)
+    {
+        int version = ++galleryFillVersion;
+        var display = new ObservableCollection<Wallpaper>();
+        DisplayWallpaperList = display;
+        var frame = Stopwatch.StartNew();
+
+        foreach (var wp in ordered)
+        {
+            display.Add(wp);
+            if (frame.ElapsedMilliseconds < 8) continue;
+
+            await Dispatcher.Yield(); // input + rendering run first
+            if (version != galleryFillVersion) return;
+            frame.Restart();
+        }
     }
 
 

@@ -45,12 +45,12 @@ public class ImageHelper
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallMod", "mirrored");
 
     // everything one decode of an image produces; Thumbnail is null if the file couldn't be decoded
-    private sealed record ImageData(byte[]? Thumbnail, int Width, int Height, double Hue);
-    private static readonly ImageData unreadableImage = new(null, 0, 0, 0);
+    private sealed record ImageData(byte[]? Thumbnail, int Width, int Height, double? Hue);
+    private static readonly ImageData unreadableImage = new(null, 0, 0, null);
     private static readonly ConcurrentDictionary<string, ImageData> imageCache = new();
 
-    private int allocCPUThreads => Math.Max(1, uniVM.CPUThreadsAllocated);
-
+    // dont ever take last 2 cores (keeps UI responsive)
+    private int allocCPUThreads => Math.Clamp(uniVM.CPUThreadsAllocated, 1, UniversalAppStore.MaxCPUThreads);
 
     // ===== wallpaper objects ======================================================================
 
@@ -229,7 +229,7 @@ public class ImageHelper
     }
 
     // same maths as PixelDatabase's ImageClassifier.Classify: whole-number average of every pixel's R, G, B
-    private static double AverageHue(SKBitmap resizedBitmap)
+    private static double? AverageHue(SKBitmap resizedBitmap)
     {
         ReadOnlySpan<byte> pixels = resizedBitmap.GetPixelSpan(); // B, G, R, A per pixel
         long r = 0, g = 0, b = 0;
@@ -241,7 +241,11 @@ public class ImageHelper
         }
 
         long count = pixels.Length / 4;
-        return RgbToHue(r / count, g / count, b / count);
+        long avgR = r / count, avgG = g / count, avgB = b / count;
+
+        // near-grey average (bw/dark/muted image) -> hue is just noise, so no hue
+        if (Math.Max(avgR, Math.Max(avgG, avgB)) - Math.Min(avgR, Math.Min(avgG, avgB)) < 12) return null;
+        return RgbToHue(avgR, avgG, avgB);
     }
 
     private static byte[] EncodeJpeg(SKBitmap resizedBitmap)
@@ -319,6 +323,12 @@ public class ImageHelper
         }
 
     }
+
+
+    // COLOUR BAND: used for choosing colour in filters --- [RgbToHue bounds are <-15,345> ]
+    private static readonly (string Name, double MaxHue)[] ColourBands =
+        { ("Red", 15), ("OrangeYellow", 70), ("Green", 180), ("Blue", 260), ("Violet", 345) };
+    public static string GetColourName(double? hue) => hue == null ? "Grey" : ColourBands.First(band => hue < band.MaxHue).Name;
 
     public static double RgbToHue(double r, double g, double b)
     {

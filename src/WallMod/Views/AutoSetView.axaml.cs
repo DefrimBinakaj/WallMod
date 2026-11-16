@@ -27,6 +27,11 @@ public partial class AutoSetView : UserControl
     {
         InitializeComponent();
         DataContext = App.Services!.GetRequiredService<AutoSetViewModel>();
+
+        // normal mouse wheel scrolls the queue strips sideways (tunnel so the inner ListBox can't swallow it)
+        CustomScroll.AddHandler(PointerWheelChangedEvent, HorizMouseWheelChanged, RoutingStrategies.Tunnel);
+        // prob dont need random view scrolling for now
+        // RandomScroll.AddHandler(PointerWheelChangedEvent, HorizMouseWheelChanged, RoutingStrategies.Tunnel);
     }
 
 
@@ -203,6 +208,17 @@ public partial class AutoSetView : UserControl
         {
             InsertLine.IsVisible = false;
         }
+    }
+
+
+    // horizontal scrolling when point is in autoset
+    private void HorizMouseWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (sender is not ScrollViewer sv || e.Delta.Y == 0) return;
+
+        double maxX = Math.Max(0, sv.Extent.Width - sv.Viewport.Width);
+        sv.Offset = sv.Offset.WithX(Math.Clamp(sv.Offset.X - e.Delta.Y * 50, 0, maxX));
+        e.Handled = true;
     }
 
 

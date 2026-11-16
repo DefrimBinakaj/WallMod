@@ -59,7 +59,7 @@ public partial class SettingsViewModel : ObservableObject
     public bool RememberFilters { get => uniVM.RememberFilters; set { if (uniVM.RememberFilters != value) { uniVM.RememberFilters = value; OnPropertyChanged(); } } }
     public bool RememberThumbnailZoomLevel { get => uniVM.RememberThumbnailZoomLevel; set { if (uniVM.RememberThumbnailZoomLevel != value) { uniVM.RememberThumbnailZoomLevel = value; OnPropertyChanged(); } } }
     public int CPUThreadsAllocated { get => uniVM.CPUThreadsAllocated; set { if (uniVM.CPUThreadsAllocated != value) { uniVM.CPUThreadsAllocated = value; OnPropertyChanged(); } } }
-    public int MaxCPUThreads { get; } = Environment.ProcessorCount;
+    public int MaxCPUThreads => UniversalAppStore.MaxCPUThreads;
     public Color SelectedBackgroundColour { get => uniVM.SelectedBackgroundColour; set { if (uniVM.SelectedBackgroundColour != value) { uniVM.SelectedBackgroundColour = value; OnPropertyChanged(); } } }
     public Color SelectedPrimaryAccentColour { get => uniVM.SelectedPrimaryAccentColour; set { if (uniVM.SelectedPrimaryAccentColour != value) { uniVM.SelectedPrimaryAccentColour = value; OnPropertyChanged(); } } }
     public Color SelectedWallpaperCollectionColour { get => uniVM.SelectedWallpaperCollectionColour; set { if (uniVM.SelectedWallpaperCollectionColour != value) { uniVM.SelectedWallpaperCollectionColour = value; OnPropertyChanged(); } } }
