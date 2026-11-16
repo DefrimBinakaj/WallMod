@@ -14,7 +14,7 @@ using WallMod.Models;
 using WallMod.State;
 using WallMod.ViewModels;
 
-namespace WallMod.Helpers;
+namespace WallMod.Helpers.History;
 
 /**
  * Class for loading/viewing/adding image history

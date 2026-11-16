@@ -262,7 +262,7 @@ public class ImageHelper
         return new Bitmap(memStream);
     }
 
-    private int CountFolderItems(string subDir)
+    public int CountFolderItems(string subDir)
     {
         try
         {

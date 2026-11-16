@@ -123,10 +123,9 @@
 										<Setter Property="Background" Value="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
 									</Style>
 									<Style Selector="TextBlock.filterLabel">
-										<Setter Property="FontSize" Value="10"/>
-										<Setter Property="LetterSpacing" Value="2.5"/>
-										<Setter Property="Foreground" Value="#80FFFFFF"/>
-										<Setter Property="Margin" Value="1,10,0,2"/>
+										<Setter Property="FontSize" Value="13"/>
+										<Setter Property="Foreground" Value="#99FFFFFF"/>
+										<Setter Property="Margin" Value="1,8,0,0"/>
 									</Style>
 									<Style Selector=":is(ToggleButton).segmented" x:DataType="vm:MainWindowViewModel">
 										<Setter Property="Background" Value="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"/>
@@ -136,7 +135,7 @@
 								<StackPanel Spacing="6">
 									<TextBox x:Name="FilterSearchBox" Text="{Binding FilterSearchText}" Watermark="Search by name" Foreground="White" Background="rgba(52, 52, 52, 1)"/>
 
-									<TextBlock Classes="filterLabel" Text="SORT BY"/>
+									<TextBlock Classes="filterLabel" Text="Sort by"/>
 									<Border Classes="segmentTrack">
 										<StackPanel Orientation="Horizontal" Spacing="2">
 											<RadioButton Classes="segmented" GroupName="FilterGroup" Content="Name" IsChecked="{Binding CurrentSortChoice, Converter={StaticResource BoolToStrConverter}, ConverterParameter=Name}"/>
@@ -147,7 +146,7 @@
 										</StackPanel>
 									</Border>
 
-									<TextBlock Classes="filterLabel" Text="ASPECT RATIO"/>
+									<TextBlock Classes="filterLabel" Text="Aspect ratio"/>
 									<Border Classes="segmentTrack">
 										<StackPanel Orientation="Horizontal" Spacing="2">
 											<RadioButton Classes="segmented" GroupName="AspectRatioGroup" Content="All" IsChecked="{Binding CurrentAspectRatio, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"/>
@@ -160,7 +159,7 @@
 										</StackPanel>
 									</Border>
 
-									<TextBlock Classes="filterLabel" Text="COLOUR (avg)"/>
+									<TextBlock Classes="filterLabel" Text="Colour (avg)"/>
 									<Border Classes="segmentTrack">
 										<StackPanel Orientation="Horizontal" Spacing="2">
 											<RadioButton Classes="segmented" GroupName="ColourGroup" Content="Any" IsChecked="{Binding ColourFilter, Converter={StaticResource BoolToStrConverter}, ConverterParameter=All}"/>
@@ -185,7 +184,7 @@
 										</StackPanel>
 									</Border>
 
-									<TextBlock Classes="filterLabel" Text="SHOW"/>
+									<TextBlock Classes="filterLabel" Text="Show"/>
 									<StackPanel Orientation="Horizontal" Spacing="6">
 										<Border Classes="segmentTrack">
 											<ToggleButton Classes="segmented" Content="Folders" IsChecked="{Binding ShowFolders}"/>
@@ -219,10 +218,51 @@
 						</Button>
 
 
+						<!-- Directory History (Recent Direcs) -->
+						<Button x:Name="DirectoryHistoryButton" Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 82" Command="{Binding directoryHistoryClicked}" ToolTip.Tip="Open Recent Directories">
+							<Image Source="avares://Wallmod/Assets/directory-history-icon.png" Width="24" Height="24"/>
+						</Button>
+						<Popup PlacementTarget="{Binding #DirectoryHistoryButton}" Placement="RightEdgeAlignedBottom" IsLightDismissEnabled="True" IsOpen="{Binding IsDirectoryHistoryOpen}">
+
+							<Border Background="rgba(20, 20, 20, 15)" CornerRadius="8" Padding="8" MinWidth="220">
+								<StackPanel Spacing="2">
+									<TextBlock Text="Recently Opened" FontSize="13" Foreground="#99FFFFFF" Margin="4,0,0,4"/>
+									<TextBlock Text="No recent directories" FontSize="12" Foreground="#99FFFFFF" Margin="4,2" IsVisible="{Binding !DirectoryHistoryList.Count}"/>
+									<ItemsControl ItemsSource="{Binding DirectoryHistoryList}" Grid.IsSharedSizeScope="True">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate>
+												<Button Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).openDirectoryHistoryCommand}"
+														CommandParameter="{Binding DirecPath}" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"
+														HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" ToolTip.Tip="{Binding DirecPath}">
+													<Grid>
+														<Grid.ColumnDefinitions>
+															<ColumnDefinition Width="Auto" SharedSizeGroup="DirectoryHistoryCount"/>
+															<ColumnDefinition Width="1"/>
+															<ColumnDefinition Width="*"/>
+														</Grid.ColumnDefinitions>
+														<TextBlock Grid.Column="0" Text="{Binding ItemCount}" FontSize="12" Foreground="#99FFFFFF" HorizontalAlignment="Right" Margin="6,5,8,5"/>
+														<Border Grid.Column="1" Background="#33FFFFFF"/>
+														<!-- display parent path and then child in accent colour -->
+														<TextBlock Grid.Column="2" FontSize="12" MaxWidth="320" TextTrimming="PrefixCharacterEllipsis" Margin="8,5,6,5"
+																   Foreground="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}">
+															<!-- keep this weird formatting for the Runs so that theres no space between the two -->
+															<Run Text="{Binding ParentPath}" Foreground="White" /><Run Text="{Binding FolderName}"/>
+														</TextBlock>
+													</Grid>
+												</Button>
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+								</StackPanel>
+							</Border>
+						</Popup>
+
+						<!-- View Favourites -->
 						<Button Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 44" Command="{Binding viewFavouritesButton}" ToolTip.Tip="View Favourites">
 							<Image Source="avares://Wallmod/Assets/favourite-icon.png" Width="20" Height="20"/>
 						</Button>
 
+						<!-- View History -->
 						<Button Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}" ToolTip.Tip="View History">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>

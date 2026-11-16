@@ -22,6 +22,7 @@ public static class AppStorageHelper
     public static readonly string appFavouritesFile = Path.Combine(appStorageDirectory, "WallModFavourites.json");
     public static readonly string appQueueHistoryFile = Path.Combine(appStorageDirectory, "WallModQueueHistory.json");
     public static readonly string appUIStateHistoryFile = Path.Combine(appStorageDirectory, "WallModUIStateHistory.json");
+    public static readonly string appRecentDirectoriesFile = Path.Combine(appStorageDirectory, "WallModRecentDirectories.json");
     public static string crashLogFile = Path.Combine(appStorageDirectory, "CrashLog.txt"); // not readonly so tests can redirect it
 
     // add error logs to crashlog file

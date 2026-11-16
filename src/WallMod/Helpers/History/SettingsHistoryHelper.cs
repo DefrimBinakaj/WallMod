@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace WallMod.Helpers;
+namespace WallMod.Helpers.History;
 
 public class SettingsHistoryHelper
 {

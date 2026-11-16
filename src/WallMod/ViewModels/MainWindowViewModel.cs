@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using WallMod.Helpers;
+using WallMod.Helpers.History;
 using WallMod.Models;
 using WallMod.State;
 
@@ -32,6 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
     FavouritesHelper favouritesHelper = new FavouritesHelper();
     QueueHistoryHelper queueHistoryHelper = new QueueHistoryHelper();
+    DirectoryHistoryHelper directoryHistoryHelper = new DirectoryHistoryHelper();
     private bool isRestoringQueue;
 
     // cancels the running gallery load whenever a new one starts
@@ -55,6 +57,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // list of history wallpapers
     public ObservableCollection<Wallpaper> HistoryWallpaperList => uniVM.HistoryWallpaperList;
+
+    // list of recent directories (directory history)
+    public ObservableCollection<DirectoryHistoryRecord> DirectoryHistoryList { get; } = new ObservableCollection<DirectoryHistoryRecord>();
 
     // holds the untouched gallery object while the mirrored copy is selected (null = not mirrored)
     private Wallpaper? originalBeforeMirror;
@@ -196,6 +201,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool isFilterOpen;
     public bool IsFilterOpen { get => isFilterOpen; set => SetProperty(ref isFilterOpen, value); }
 
+    private bool isDirectoryHistoryOpen;
+    public bool IsDirectoryHistoryOpen { get => isDirectoryHistoryOpen; set => SetProperty(ref isDirectoryHistoryOpen, value); }
 
     private bool onlyHighRes;
     public bool OnlyHighRes { get => onlyHighRes; set { if (SetProperty(ref onlyHighRes, value)) applyAllFilters(); } }
@@ -345,6 +352,7 @@ public partial class MainWindowViewModel : ViewModelBase
             AllWallpapers = folderTiles;
             applyAllFilters();
             uniVM.CurrentSelectedDirectory = folderChoice;
+            directoryHistoryHelper.AddToRecent(folderChoice);
 
             // Name/Date order is known from the file list, so images can arrive already sorted;
             // Size/Colour need every image decoded first, so those re-sort once at the end
@@ -879,6 +887,32 @@ public partial class MainWindowViewModel : ViewModelBase
         GC.WaitForPendingFinalizers();
     }
 
+
+
+    // directory history ===================================================
+
+    [RelayCommand]
+    public void directoryHistoryClicked()
+    {
+        // refresh on every open; folders deleted/moved since are skipped
+        DirectoryHistoryList.Clear();
+        ImageHelper imgHelper = new ImageHelper();
+        foreach (var direc in directoryHistoryHelper.LoadRecentJson().Where(direc => direc != CurrentSelectedDirectory && Directory.Exists(direc)))
+        {
+            DirectoryHistoryList.Add(new DirectoryHistoryRecord(imgHelper.CountFolderItems(direc), direc));
+        }
+
+        // same reopen as filterClicked
+        IsDirectoryHistoryOpen = false;
+        IsDirectoryHistoryOpen = true;
+    }
+
+    [RelayCommand]
+    public void openDirectoryHistory(string direc)
+    {
+        IsDirectoryHistoryOpen = false;
+        selectDirec(direc);
+    }
 
 
     // settings ============================================================

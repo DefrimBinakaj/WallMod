@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WallMod.Helpers;
+using WallMod.Helpers.History;
 
 namespace WallModTest.Helpers;
 

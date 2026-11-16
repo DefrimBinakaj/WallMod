@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WallMod.Helpers;
+using WallMod.Helpers.History;
 using WallMod.Models;
 using WallMod.State;
 

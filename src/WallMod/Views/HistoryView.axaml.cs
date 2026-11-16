@@ -6,7 +6,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using WallMod.Helpers;
+using WallMod.Helpers.History;
 using WallMod.Models;
 using WallMod.State;
 using WallMod.ViewModels;
