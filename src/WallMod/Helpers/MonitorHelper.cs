@@ -23,7 +23,7 @@ public class MonitorHelper
 
     // monitor canvas size in the preview panel
     public static readonly double CanvasWidth = 200;
-    public static readonly double CanvasHeight = 80;
+    public static readonly double CanvasHeight = 100;
 
     // used to get monitors on the pc and also scale them down for use in ui
     public static IEnumerable<MonitorInfo> GetMonitors(Window mainWindow)
