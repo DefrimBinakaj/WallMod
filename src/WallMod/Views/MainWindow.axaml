@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ia="using:Xaml.Behaviors.Interactions.Animated"
+		xmlns:models="using:WallMod.Models"
         xmlns:views="using:WallMod.Views"
         xmlns:helpers="using:WallMod.Helpers"
         WindowStartupLocation="CenterScreen"
@@ -45,8 +46,8 @@
 		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="3" Gesture="D3"/>
 		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySelectMonitor}" CommandParameter="4" Gesture="D4"/>
 		<!-- thumbnailzoom  -->
-		<KeyBinding Command="{Binding HotkeyPlusClicked}"						 Gesture="OemPlus" />
-		<KeyBinding Command="{Binding HotkeyMinusClicked}"						 Gesture="OemMinus" />
+		<KeyBinding Command="{Binding HotkeyPlus}"						 Gesture="OemPlus" />
+		<KeyBinding Command="{Binding HotkeyMinus}"						 Gesture="OemMinus" />
 		<!-- vertical slider shifting -->
 		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceLeft}"		 Gesture="OemOpenBrackets" />
 		<KeyBinding Command="{Binding #MainWindowAxaml.HotkeySqBraceRight}"		 Gesture="OemCloseBrackets" />
@@ -75,7 +76,7 @@
 			   Margin="8,8,0,0"
 			   IsHitTestVisible="False"/>
 
-		<Grid Margin="24" x:Name="MainGrid" IsVisible="{Binding MainGridVisibility}">
+		<Grid Margin="24" x:Name="MainGrid" IsVisible="{Binding MainGridVisibility}" Opacity="{Binding MainGridOpacity}">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="2*" MinWidth="280"/>
 				<ColumnDefinition Width="Auto" />
@@ -99,11 +100,21 @@
 							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="*" />
 						</Grid.RowDefinitions>
+						<!-- gallery buttons: faint light background on hover -->
+						<Grid.Styles>
+							<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+								<Setter Property="Background" Value="#1FFFFFFF"/>
+								<Setter Property="BoxShadow" Value="0 0 0 0 #00000000"/>
+							</Style>
+						</Grid.Styles>
 
 						<ProgressBar Grid.Row="0" Minimum="0" Maximum="100" Value="{Binding ImgLoadProgress}" Height="15" Background="Gray" Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" VerticalAlignment="Top" CornerRadius="10,0"/>
 
-						<Button x:Name="FilterButton" Grid.Row="1" Command="{Binding filterClicked}" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0" ToolTip.Tip="Filter By">
-							<Image Source="avares://Wallmod/Assets/filtericon.png" Width="17" Height="17"></Image>
+						<Button x:Name="FilterButton" Grid.Row="1" Command="{Binding filterClicked}" Background="Transparent"
+								HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0, 6, 4, 0" ToolTip.Tip="Filter By">
+							<!-- funnel turns accent while any filter is on -->
+							<Path Width="17" Height="17" Stretch="Uniform" Data="M2,3H22L14,13V20L10,22V13Z"
+								  Fill="{Binding FilterIconColour, Converter={StaticResource ColorToBrushConverter}}"/>
 						</Button>
 
 						<Popup x:Name="FilterPopup"
@@ -196,7 +207,7 @@
 											<ToggleButton Classes="segmented" Content="High-res only" ToolTip.Tip="Only images that have equal or higher resolution than your highest-resolution monitor" IsChecked="{Binding OnlyHighRes}"/>
 										</Border>
 									</StackPanel>
-									
+
 								</StackPanel>
 							</Border>
 
@@ -204,31 +215,37 @@
 
 
 						<Button Grid.Row="1" Command="{Binding navigateToParentDirec}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 6, 0, 0" ToolTip.Tip="Navigate Back">
-							<Image Source="avares://Wallmod/Assets/back-icon.png" Width="20" Height="20"></Image>
+							<Image Source="avares://Wallmod/Assets/back-icon.png" Width="20" Height="20"/>
 						</Button>
 
 						<Button Grid.Row="2" Command="{Binding selectedDirectory}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4, 2, 0, 0" ToolTip.Tip="Search Directory">
-							<Image Source="avares://Wallmod/Assets/search-folder-icon.png" Width="22" Height="22"></Image>
+							<Image Source="avares://Wallmod/Assets/search-folder-icon.png" Width="22" Height="22"/>
 						</Button>
-
-						<Border Grid.Row="2" Width="14" Height="2" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="15, 44, 0, 0" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"/>
-
-						<Button Grid.Row="2" Command="{Binding uploadClicked}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5, 54, 0, 0" ToolTip.Tip="Temporarily Add Image To Gallery">
-							<Image Source="avares://Wallmod/Assets/addimgicon.png" Width="20" Height="20"></Image>
-						</Button>
-
 
 						<!-- Directory History (Recent Direcs) -->
-						<Button x:Name="DirectoryHistoryButton" Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 82" Command="{Binding directoryHistoryClicked}" ToolTip.Tip="Open Recent Directories">
-							<Image Source="avares://Wallmod/Assets/directory-history-icon.png" Width="24" Height="24"/>
+						<Button x:Name="DirectoryHistoryButton" Grid.Row="2" Background="Transparent" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="4.5, 38, 0, 0" Command="{Binding directoryHistoryClicked}" ToolTip.Tip="Open Recent Directories">
+							<Image Source="avares://Wallmod/Assets/directory-history-icon.png" Width="22" Height="22"/>
 						</Button>
-						<Popup PlacementTarget="{Binding #DirectoryHistoryButton}" Placement="RightEdgeAlignedBottom" IsLightDismissEnabled="True" IsOpen="{Binding IsDirectoryHistoryOpen}">
+						<Popup PlacementTarget="{Binding #DirectoryHistoryButton}" Placement="RightEdgeAlignedTop" IsLightDismissEnabled="True" IsOpen="{Binding IsDirectoryHistoryOpen}">
 
 							<Border Background="rgba(20, 20, 20, 15)" CornerRadius="8" Padding="8" MinWidth="220">
-								<StackPanel Spacing="2">
-									<TextBlock Text="Recently Opened" FontSize="13" Foreground="#99FFFFFF" Margin="4,0,0,4"/>
+								<!-- shared size scope here (not on the ItemsControl) so the header lines up with the rows -->
+								<StackPanel Spacing="2" Grid.IsSharedSizeScope="True">
+									<TextBlock Text="Recently Opened" FontSize="13" Foreground="#99FFFFFF" Margin="4,0,0,10"/>
 									<TextBlock Text="No recent directories" FontSize="12" Foreground="#99FFFFFF" Margin="4,2" IsVisible="{Binding !DirectoryHistoryList.Count}"/>
-									<ItemsControl ItemsSource="{Binding DirectoryHistoryList}" Grid.IsSharedSizeScope="True">
+
+									<!-- column headers -->
+									<Grid IsVisible="{Binding !!DirectoryHistoryList.Count}" Margin="0,0,0,2">
+										<Grid.ColumnDefinitions>
+											<ColumnDefinition Width="Auto" SharedSizeGroup="DirectoryHistoryCount"/>
+											<ColumnDefinition Width="1"/>
+											<ColumnDefinition Width="*"/>
+										</Grid.ColumnDefinitions>
+										<TextBlock Grid.Column="0" Text="Items" FontSize="9" Foreground="#80FFFFFF" HorizontalAlignment="Right" Margin="6,0,8,0"/>
+										<TextBlock Grid.Column="2" Text="Folder" FontSize="9" Foreground="#80FFFFFF" Margin="8,0,6,0"/>
+									</Grid>
+
+									<ItemsControl ItemsSource="{Binding DirectoryHistoryList}">
 										<ItemsControl.ItemTemplate>
 											<DataTemplate>
 												<Button Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).openDirectoryHistoryCommand}"
@@ -246,7 +263,8 @@
 														<TextBlock Grid.Column="2" FontSize="12" MaxWidth="320" TextTrimming="PrefixCharacterEllipsis" Margin="8,5,6,5"
 																   Foreground="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}">
 															<!-- keep this weird formatting for the Runs so that theres no space between the two -->
-															<Run Text="{Binding ParentPath}" Foreground="White" /><Run Text="{Binding FolderName}"/>
+															<Run Text="{Binding ParentPath}" Foreground="White" />
+															<Run Text="{Binding FolderName}"/>
 														</TextBlock>
 													</Grid>
 												</Button>
@@ -257,13 +275,21 @@
 							</Border>
 						</Popup>
 
+
+						<Border Grid.Row="2" Width="14" Height="2" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="15, 78, 0, 0" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"/>
+
+						<Button Grid.Row="2" Command="{Binding uploadClicked}" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5, 88, 0, 0" ToolTip.Tip="Temporarily Add Image To Gallery">
+							<Image Source="avares://Wallmod/Assets/addimgicon.png" Width="20" Height="20"/>
+						</Button>
+
+
 						<!-- View Favourites -->
-						<Button Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 44" Command="{Binding viewFavouritesButton}" ToolTip.Tip="View Favourites">
+						<Button Grid.Row="2" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 44" Command="{Binding viewFavouritesButton}" ToolTip.Tip="View Favourites">
 							<Image Source="avares://Wallmod/Assets/favourite-icon.png" Width="20" Height="20"/>
 						</Button>
 
 						<!-- View History -->
-						<Button Grid.Row="3" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}" ToolTip.Tip="View History">
+						<Button Grid.Row="2" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4, 0, 0, 6" Command="{Binding viewHistoryButton}" ToolTip.Tip="View History">
 							<Image Source="avares://Wallmod/Assets/historyicon.png" Width="20" Height="20"/>
 						</Button>
 
@@ -271,11 +297,11 @@
 									HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0, 6, 0, 0">
 							<TextBlock Text="{Binding CurrentSelectedDirecName}" FontSize="17" Foreground="White" VerticalAlignment="Center"
 									   MaxWidth="260" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-							<TextBlock Text="{Binding DisplayWallpaperList.Count}" FontSize="12" Foreground="#99FFFFFF" VerticalAlignment="Center"
+							<TextBlock Text="{Binding GalleryCount}" FontSize="12" Foreground="#99FFFFFF" VerticalAlignment="Center"
 									   ToolTip.Tip="Images in view"/>
 						</StackPanel>
-						
-						<Grid Grid.Row="3" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+
+						<Grid Grid.Row="2" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom">
 							<Grid.RowDefinitions>
 								<RowDefinition Height="Auto"/>
 								<RowDefinition Height="*"/>
@@ -321,7 +347,7 @@
 								</ListBox.Styles>
 
 								<ListBox.ItemTemplate>
-									<DataTemplate>
+									<DataTemplate x:DataType="models:Wallpaper">
 										<StackPanel Orientation="Vertical" Margin="4">
 											<Panel>
 												<Image Source="{Binding ImageThumbnailBitmap}"
@@ -338,16 +364,19 @@
 															   Foreground="White"/>
 												</Border>
 
-												<!-- corner badges: fixed slots, heart always on top, queue always below it -->
-												<Grid RowDefinitions="15,18" Width="15"
+												<!-- corner badges: fixed slots (queue | heart in the corner), each with its own dark pill;
+												     the heart slot stays reserved so a queue-only badge doesn't slide right -->
+												<Grid ColumnDefinitions="15,2,15"
 													  HorizontalAlignment="Right" VerticalAlignment="Top"
-													  Margin="0,4,4,0" IsHitTestVisible="False">
-													<Path Grid.Row="0" Classes="tileBadge" IsVisible="{Binding IsFavourite}"
-														  Fill="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-														  Data="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"/>
-													<Path Grid.Row="1" Classes="tileBadge" IsVisible="{Binding IsQueued}" VerticalAlignment="Bottom"
-														  Fill="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-														  Data="M1,2H15V6H1Z M1,9H15V13H1Z M1,16H10V20H1Z M16.5,12H20.5V15.5H24V19.5H20.5V23H16.5V19.5H13V15.5H16.5Z"/>
+													  Margin="0,2,2,0" IsHitTestVisible="False">
+													<Border Grid.Column="0" IsVisible="{Binding IsQueued}" Background="#B3141118" CornerRadius="4" Height="12" Padding="3,0">
+														<Path Width="10" Height="9" Stretch="Uniform" VerticalAlignment="Center" Fill="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+															  Data="M1,2H15V6H1Z M1,9H15V13H1Z M1,16H10V20H1Z M16.5,12H20.5V15.5H24V19.5H20.5V23H16.5V19.5H13V15.5H16.5Z"/>
+													</Border>
+													<Border Grid.Column="2" IsVisible="{Binding IsFavourite}" Background="#B3141118" CornerRadius="4" Height="12" Padding="3,0">
+														<Path Width="10" Height="9" Stretch="Fill" VerticalAlignment="Center" Fill="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+															  Data="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"/>
+													</Border>
 												</Grid>
 											</Panel>
 
@@ -365,12 +394,12 @@
 							</ListBox>
 						</ScrollViewer>
 
-						<Button Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+						<Button Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Bottom"
 								Background="Transparent" Margin="0,0,3,180" Click="JumpToTopClicked" ToolTip.Tip="Jump To Top">
 							<Image Source="avares://Wallmod/Assets/jumptotop-icon.png" Width="20" Height="20"/>
 						</Button>
 
-						<Button Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+						<Button Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Bottom"
 								Background="Transparent" Margin="0,0,3,150" Click="JumpToBottomClicked" ToolTip.Tip="Jump To Bottom">
 							<Image Source="avares://Wallmod/Assets/jumptobot-icon.png" Width="20" Height="20"/>
 						</Button>
@@ -387,7 +416,7 @@
 			</Border>
 
 			<!-- GridSplitter: Allows Resizing Between Left and Right Sections ========= -->
-			<GridSplitter x:Name="MainVertSplitter" Grid.Column="1" Grid.Row="0" Grid.RowSpan="1" Width="5"
+			<GridSplitter x:Name="MainVertSplitter" Grid.Column="1" Grid.Row="0" Width="5"
 						  Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}" Margin="0,25,0,25"
 						  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
 						  ShowsPreview="False" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
@@ -396,10 +425,11 @@
 			<!-- Right Section: Preview and Controls ============================================================ -->
 			<Border Grid.Column="2" Grid.Row="0" Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="10" Margin="8">
 
-				<Grid RowDefinitions="19*,1*" >
+				<!-- scrolling preview / sticky action row / autoset + settings strip -->
+				<Grid RowDefinitions="*,Auto,Auto">
 
 					<!--PREVIEW SECTION =========-->
-					<ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsPreviewVisible}">
+					<ScrollViewer VerticalScrollBarVisibility="Auto">
 						<Interaction.Behaviors>
 							<ia:VerticalScrollViewerAnimatedBehavior/>
 						</Interaction.Behaviors>
@@ -415,7 +445,6 @@
 								<RowDefinition Height="Auto"/>
 								<RowDefinition Height="Auto"/>
 								<RowDefinition Height="Auto"/>
-								<RowDefinition Height="Auto"/>
 							</Grid.RowDefinitions>
 
 							<TextBlock Text="Preview" FontWeight="Bold" FontSize="16"
@@ -427,7 +456,6 @@
 							<Button Command="{Binding mirrorPreviewCommand}"
 									Grid.Row="0" Grid.Column="0"
 									HorizontalAlignment="Left"
-									Margin="0,0,0,0"
 									Background="{Binding MirrorButtonColour, Converter={StaticResource ColorToBrushConverter}}"
 									ToolTip.Tip="Mirror Image Horizontally">
 								<Image Source="avares://Wallmod/Assets/flip-icon.png" Width="15" Height="15"/>
@@ -445,13 +473,10 @@
 							<Grid Grid.Row="1" Grid.ColumnSpan="2">
 								<Image x:Name="PreviewImage"
 									   Source="{Binding CurrentWallpaperPreview}"
-									   Stretch="Uniform"
-									   IsVisible="True"/>
+									   Stretch="Uniform"/>
 
 								<!-- draggable rect -->
-								<Canvas x:Name="OverlayCanvas"
-										IsHitTestVisible="True"
-										Panel.ZIndex="999">
+								<Canvas x:Name="OverlayCanvas" Panel.ZIndex="999">
 									<Rectangle x:Name="DragRect"
 											   StrokeThickness="4"
 											   Opacity="0.8"
@@ -501,24 +526,42 @@
 										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 										   VerticalAlignment="Center" Margin="8,0,10,0"
 										   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+								<!-- hover = aspect ratio + file size -->
 								<TextBlock Grid.Column="2" Text="{Binding CurrentWallpaperSize}"
+										   ToolTip.Tip="{Binding CurrentWallpaperDetails}"
 										   FontSize="12" FontWeight="SemiBold"
 										   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 										   VerticalAlignment="Center" Margin="0,0,4,0"/>
 							</Grid>
 
 
-							<!-- monitors card: glass panel / dot-grid stage / floating tiles -->
 							<!-- monitors card: header / layout / mode + style -->
-							<Border Grid.Row="3" Grid.ColumnSpan="2" Classes="monitorCard" Margin="0,12,0,0">
+							<Border Grid.Row="3" Grid.ColumnSpan="2" Margin="0,12,0,0" Padding="10,8" CornerRadius="6"
+									Background="#26000000" BorderBrush="#1FFFFFFF" BorderThickness="1">
 								<Grid RowDefinitions="Auto,Auto,Auto">
 
 									<!-- header -->
 									<Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-										<TextBlock Classes="monitorHeader" Text="MONITORS"/>
-										<Button Grid.Column="1" Classes="ghostIcon"
+										<TextBlock Text="Monitors" FontSize="13" FontWeight="SemiBold" Foreground="#B3FFFFFF" VerticalAlignment="Center"/>
+										<Button Grid.Column="1"
 												Command="{Binding #MainWindowAxaml.DetectMonitors}"
+												Background="Transparent" BorderThickness="0" Width="24" Height="24" Padding="0"
+												HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Cursor="Hand"
 												ToolTip.Tip="Refresh Monitors (R)">
+											<!-- icon spins half a turn on hover -->
+											<Button.Styles>
+												<Style Selector="Image">
+													<Setter Property="RenderTransform" Value="rotate(0deg)"/>
+													<Setter Property="Transitions">
+														<Transitions>
+															<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35" Easing="CubicEaseOut"/>
+														</Transitions>
+													</Setter>
+												</Style>
+												<Style Selector="Button:pointerover Image">
+													<Setter Property="RenderTransform" Value="rotate(180deg)"/>
+												</Style>
+											</Button.Styles>
 											<Image Source="avares://Wallmod/Assets/refresh-icon.png" Width="12" Height="12"/>
 										</Button>
 									</Grid>
@@ -535,14 +578,33 @@
 										<ItemsControl.ItemTemplate>
 											<DataTemplate>
 												<Canvas>
-													<Border Classes="monitorTile"
-															Background="{Binding FillColour}"
+													<Border Background="{Binding FillColour}"
+															BorderThickness="1" CornerRadius="4" Cursor="Hand"
 															Width="{Binding UIBounds.Width}" Height="{Binding UIBounds.Height}"
 															Canvas.Left="{Binding UIBounds.X}" Canvas.Top="{Binding UIBounds.Y}"
 															ToolTip.Tip="{Binding Description}"
 															PointerPressed="OnPreviewMonitorTapped">
+														<!-- 1px border that lights up on hover -->
+														<Border.Styles>
+															<Style Selector="Border">
+																<Setter Property="BorderBrush" Value="#55506A"/>
+																<Setter Property="Transitions">
+																	<Transitions>
+																		<BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+																	</Transitions>
+																</Setter>
+															</Style>
+															<Style Selector="Border:pointerover">
+																<Setter Property="BorderBrush" Value="#E6FFFFFF"/>
+															</Style>
+														</Border.Styles>
 														<Panel>
-															<TextBlock Classes="outlinedText" Text="{Binding DisplayNumber}"/>
+															<TextBlock Text="{Binding DisplayNumber}" FontSize="11" FontWeight="SemiBold" Foreground="White"
+																	   HorizontalAlignment="Center" VerticalAlignment="Center">
+																<TextBlock.Effect>
+																	<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
+																</TextBlock.Effect>
+															</TextBlock>
 															<Border IsVisible="{Binding IsPrimary}" Height="1" CornerRadius="1" Background="#E0B84D"
 																	HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="4,0,4,3"/>
 														</Panel>
@@ -561,7 +623,6 @@
 															 Classes="segmented"
 															 GroupName="MonitorMode"
 															 Content="One"
-															 IsThreeState="False"
 															 IsChecked="True"
 															 ToolTip.Tip="Click a monitor to set / crop for it (M)"
 															 Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
@@ -570,120 +631,173 @@
 															 Classes="segmented"
 															 GroupName="MonitorMode"
 															 Content="All"
-															 IsThreeState="False"
 															 ToolTip.Tip="Set on every monitor (M)"
 															 Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
 															 IsCheckedChanged="OnSelectAllMonitorsToggleChecked"/>
 											</StackPanel>
 										</Border>
 
+										<!-- One mode: Custom Area (drag the rect) + styles drawn for that monitor ; All mode: OS styles -->
 										<ComboBox Grid.Column="2"
-												  Classes="translucentDark"
+												  Background="#99000000" Foreground="White" CornerRadius="6"
 												  ItemsSource="{Binding WallpaperStyleList}"
 												  SelectedItem="{Binding SelectedWallpaperStyle}"
-												  IsEnabled="{Binding StyleDropdownEnabled}"
-												  ToolTip.Tip="Wallpaper Style (All mode)"
-												  Width="96"
+												  SelectionChanged="OnWallpaperStyleChanged"
+												  ToolTip.Tip="Wallpaper Style"
+												  BorderThickness="0"
+												  MinWidth="160"
 												  FontSize="12"
-												  VerticalAlignment="Center"/>
+												  VerticalAlignment="Center">
+											<ComboBox.SelectionBoxItemTemplate>
+												<DataTemplate x:DataType="x:String">
+													<StackPanel Orientation="Horizontal" Spacing="8">
+														<TextBlock Text="Style" Foreground="#99FFFFFF"/>
+														<TextBlock Text="{Binding}"/>
+													</StackPanel>
+												</DataTemplate>
+											</ComboBox.SelectionBoxItemTemplate>
+										</ComboBox>
 									</Grid>
 								</Grid>
 							</Border>
-							
-							<!-- action row: set bg (fills the width) + fav + addToAutoset -->
-							<Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,12">
-
-								<!-- set background -->
-								<Button Grid.Column="0"
-										Name="SetBackgroundButton"
-										Classes="accentButton"
-										Click="OnSetWallpaperClicked"
-										FontWeight="Medium"
-										Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-										Height="42"
-										HorizontalAlignment="Stretch"
-										HorizontalContentAlignment="Center"
-										VerticalContentAlignment="Center"
-										CornerRadius="8"
-										IsEnabled="{Binding SetBackgroundButtonEnabled}">
-									<TextBlock Classes="outlinedText" Text="Set As Background"/>
-								</Button>
-
-								<!-- fav -->
-								<Button Grid.Column="1"
-										x:Name="FavouriteButton"
-										Classes="iconOutline"
-										Command="{Binding addWallpaperToFavouritesCommand}"
-										Width="42" Height="42"
-										Margin="8,0,0,0"
-										Background="{Binding FavouriteButtonColour, Converter={StaticResource ColorToBrushConverter}}"
-										ToolTip.Tip="Add To Favourites">
-									<Image Source="avares://Wallmod/Assets/favourite-icon.png" Width="18" Height="18"/>
-								</Button>
-
-								<!-- add to autoset queue -->
-								<Button Grid.Column="2"
-										Command="{Binding addWallpaperToAutoSetCommand}"
-										Classes="iconOutline"
-										Width="42" Height="42"
-										Margin="8,0,0,0"
-										Background="{Binding AutoSetButtonColour, Converter={StaticResource ColorToBrushConverter}}"
-										ToolTip.Tip="Add To Custom Autoset Queue">
-									<Image Source="avares://Wallmod/Assets/addtoqueue-icon.png" Width="18" Height="17"/>
-								</Button>
-							</Grid>
 
 						</Grid>
 					</ScrollViewer>
 
-					<!-- bar with buttons -->
-					<Grid Grid.Row="1" ColumnDefinitions="*,*">
-						<Button Command="{Binding autoSetNavCommand}" CornerRadius="0,0,0,8" ToolTip.Tip="View Autoset Queues"
-								MinHeight="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-								Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}">
-							<Image Source="avares://Wallmod/Assets/autoset-icon.png" Width="23" Height="22"/>
+					<!-- action row (sticky): addToAutoset + fav, then set bg taking the rest -->
+					<Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*" Margin="18,12,18,12">
+
+						<!-- add to autoset queue (badge = how many times this image is already queued) -->
+						<Panel Grid.Column="0">
+							<Button Command="{Binding addWallpaperToAutoSetCommand}"
+									Classes="iconOutline"
+									Width="38" Height="38"
+									ToolTip.Tip="{Binding QueueButtonTip}">
+								<Image Source="avares://Wallmod/Assets/addtoqueue-icon.png" Width="17" Height="16"/>
+							</Button>
+							<Border IsVisible="{Binding !!QueueCount}" IsHitTestVisible="False"
+									Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+									MinWidth="16" Height="16" CornerRadius="8" Padding="4,0"
+									HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0">
+								<TextBlock Text="{Binding QueueCount}" FontSize="10" FontWeight="Bold"
+										   HorizontalAlignment="Center" VerticalAlignment="Center">
+									<TextBlock.Effect>
+										<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
+									</TextBlock.Effect>
+								</TextBlock>
+							</Border>
+						</Panel>
+
+						<!-- fav -->
+						<Button Grid.Column="1"
+								x:Name="FavouriteButton"
+								Classes="iconOutline"
+								Command="{Binding addWallpaperToFavouritesCommand}"
+								Width="38" Height="38"
+								Margin="8,0,0,0"
+								Background="{Binding FavouriteButtonColour, Converter={StaticResource ColorToBrushConverter}}"
+								ToolTip.Tip="Add To Favourites (F)">
+							<Image Source="avares://Wallmod/Assets/favourite-icon.png" Width="17" Height="17"/>
 						</Button>
-						<Button Grid.Column="1" Command="{Binding settingsButton}" CornerRadius="0,0,8,0"
-								MinHeight="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Gray">
-							<Image Source="avares://Wallmod/Assets/settings-icon.png" Width="23" Height="22"/>
+
+						<!-- set background: label says what it'll do (Pick a monitor / Set on Monitor N / Set on all monitors) -->
+						<Button Grid.Column="2"
+								Name="SetBackgroundButton"
+								Click="OnSetWallpaperClicked"
+								FontWeight="Medium"
+								Background="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+								Height="38"
+								Margin="20,0,10,0"
+								HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Center"
+								VerticalContentAlignment="Center"
+								CornerRadius="8"
+								ToolTip.Tip="Set As Background (B)"
+								IsEnabled="{Binding SetBackgroundButtonEnabled}">
+							<!-- white text on accent: super thin grey outline so it stays readable -->
+							<TextBlock Text="{Binding SetButtonText}">
+								<TextBlock.Effect>
+									<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
+								</TextBlock.Effect>
+							</TextBlock>
 						</Button>
-						<TextBlock Grid.Column="1"
-								   Text="⚠"
-								   FontSize="18"
-								   FontWeight="Bold"
-								   HorizontalAlignment="Center"
-								   VerticalAlignment="Center"
-								   Margin="48,0,0,0"
-								   IsHitTestVisible="False"
-								   IsVisible="{Binding UpdateAvailableVisible}"
-								   Foreground="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
-								   ToolTip.Tip="Update available"/>
 					</Grid>
+
+					<!-- autoset (opens the tray; dot = running) + "added" note + settings (dot = update available) -->
+					<Border Grid.Row="2" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0" Padding="10,6,10,8">
+						<Grid ColumnDefinitions="Auto,*,Auto">
+							<Button Command="{Binding autoSetNavCommand}" Background="Transparent" Padding="10,6" CornerRadius="8"
+									ToolTip.Tip="Autoset (Shift+A)">
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<Image Source="avares://Wallmod/Assets/autoset-icon.png" Width="18" Height="17"/>
+									<TextBlock Text="Autoset" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+									<Panel VerticalAlignment="Center">
+										<Ellipse Width="7" Height="7"
+												 Fill="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+												 IsVisible="{Binding #AutoSetPanel.((vm:AutoSetViewModel)DataContext).CustomAutoSetDisableButtonEnabled}"/>
+										<Ellipse Width="7" Height="7"
+												 Fill="{Binding SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}"
+												 IsVisible="{Binding #AutoSetPanel.((vm:AutoSetViewModel)DataContext).RandomAutoSetDisableButtonEnabled}"/>
+									</Panel>
+								</StackPanel>
+							</Button>
+
+							<!-- just queued something: points at where it went (fades in / out) -->
+							<Border Grid.Column="1" Classes.shown="{Binding QueueAddedShown}" IsHitTestVisible="False"
+									Background="#40000000" CornerRadius="6" Padding="8,3"
+									HorizontalAlignment="Left" VerticalAlignment="Center" Margin="6,0,0,0">
+								<Border.Transitions>
+									<Transitions>
+										<DoubleTransition Property="Opacity" Duration="0:0:0.25"/>
+									</Transitions>
+								</Border.Transitions>
+								<Border.Styles>
+									<Style Selector="Border:not(.shown)">
+										<Setter Property="Opacity" Value="0"/>
+									</Style>
+								</Border.Styles>
+								<TextBlock Text="{Binding QueueAddedText}" Foreground="#6CC47A" FontSize="13" FontWeight="SemiBold"/>
+							</Border>
+
+							<Button Grid.Column="2" Command="{Binding settingsButton}" Background="Transparent"
+									Width="34" Height="34" Padding="0" CornerRadius="8"
+									HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+									ToolTip.Tip="Settings (Shift+S)">
+								<Panel>
+									<Image Source="avares://Wallmod/Assets/settings-icon.png" Width="18" Height="18"/>
+									<Ellipse Width="7" Height="7" Fill="#E0B84D"
+											 HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-3,0"
+											 IsVisible="{Binding UpdateAvailableVisible}"
+											 ToolTip.Tip="Update available"/>
+								</Panel>
+							</Button>
+
+						</Grid>
+					</Border>
 
 				</Grid>
 			</Border>
 
-			<!-- ========= full-width AutoSet tray (toggled by the blue button via your VM) ========= -->
+			<!-- ========= full-width AutoSet tray (opened by the Autoset button) ========= -->
 			<Border Grid.Row="1" Grid.ColumnSpan="3"
 					Background="{Binding SelectedPreviewBackgroundColour, Converter={StaticResource ColorToBrushConverter}}"
 					CornerRadius="10"
 					Margin="8"
 					IsVisible="{Binding IsAutoSetVisible}">
-				<views:AutoSetView/>
+				<views:AutoSetView x:Name="AutoSetPanel"/>
 			</Border>
 
 		</Grid>
 
 		<!-- HUGE Image Enlargement Display (covers entire area)-->
 		<Image x:Name="EnlargedPreviewImage"
-			   Grid.RowSpan="4"
-			   Grid.ColumnSpan="4"
-			   Source="{Binding CurrentWallpaperPreview}"
+			   Source="{Binding EnlargedWallpaper}"
+			   RenderOptions.BitmapInterpolationMode="HighQuality"
 			   Stretch="Uniform"
-			   IsVisible="False"
+			   IsVisible="{Binding EnlargedWallpaper, Converter={x:Static ObjectConverters.IsNotNull}}"
 			   PointerPressed="OnEnlargedImageClick" />
 
-		<!-- Settings (temp currently put into same vm) -->
+		<!-- Settings (covers everything while open) -->
 		<Grid Name="SettingsGrid" IsVisible="{Binding SettingsViewVisibility}">
 			<views:SettingsView />
 		</Grid>

@@ -6,12 +6,7 @@
 		</Border>
 	</Design.PreviewWith>
 
-	<!-- Add Styles Here -->
-	<Style>
-		<Style.Resources>
-			<StreamGeometry x:Key="store_microsoft_regular">M11.5 9.5V13H8V9.5H11.5Z M11.5 17.5V14H8V17.5H11.5Z M16 9.5V13H12.5V9.5H16Z M16 17.5V14H12.5V17.5H16Z M8 6V3.75C8 2.7835 8.7835 2 9.75 2H14.25C15.2165 2 16 2.7835 16 3.75V6H21.25C21.6642 6 22 6.33579 22 6.75V18.25C22 19.7688 20.7688 21 19.25 21H4.75C3.23122 21 2 19.7688 2 18.25V6.75C2 6.33579 2.33579 6 2.75 6H8ZM9.5 3.75V6H14.5V3.75C14.5 3.61193 14.3881 3.5 14.25 3.5H9.75C9.61193 3.5 9.5 3.61193 9.5 3.75ZM3.5 18.25C3.5 18.9404 4.05964 19.5 4.75 19.5H19.25C19.9404 19.5 20.5 18.9404 20.5 18.25V7.5H3.5V18.25Z</StreamGeometry>
-		</Style.Resources>
-	</Style>
+	<!-- only styles shared by many controls / views live here; one-off looks stay inline where they're used -->
 
 	<!-- segmented One/All toggle ===== -->
 	<!-- track (background = gallery colour, bound in MainWindow) -->
@@ -55,105 +50,6 @@
 	</Style>
 	<Style Selector=":is(ToggleButton).segmented:unchecked:pointerover /template/ Border#PART_Fill">
 		<Setter Property="Background" Value="#40FFFFFF"/>
-	</Style>
-
-	<!-- white text on accent: super thin grey outline so it stays readable -->
-	<Style Selector="TextBlock.outlinedText">
-		<Setter Property="Effect">
-			<DropShadowEffect OffsetX="0" OffsetY="0" BlurRadius="1.5" Color="#3A3A3A"/>
-		</Setter>
-	</Style>
-
-	<!-- monitors card (preview panel): flat panel, 1px outline ===== -->
-	<Style Selector="Border.monitorCard">
-		<Setter Property="Background" Value="#26000000"/>
-		<Setter Property="BorderBrush" Value="#1FFFFFFF"/>
-		<Setter Property="BorderThickness" Value="1"/>
-		<Setter Property="CornerRadius" Value="6"/>
-		<Setter Property="Padding" Value="10,8"/>
-	</Style>
-	<Style Selector="TextBlock.monitorHeader">
-		<Setter Property="FontSize" Value="11"/>
-		<Setter Property="FontWeight" Value="SemiBold"/>
-		<Setter Property="LetterSpacing" Value="1.5"/>
-		<Setter Property="Foreground" Value="#B3FFFFFF"/>
-		<Setter Property="VerticalAlignment" Value="Center"/>
-	</Style>
-
-	<!-- borderless icon button; icon spins half a turn on hover -->
-	<Style Selector="Button.ghostIcon">
-		<Setter Property="Background" Value="Transparent"/>
-		<Setter Property="BorderThickness" Value="0"/>
-		<Setter Property="Width" Value="24"/>
-		<Setter Property="Height" Value="24"/>
-		<Setter Property="Padding" Value="0"/>
-		<Setter Property="HorizontalContentAlignment" Value="Center"/>
-		<Setter Property="VerticalContentAlignment" Value="Center"/>
-		<Setter Property="Cursor" Value="Hand"/>
-	</Style>
-	<Style Selector="Button.ghostIcon Image">
-		<Setter Property="RenderTransform" Value="rotate(0deg)"/>
-		<Setter Property="Transitions">
-			<Transitions>
-				<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35" Easing="CubicEaseOut"/>
-			</Transitions>
-		</Setter>
-	</Style>
-	<Style Selector="Button.ghostIcon:pointerover Image">
-		<Setter Property="RenderTransform" Value="rotate(180deg)"/>
-	</Style>
-
-	<!-- monitor tile: flat fill (bound per monitor), 1px border that lights up on hover -->
-	<Style Selector="Border.monitorTile">
-		<Setter Property="BorderBrush" Value="#55506A"/>
-		<Setter Property="BorderThickness" Value="1"/>
-		<Setter Property="CornerRadius" Value="4"/>
-		<Setter Property="Cursor" Value="Hand"/>
-		<Setter Property="Transitions">
-			<Transitions>
-				<BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
-			</Transitions>
-		</Setter>
-	</Style>
-	<Style Selector="Border.monitorTile:pointerover">
-		<Setter Property="BorderBrush" Value="#E6FFFFFF"/>
-	</Style>
-	<Style Selector="Border.monitorTile TextBlock">
-		<Setter Property="FontSize" Value="11"/>
-		<Setter Property="FontWeight" Value="SemiBold"/>
-		<Setter Property="Foreground" Value="White"/>
-		<Setter Property="HorizontalAlignment" Value="Center"/>
-		<Setter Property="VerticalAlignment" Value="Center"/>
-	</Style>
-	<!-- primary monitor marker (tooltip also says "Primary") -->
-	<Style Selector="Ellipse.primaryDot">
-		<Setter Property="Width" Value="4"/>
-		<Setter Property="Height" Value="4"/>
-		<Setter Property="Fill" Value="#CCFFFFFF"/>
-		<Setter Property="HorizontalAlignment" Value="Right"/>
-		<Setter Property="VerticalAlignment" Value="Top"/>
-		<Setter Property="Margin" Value="0,3,3,0"/>
-	</Style>
-
-	<!-- gallery thumbnail corner badges (fill = accent, bound in MainWindow) ===== -->
-	<Style Selector="Path.tileBadge">
-		<Setter Property="Width" Value="15"/>
-		<Setter Property="Height" Value="15"/>
-		<Setter Property="Stretch" Value="Uniform"/>
-		<Setter Property="Stroke" Value="#2B2B2B"/>
-		<Setter Property="StrokeThickness" Value="1.5"/>
-		<Setter Property="StrokeJoin" Value="Round"/>
-	</Style>
-
-	<!-- translucent dark colour ===== -->
-	<Style Selector="Button.translucentDark">
-		<Setter Property="Background" Value="#99000000"/>
-		<Setter Property="Foreground" Value="White"/>
-	</Style>
-	<Style Selector="ComboBox.translucentDark">
-		<Setter Property="Background" Value="#99000000"/>
-		<Setter Property="Foreground" Value="White"/>
-		<Setter Property="CornerRadius" Value="6"/>
 	</Style>
 
 	<!-- outlined icon buttons ===== -->
@@ -246,13 +142,17 @@
 		<Setter Property="TextWrapping" Value="Wrap"/>
 	</Style>
 
-	<!-- accent-coloured button: keep the accent on hover/press (Fluent swaps in grey), just darken it slightly -->
-	<Style Selector="Button.accentButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+	<!-- every button keeps its own background/border/text on hover/press (Fluent swaps in grey), just darkened slightly -->
+	<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 		<Setter Property="Background" Value="{Binding $parent[Button].Background}"/>
+		<Setter Property="BorderBrush" Value="{Binding $parent[Button].BorderBrush}"/>
+		<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}"/>
 		<Setter Property="BoxShadow" Value="inset 0 0 0 100 #26000000"/>
 	</Style>
-	<Style Selector="Button.accentButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+	<Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
 		<Setter Property="Background" Value="{Binding $parent[Button].Background}"/>
+		<Setter Property="BorderBrush" Value="{Binding $parent[Button].BorderBrush}"/>
+		<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}"/>
 		<Setter Property="BoxShadow" Value="inset 0 0 0 100 #40000000"/>
 	</Style>
 

@@ -1,12 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.VisualTree;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
@@ -22,7 +18,7 @@ namespace WallMod.Views;
 
 /**
  * Code behind for main application functionality
- * 
+ *
  * NOTE: messy code for dragging rect functionality
  */
 public partial class MainWindow : Window
@@ -40,9 +36,9 @@ public partial class MainWindow : Window
     private double _aspectRatio = 1.0;
     private const double CornerHitSize = 16;
 
-    public Wallpaper lastTapImage = new();
+    private Wallpaper lastTapImage = new();
 
-    public UIHistoryHelper uiHistoryHelper = new();
+    private readonly UIHistoryHelper uiHistoryHelper = new();
 
     public MainWindow(MainWindowViewModel vm)
     {
@@ -53,6 +49,13 @@ public partial class MainWindow : Window
         this.SizeChanged += OnWindowSizeChanged;
 
         this.AddHandler(KeyDownEvent, OnGalleryKeyDown, RoutingStrategies.Tunnel); // fixes arrow key navig
+
+        // preview decodes at the pane's real pixel width (image width = pane width, whatever the image)
+        PreviewImage.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == BoundsProperty && PreviewImage.Bounds.Width > 0)
+                vm.PreviewPixelWidth = (int)Math.Ceiling(PreviewImage.Bounds.Width * RenderScaling);
+        };
 
         DetectMonitors();
     }
@@ -69,7 +72,6 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
         var state = uiHistoryHelper.Load();
-        Debug.WriteLine($">>> Loaded: W={state.WindowWidth} H={state.WindowHeight} L={state.LeftColumnStars} Zoom={state.ThumbnailZoomLevel}");
 
         // size -> position -> window state (order matters in Avalonia)
         Width = state.WindowWidth;
@@ -88,7 +90,7 @@ public partial class MainWindow : Window
         MainGrid.ColumnDefinitions[0].Width = new GridLength(state.LeftColumnStars, GridUnitType.Star);
         MainGrid.ColumnDefinitions[2].Width = new GridLength(state.RightColumnStars, GridUnitType.Star);
 
-        if (DataContext is MainWindowViewModel vm && uniVM.RememberThumbnailZoomLevel == true)
+        if (DataContext is MainWindowViewModel vm && uniVM.RememberThumbnailZoomLevel)
             vm.ThumbnailZoomLevel = state.ThumbnailZoomLevel;
     }
 
@@ -112,7 +114,6 @@ public partial class MainWindow : Window
             state.ThumbnailZoomLevel = vm.ThumbnailZoomLevel;
 
         uiHistoryHelper.Save(state);
-        Debug.WriteLine($">>> Saving: W={state.WindowWidth} H={state.WindowHeight} L={state.LeftColumnStars} Zoom={state.ThumbnailZoomLevel}");
         base.OnClosing(e);
     }
 
@@ -121,11 +122,10 @@ public partial class MainWindow : Window
     // gallery section ---------------------------------------------------------
 
     // use arrows or hjkl to navig through image gallery (used LLM for some of this)
-    private async void OnGalleryKeyDown(object? sender, KeyEventArgs e)
+    private void OnGalleryKeyDown(object? sender, KeyEventArgs e)
     {
         var lb = ImageViewControl;
-        var vm = DataContext as MainWindowViewModel;
-        if (vm == null || !lb.IsVisible || lb.ItemCount == 0) return;
+        if (DataContext is not MainWindowViewModel vm || !lb.IsVisible || lb.ItemCount == 0) return;
 
         // only handle nav/activation keys
         bool isNav = e.Key is Key.Left or Key.Right or Key.Up or Key.Down
@@ -192,25 +192,16 @@ public partial class MainWindow : Window
     // single-click OR keyboard navigation selects an item -> preview it
     private async void OnGallerySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (sender is not ListBox lb) return;
-        if (lb.SelectedItem is not Wallpaper wallpaper) return;
-
-        await HandleImageSelected(wallpaper);
+        if (sender is ListBox { SelectedItem: Wallpaper wallpaper }) await HandleImageSelected(wallpaper);
     }
 
     // double-click (or double-tap) a folder -> enter it; an image -> apply to selected monitor
-    private async void OnImageDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnImageDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (sender is not ListBox lb) return;
-        if (lb.SelectedItem is not Wallpaper wallpaper) return;
-
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel != null)
-        {
-            viewModel.ImageDoubleTapped(wallpaper);
-        }
+        if (sender is ListBox { SelectedItem: Wallpaper wallpaper } && DataContext is MainWindowViewModel vm) vm.ImageDoubleTapped(wallpaper);
     }
 
+    // also called by the history view when one of its images is clicked
     public async Task HandleImageSelected(Wallpaper wallpaper)
     {
         // if user clicked a diff wallpaper than before, reset rect and disable set button
@@ -218,28 +209,17 @@ public partial class MainWindow : Window
         if (wallpaper != lastTapImage && SelectOneToggle.IsChecked == true)
         {
             ResetRectangle();
-            uniVM.SetBackgroundButtonEnabled = false;
             UnselectAllPreviewMonitors();
         }
 
         lastTapImage = wallpaper;
 
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel != null)
-        {
-            await viewModel.ImageTapped(wallpaper);
-        }
+        if (DataContext is MainWindowViewModel vm) await vm.ImageTapped(wallpaper);
     }
 
     // jump to top / bottom (buttons)
-    public void JumpToTopClicked(object? sender, RoutedEventArgs e)
-    {
-        ImageGalleryScrollView.ScrollToHome();
-    }
-    public void JumpToBottomClicked(object? sender, RoutedEventArgs e)
-    {
-        ImageGalleryScrollView.ScrollToEnd();
-    }
+    public void JumpToTopClicked(object? sender, RoutedEventArgs e) => ImageGalleryScrollView.ScrollToHome();
+    public void JumpToBottomClicked(object? sender, RoutedEventArgs e) => ImageGalleryScrollView.ScrollToEnd();
 
     // scrolling while hovering on thumbnail-size slider
     private void OnZoomSliderScroll(object? sender, PointerWheelEventArgs e)
@@ -257,14 +237,8 @@ public partial class MainWindow : Window
     // HOTKEYS --------------------
 
     // jump hotkeys
-    public void HotkeyG()
-    {
-        ImageGalleryScrollView.ScrollToHome();
-    }
-    public void HotkeyShiftG()
-    {
-        ImageGalleryScrollView.ScrollToEnd();
-    }
+    public void HotkeyG() => ImageGalleryScrollView.ScrollToHome();
+    public void HotkeyShiftG() => ImageGalleryScrollView.ScrollToEnd();
 
 
     // horizontally shift vertical splitter hotkeys
@@ -299,11 +273,17 @@ public partial class MainWindow : Window
 
     private void OnEnlargedImageClick(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is MainWindowViewModel viewModel)
-        {
-            EnlargedPreviewImage.IsVisible = false;
-            MainGrid.Opacity = 1;
-        }
+        (DataContext as MainWindowViewModel)?.CloseEnlarged(); // frees the full-res image
+    }
+
+    // opens once the real file is decoded (wait cursor meanwhile)
+    private async void EnlargePreviewImg(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm || vm.CurrentWallpaperPreview == null) return;
+
+        Cursor = new Cursor(StandardCursorType.Wait);
+        await vm.OpenEnlarged();
+        Cursor = Cursor.Default;
     }
 
 
@@ -312,8 +292,6 @@ public partial class MainWindow : Window
 
     public void ShowDraggableRectangle(MonitorInfo monitor)
     {
-        if (DragRect == null || OverlayCanvas == null || PreviewImage == null) return;
-
         double realW = monitor.Bounds.Width, realH = monitor.Bounds.Height;
         if (realW <= 0 || realH <= 0) return;
 
@@ -346,7 +324,6 @@ public partial class MainWindow : Window
 
     public void ResetRectangle()
     {
-        if (DragRect == null) return;
         DragRect.IsVisible = false;
         DragRect.Width = DragRect.Height = 0;
         UpdateDragRectHandle();
@@ -355,11 +332,10 @@ public partial class MainWindow : Window
         _aspectRatio = 1.0;
         (DataContext as MainWindowViewModel)?.ClearPendingCrop();
     }
+
     // keeps the visual corner triangle glued to DragRect's bottom-right
     private void UpdateDragRectHandle()
     {
-        if (DragRect == null || DragRectHandle == null) return;
-
         if (!DragRect.IsVisible)
         {
             DragRectHandle.IsVisible = false;
@@ -372,19 +348,18 @@ public partial class MainWindow : Window
         DragRectHandle.IsVisible = true;
     }
 
-    // ------------------------------------------------------
-    // 2) Pointer Pressed => Decide DRAG vs RESIZE
-    // ------------------------------------------------------
+    // pointer pressed -> decide drag vs resize
     private void DragRect_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (DragRect == null || OverlayCanvas == null) return;
-
         _isPointerDown = true;
         e.Pointer.Capture(DragRect);
 
+        // touching the rect = positioning it by hand
+        if (DataContext is MainWindowViewModel vm) vm.SelectedWallpaperStyle = "Custom Area";
+
         var pos = e.GetPosition(OverlayCanvas);
 
-        // Save current rect coords
+        // save current rect coords
         _dragStart = pos;
         _rectStartX = Canvas.GetLeft(DragRect);
         _rectStartY = Canvas.GetTop(DragRect);
@@ -394,15 +369,9 @@ public partial class MainWindow : Window
         double rectRight = _rectStartX + _rectStartWidth;
         double rectBottom = _rectStartY + _rectStartHeight;
 
-        // If near bottom-right corner => Resize
-        if (Math.Abs(pos.X - rectRight) < CornerHitSize && Math.Abs(pos.Y - rectBottom) < CornerHitSize)
-        {
-            _operation = RectOperation.Resizing;
-        }
-        else
-        {
-            _operation = RectOperation.Dragging;
-        }
+        // near the bottom-right corner = resize, anywhere else = drag
+        bool nearCorner = Math.Abs(pos.X - rectRight) < CornerHitSize && Math.Abs(pos.Y - rectBottom) < CornerHitSize;
+        _operation = nearCorner ? RectOperation.Resizing : RectOperation.Dragging;
     }
 
     private void DragRect_PointerMoved(object? sender, PointerEventArgs e)
@@ -454,6 +423,19 @@ public partial class MainWindow : Window
     }
 
 
+    // one monitor: only Custom Area uses the drag rect ; every other style is drawn into the image when set
+    private void OnWallpaperStyleChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox { SelectedItem: string style } || DataContext is not MainWindowViewModel { AllMonitorsMode: false, LastSelMonitor: MonitorInfo monitor }) return;
+
+        if (style != "Custom Area") ResetRectangle();
+        else if (!DragRect.IsVisible) ShowDraggableRectangle(monitor);
+    }
+
+
+
+    // monitor section ------------------------------------
+
     private void OnPreviewMonitorTapped(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Control { DataContext: MonitorInfo monitor }) SelectMonitor(monitor);
@@ -465,82 +447,72 @@ public partial class MainWindow : Window
         if (DataContext is not MainWindowViewModel vm) return;
         SelectOneToggle.IsChecked = true; // flip first
         vm.MonitorTapped(monitor);        // also enables the set button
-        ShowDraggableRectangle(monitor);
+        if (vm.SelectedWallpaperStyle == "Custom Area") ShowDraggableRectangle(monitor);
     }
 
+    // no monitor highlighted + set button off
     private void UnselectAllPreviewMonitors()
     {
-        if (DataContext is MainWindowViewModel vm)
-        {
-            vm.LastSelMonitor = null;
-            // manipulate monitor UI
-            foreach (MonitorInfo mon in vm.MonitorList)
-            {
-                mon.FillColour = MonitorHelper.IdleFill;
-            }
-            uniVM.SetBackgroundButtonEnabled = false;
-        }
+        (DataContext as MainWindowViewModel)?.UnselectAllMonitors();
     }
 
     private void OnSelectOneMonitorToggleChecked(object? sender, RoutedEventArgs e)
     {
-        if (sender is not RadioButton { IsChecked: true }) return;
+        if (sender is not RadioButton { IsChecked: true } || DataContext is not MainWindowViewModel vm) return;
 
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel == null) return;
-
-        viewModel.StyleDropdownEnabled = false;
-        UnselectAllPreviewMonitors();
+        vm.AllMonitorsMode = false;
+        UnselectAllPreviewMonitors(); // also turns the set button off until a monitor is picked
         ResetRectangle();
-        uniVM.SetBackgroundButtonEnabled = false;
     }
 
-    private async void OnSelectAllMonitorsToggleChecked(object? sender, RoutedEventArgs e)
+    private void OnSelectAllMonitorsToggleChecked(object? sender, RoutedEventArgs e)
     {
-        if (sender is not RadioButton { IsChecked: true }) return;
-
-        var viewModel = DataContext as MainWindowViewModel;
-        if (viewModel == null) return;
+        if (sender is not RadioButton { IsChecked: true } || DataContext is not MainWindowViewModel vm) return;
 
         uniVM.SetBackgroundButtonEnabled = true;
         ResetRectangle();
-        viewModel.StyleDropdownEnabled = true;
-        viewModel.AllMonitorsSelected();
+        vm.AllMonitorsMode = true;
+        vm.AllMonitorsSelected();
     }
 
-
-    private void OnFavouriteClicked(object? sender, RoutedEventArgs e)
+    // redetect/refresh monitors
+    public void DetectMonitors()
     {
-        Debug.WriteLine("favourite clicked (not yet implemented)");
-    }
-
-
-    private void EnlargePreviewImg(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel viewModel && viewModel.CurrentWallpaperPreview != null)
+        try
         {
-            EnlargedPreviewImage.IsVisible = true;
-            MainGrid.Opacity = 0.01;
+            var monitors = MonitorHelper.GetMonitors(this);
+            uniVM.MonitorList.Clear();
+            foreach (var mon in monitors)
+            {
+                uniVM.MonitorList.Add(mon);
+            }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("ERROR --" + ex);
+        }
+        UnselectAllPreviewMonitors();
+        ResetRectangle();
     }
 
 
 
+    // setting the wallpaper ------------------------------------
 
     private async void OnSetWallpaperClicked(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel viewModel) return;
+        if (DataContext is not MainWindowViewModel vm) return;
 
         uniVM.SetBackgroundButtonEnabled = false; // disable button to ensure no spamming
 
-        if (viewModel.StyleDropdownEnabled)
+        if (vm.AllMonitorsMode || !DragRect.IsVisible) // all monitors, or one monitor with a drawn style (Fit/Tile/...)
         {
-            viewModel.SetWallpaperWithoutCrop();
+            vm.SetWallpaperWithoutCrop();
         }
         else
         {
             UpdatePendingCropInVm(); // DragRect -> original-image pixels
-            viewModel.SetWallpaperWithCrop();
+            vm.SetWallpaperWithCrop();
         }
 
         // delay button enable by a second ; helps users intuitively understand that the button worked
@@ -591,17 +563,11 @@ public partial class MainWindow : Window
     // enlarged preview -> filter popup -> settings -> autoset tray
     public void HotkeyEscape()
     {
-        if (EnlargedPreviewImage.IsVisible)
-        {
-            EnlargedPreviewImage.IsVisible = false;
-            MainGrid.Opacity = 1;
-            return;
-        }
-
         if (DataContext is not MainWindowViewModel vm) return;
 
+        if (vm.EnlargeRequested) { vm.CloseEnlarged(); return; } // also cancels one still loading
         if (vm.IsFilterOpen) { vm.IsFilterOpen = false; return; }
-        if (vm.SettingsViewVisibility) { vm.navToSettings(); return; }
+        if (vm.SettingsViewVisibility) { vm.settingsButton(); return; }
         if (vm.IsAutoSetVisible) { vm.IsAutoSetVisible = false; return; }
     }
 
@@ -612,9 +578,8 @@ public partial class MainWindow : Window
         else SelectOneToggle.IsChecked = true;
     }
 
-
     // 1-4 - select monitor N directly (same flow as tapping its rectangle)
-    public async void HotkeySelectMonitor(object? parameter)
+    public void HotkeySelectMonitor(object? parameter)
     {
         if (DataContext is not MainWindowViewModel vm) return;
         if (int.TryParse(parameter?.ToString(), out int idx) && idx >= 1 && idx <= vm.MonitorList.Count)
@@ -622,28 +587,5 @@ public partial class MainWindow : Window
             SelectMonitor(vm.MonitorList[idx - 1]);
         }
     }
-
-
-    // redetect/refresh monitors 
-    public void DetectMonitors()
-    {
-        Window window = new Window();
-        try
-        {
-            var monitors = MonitorHelper.GetMonitors(window);
-            uniVM.MonitorList.Clear();
-            foreach (var mon in monitors)
-            {
-                uniVM.MonitorList.Add(mon);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("ERROR --" + ex);
-        }
-        UnselectAllPreviewMonitors();
-        ResetRectangle();
-    }
-
 
 }

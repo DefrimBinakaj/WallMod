@@ -2,14 +2,9 @@
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
-using CommunityToolkit.Mvvm.ComponentModel;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WallMod.Helpers.History;
 using WallMod.Models;
 using WallMod.ViewModels;
@@ -22,11 +17,41 @@ public class UniversalAppStore : ViewModelBase
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
 
+    // loads every saved setting once, when the store is first created (at startup, right before the main window).
+    // fields are set directly so nothing gets saved straight back
+    public UniversalAppStore()
+    {
+        bool boolSetting(string key) => bool.Parse(settingsHistoryHelper.GetSettingEntry(key));
+        Color colourSetting(string key) => Color.Parse(settingsHistoryHelper.GetSettingEntry(key));
+
+        allowSaveHistory = boolSetting("AllowSaveHistory");
+        stayRunningInBackground = boolSetting("StayRunningInBackground");
+        folderCountIncludesFolders = boolSetting("FolderCount");
+        autoOpenLastDirectory = boolSetting("AutoOpenLastChosenDirectoryOnAppStart");
+        rememberFilters = boolSetting("RememberFilterSettings");
+        rememberThumbnailZoomLevel = boolSetting("RememberThumbnailZoomLevel");
+        cpuThreadsAllocated = int.Parse(settingsHistoryHelper.GetSettingEntry("CPUThreadsAllocated"));
+
+        if (rememberFilters)
+        {
+            filterSearchText = settingsHistoryHelper.GetSettingEntry("SearchFilter");
+            showFolders = boolSetting("ShowFoldersFilter");
+            currentSortChoice = settingsHistoryHelper.GetSettingEntry("ImgPropertySort");
+            currentAspectRatio = settingsHistoryHelper.GetSettingEntry("AspectRatioFilter");
+        }
+
+        selectedBackgroundColour = convertBackgroundColour(colourSetting("SelectedBackgroundColour"));
+        selectedPrimaryAccentColour = convertUIColour(colourSetting("SelectedPrimaryAccentColour"));
+        selectedWallpaperCollectionColour = convertUIColour(colourSetting("SelectedWallpaperCollectionColour"));
+        selectedPreviewBackgroundColour = convertUIColour(colourSetting("SelectedPreviewBackgroundColour"));
+        changeFluentColour();
+    }
+
+
     // =======================================================
     // GALLERY
     private bool isImageGalleryViewVisible = true;
     public bool IsImageGalleryViewVisible { get => isImageGalleryViewVisible; set => SetProperty(ref isImageGalleryViewVisible, value); }
-
 
     private string currentSelectedDirectory = "No Directory Selected";
     public string CurrentSelectedDirectory
@@ -34,80 +59,33 @@ public class UniversalAppStore : ViewModelBase
         get => currentSelectedDirectory;
         set
         {
-            if (currentSelectedDirectory != value)
-            {
-                currentSelectedDirectory = value;
-                OnPropertyChanged(nameof(CurrentSelectedDirectory));
-                CurrentSelectedDirecName = "/" + Path.GetFileName(Path.TrimEndingDirectorySeparator(value)); // change the display var
-                settingsHistoryHelper.UpdateSetting("LastChosenDirectory", CurrentSelectedDirectory);
-            }
+            if (!SetProperty(ref currentSelectedDirectory, value)) return;
+            CurrentSelectedDirecName = "/" + Path.GetFileName(Path.TrimEndingDirectorySeparator(value)); // change the display var
+            settingsHistoryHelper.UpdateSetting("LastChosenDirectory", value);
         }
     }
 
     private string currentSelectedDirecName = "No Directory Selected";
-    public string CurrentSelectedDirecName { get => currentSelectedDirecName; set { if (currentSelectedDirecName != value) { currentSelectedDirecName = value; OnPropertyChanged(nameof(CurrentSelectedDirecName)); } } }
+    public string CurrentSelectedDirecName { get => currentSelectedDirecName; set => SetProperty(ref currentSelectedDirecName, value); }
 
     private double imgLoadProgress;
-    public double ImgLoadProgress { get => imgLoadProgress; set { if (value != imgLoadProgress) { imgLoadProgress = value; OnPropertyChanged(nameof(ImgLoadProgress)); } } }
+    public double ImgLoadProgress { get => imgLoadProgress; set => SetProperty(ref imgLoadProgress, value); }
 
 
     // =======================================================
     // FILTERS
-    // [ filters in vm must have applyAllFilters() ]
+    // [ the main vm re-runs applyAllFilters() when these change ] ; each one is saved when it changes
     private string filterSearchText = "";
-    public string FilterSearchText
-    {
-        get => filterSearchText;
-        set
-        {
-            if (SetProperty(ref filterSearchText, value))
-            {
-                settingsHistoryHelper.UpdateSetting("SearchFilter", FilterSearchText);
-            }
-        }
-    }
+    public string FilterSearchText { get => filterSearchText; set { if (SetProperty(ref filterSearchText, value)) settingsHistoryHelper.UpdateSetting("SearchFilter", value); } }
 
     private bool showFolders = true;
-    public bool ShowFolders
-    {
-        get => showFolders;
-        set
-        {
-            if (showFolders != value)
-            {
-                showFolders = value;
-                OnPropertyChanged(nameof(ShowFolders));
-                settingsHistoryHelper.UpdateSetting("ShowFoldersFilter", ShowFolders.ToString());
-            }
-        }
-    }
+    public bool ShowFolders { get => showFolders; set { if (SetProperty(ref showFolders, value)) settingsHistoryHelper.UpdateSetting("ShowFoldersFilter", value.ToString()); } }
 
     private string currentSortChoice = "Name";
-    public string CurrentSortChoice
-    {
-        get => currentSortChoice;
-        set
-        {
-            if (SetProperty(ref currentSortChoice, value))
-            {
-                settingsHistoryHelper.UpdateSetting("ImgPropertySort", CurrentSortChoice);
-            }
-        }
-    }
+    public string CurrentSortChoice { get => currentSortChoice; set { if (SetProperty(ref currentSortChoice, value)) settingsHistoryHelper.UpdateSetting("ImgPropertySort", value); } }
 
     private string currentAspectRatio = "All";
-    public string CurrentAspectRatio
-    {
-        get => currentAspectRatio;
-        set
-        {
-            if (SetProperty(ref currentAspectRatio, value))
-            {
-                settingsHistoryHelper.UpdateSetting("AspectRatioFilter", CurrentAspectRatio);
-            }
-        }
-    }
-
+    public string CurrentAspectRatio { get => currentAspectRatio; set { if (SetProperty(ref currentAspectRatio, value)) settingsHistoryHelper.UpdateSetting("AspectRatioFilter", value); } }
 
 
     // =======================================================
@@ -118,8 +96,6 @@ public class UniversalAppStore : ViewModelBase
     public bool IsHistoryViewVisible { get => isHistoryViewVisible; set => SetProperty(ref isHistoryViewVisible, value); }
 
 
-
-
     // =======================================================
     // PREVIEW
 
@@ -127,12 +103,7 @@ public class UniversalAppStore : ViewModelBase
     public ObservableCollection<MonitorInfo> MonitorList { get; set; } = new ObservableCollection<MonitorInfo>();
 
     private bool setBackgroundButtonEnabled = false;
-    public bool SetBackgroundButtonEnabled
-    {
-        get => setBackgroundButtonEnabled;
-        set => SetProperty(ref setBackgroundButtonEnabled, value);
-    }
-
+    public bool SetBackgroundButtonEnabled { get => setBackgroundButtonEnabled; set => SetProperty(ref setBackgroundButtonEnabled, value); }
 
 
     // =======================================================
@@ -147,103 +118,33 @@ public class UniversalAppStore : ViewModelBase
 
 
     // =======================================================
-    // SETTINGS
+    // SETTINGS (the saved ones are written to the settings json when they change)
     private bool mainGridVisibility = true;
     public bool MainGridVisibility { get => mainGridVisibility; set => SetProperty(ref mainGridVisibility, value); }
-    
+
     private bool settingsViewVisibility = false;
     public bool SettingsViewVisibility { get => settingsViewVisibility; set => SetProperty(ref settingsViewVisibility, value); }
-
 
     private bool allowSaveHistory;
     public bool AllowSaveHistory { get => allowSaveHistory; set => SetProperty(ref allowSaveHistory, value); }
 
     private bool stayRunningInBackground;
-    public bool StayRunningInBackground
-    {
-        get => stayRunningInBackground;
-        set
-        {
-            if (SetProperty(ref stayRunningInBackground, value))
-            {
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("StayRunningInBackground", stayRunningInBackground.ToString()); 
-            }
-        }
-    }
+    public bool StayRunningInBackground { get => stayRunningInBackground; set { if (SetProperty(ref stayRunningInBackground, value)) settingsHistoryHelper.UpdateSetting("StayRunningInBackground", value.ToString()); } }
 
     private bool folderCountIncludesFolders;
-    public bool FolderCountIncludesFolders
-    {
-        get => folderCountIncludesFolders;
-        set
-        {
-            if (SetProperty(ref folderCountIncludesFolders, value))
-            {
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("FolderCount", folderCountIncludesFolders.ToString());
-            }
-        }
-    }
-
+    public bool FolderCountIncludesFolders { get => folderCountIncludesFolders; set { if (SetProperty(ref folderCountIncludesFolders, value)) settingsHistoryHelper.UpdateSetting("FolderCount", value.ToString()); } }
 
     private bool autoOpenLastDirectory;
-    public bool AutoOpenLastDirectory
-    {
-        get => autoOpenLastDirectory;
-        set
-        {
-            if (SetProperty(ref autoOpenLastDirectory, value))
-            {
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("AutoOpenLastChosenDirectoryOnAppStart", AutoOpenLastDirectory.ToString());
-            }
-        }
-    }
+    public bool AutoOpenLastDirectory { get => autoOpenLastDirectory; set { if (SetProperty(ref autoOpenLastDirectory, value)) settingsHistoryHelper.UpdateSetting("AutoOpenLastChosenDirectoryOnAppStart", value.ToString()); } }
 
     private bool rememberFilters;
-    public bool RememberFilters
-    {
-        get => rememberFilters;
-        set
-        {
-            if (SetProperty(ref rememberFilters, value))
-            {
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("RememberFilterSettings", RememberFilters.ToString());
-            }
-        }
-    }
+    public bool RememberFilters { get => rememberFilters; set { if (SetProperty(ref rememberFilters, value)) settingsHistoryHelper.UpdateSetting("RememberFilterSettings", value.ToString()); } }
 
     private bool rememberThumbnailZoomLevel;
-    public bool RememberThumbnailZoomLevel
-    {
-        get => rememberThumbnailZoomLevel;
-        set
-        {
-            if (SetProperty(ref rememberThumbnailZoomLevel, value))
-            {
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("RememberThumbnailZoomLevel", RememberThumbnailZoomLevel.ToString());
-            }
-        }
-    }
+    public bool RememberThumbnailZoomLevel { get => rememberThumbnailZoomLevel; set { if (SetProperty(ref rememberThumbnailZoomLevel, value)) settingsHistoryHelper.UpdateSetting("RememberThumbnailZoomLevel", value.ToString()); } }
 
     private int cpuThreadsAllocated;
-    public int CPUThreadsAllocated
-    {
-        get => cpuThreadsAllocated;
-        set
-        {
-            if (cpuThreadsAllocated != value)
-            {
-                cpuThreadsAllocated = value;
-                OnPropertyChanged();
-                // save to json file
-                settingsHistoryHelper.UpdateSetting("CPUThreadsAllocated", CPUThreadsAllocated.ToString());
-            }
-        }
-    }
+    public int CPUThreadsAllocated { get => cpuThreadsAllocated; set { if (SetProperty(ref cpuThreadsAllocated, value)) settingsHistoryHelper.UpdateSetting("CPUThreadsAllocated", value.ToString()); } }
     public static int MaxCPUThreads { get; } = Math.Max(1, Environment.ProcessorCount - 2); // leave 2 threads for UI & rendering
 
 
@@ -315,7 +216,6 @@ public class UniversalAppStore : ViewModelBase
     }
 
 
-
     private Color selectedWallpaperCollectionColour;
     public Color SelectedWallpaperCollectionColour
     {
@@ -338,14 +238,10 @@ public class UniversalAppStore : ViewModelBase
         }
     }
 
+
     // version ===================================================
     private string appNameVersion = "v0.3.2";
-    public string AppNameVersion
-    {
-        get => appNameVersion;
-        set => SetProperty(ref appNameVersion, value);
-    }
-
+    public string AppNameVersion { get => appNameVersion; set => SetProperty(ref appNameVersion, value); }
 
     private bool updateAvailableVisible = false;
     public bool UpdateAvailableVisible { get => updateAvailableVisible; set => SetProperty(ref updateAvailableVisible, value); }

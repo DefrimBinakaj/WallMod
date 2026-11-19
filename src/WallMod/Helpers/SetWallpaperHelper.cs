@@ -1,468 +1,501 @@
-﻿using Microsoft.Win32;
+﻿using Avalonia;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using SkiaSharp;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using WallMod.Models;
+using WallMod.State;
 
-// generally used LLM for most of this (since OS background setting is jank), will change soon
+
+// generally used LLM for most of this (since OS background setting is jank), will change eventually lol
+//=======
+
 namespace WallMod.Helpers
 {
-    // =========================================================
-    // IDesktopWallpaper for Windows
-    // =========================================================
+    // Windows per-monitor wallpaper COM interface. Methods must stay in vtable order, so the unused ones before GetPosition stay
     [ComImport]
     [Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IDesktopWallpaper
     {
-        void SetWallpaper(
-            [MarshalAs(UnmanagedType.LPWStr)] string monitorID,
-            [MarshalAs(UnmanagedType.LPWStr)] string wallpaper);
-
-        [return: MarshalAs(UnmanagedType.LPWStr)]
-        string GetWallpaper(
-            [MarshalAs(UnmanagedType.LPWStr)] string monitorID);
-
-        [return: MarshalAs(UnmanagedType.LPWStr)]
-        string GetMonitorDevicePathAt(uint monitorIndex);
-
-        [return: MarshalAs(UnmanagedType.U4)]
+        void SetWallpaper([MarshalAs(UnmanagedType.LPWStr)] string monitorID, [MarshalAs(UnmanagedType.LPWStr)] string wallpaper);
+        [return: MarshalAs(UnmanagedType.LPWStr)] string GetWallpaper([MarshalAs(UnmanagedType.LPWStr)] string monitorID);
+        [return: MarshalAs(UnmanagedType.LPWStr)] string GetMonitorDevicePathAt(uint monitorIndex);
         uint GetMonitorDevicePathCount();
-
-        [return: MarshalAs(UnmanagedType.Struct)]
         Rect GetMonitorRECT([MarshalAs(UnmanagedType.LPWStr)] string monitorID);
-
-        void SetBackgroundColor([MarshalAs(UnmanagedType.U4)] uint color);
-
-        [return: MarshalAs(UnmanagedType.U4)]
+        void SetBackgroundColor(uint color);
         uint GetBackgroundColor();
-
-        void SetPosition([MarshalAs(UnmanagedType.I4)] DesktopWallpaperPosition position);
-
-        [return: MarshalAs(UnmanagedType.I4)]
+        void SetPosition(DesktopWallpaperPosition position);
         DesktopWallpaperPosition GetPosition();
-
-        void SetSlideshow(IntPtr items);
-
-        IntPtr GetSlideshow();
-
-        void SetSlideshowOptions(DesktopSlideshowDirection options, uint slideshowTick);
-
-        void GetSlideshowOptions(out DesktopSlideshowDirection options, out uint slideshowTick);
-
-        void AdvanceSlideshow([MarshalAs(UnmanagedType.LPWStr)] string monitorID, [MarshalAs(UnmanagedType.I4)] DesktopSlideshowDirection direction);
-
-        DesktopSlideshowDirection GetStatus();
-
-        bool Enable();
     }
 
     [ComImport]
     [Guid("C2CF3110-460E-4fc1-B9D0-8A1C0C9CC4BD")]
-    public class DesktopWallpaper
-    {
-    }
+    public class DesktopWallpaper { }
 
-    public enum DesktopSlideshowDirection
-    {
-        Forward = 0,
-        Backward = 1
-    }
-
-    public enum DesktopWallpaperPosition
-    {
-        Center = 0,
-        Tile = 1,
-        Stretch = 2,
-        Fit = 3,
-        Fill = 4,
-        Span = 5
-    }
+    public enum DesktopWallpaperPosition { Center, Tile, Stretch, Fit, Fill, Span }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Rect
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
-    }
+    public struct Rect { public int Left, Top, Right, Bottom; }
 
-    public class SetWallpaperHelper
+    // Sets one monitor's wallpaper and never changes what any other monitor shows.
+    //  - KDE, XFCE: real per-monitor wallpapers, style applied natively by the desktop
+    //  - Windows: per-monitor images, but the style is desktop-wide, so we draw the style into an image of the monitor's exact pixel size
+    //  - GNOME, Cinnamon, MATE, feh: only ONE image for all monitors, so we rebuild exactly what every monitor shows right now
+    //    into one desktop-sized image, replace only this monitor's part, and show it spanned
+    public static class SetWallpaperHelper
     {
-        public enum WallpaperStyle
-        {
-            Fill,
-            Fit,
-            Stretch,
-            Tile,
-            Center,
-            Span // Windows 8+ only
-        }
+        private static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallMod", "current");
 
-        /// <summary>
-        /// Sets the wallpaper on the current OS.
-        /// For Linux, the monitorId is used (if provided) to update only that monitor (e.g. in KDE).
-        /// </summary>
+        // a single-image desktop's big image: its size, and each monitor's rect in it.
+        // Native = image pixels per physical pixel of that monitor (only not 1 on GNOME with mixed display scaling)
+        private sealed record Layout(int Width, int Height, Dictionary<string, (SKRectI Rect, float Native)> Monitors);
+
         public static void SetWallpaper(string imagePath, string wallpaperStyle, string monitorId)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                SetWallpaperWindows(imagePath, wallpaperStyle, monitorId);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                SetWallpaperMacOS(imagePath);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                SetWallpaperLinux(imagePath, monitorId);
-            }
-            else
-            {
-                throw new NotSupportedException("OS not supported for setting a background");
-            }
+            using var src = Decode(imagePath);
+            Apply(src, imagePath, wallpaperStyle, monitorId);
         }
 
-        // crop an image then set it; moved out of MainWindowViewModel.SetWallpaperWithCrop
-        // so the autoset queue can apply crops too
-        public static void SetWallpaperCropped(string imagePath, string wallpaperStyle, string monitorId,
-                                               int x, int y, int width, int height)
+        public static void SetWallpaperCropped(string imagePath, string wallpaperStyle, string monitorId, int x, int y, int width, int height)
         {
-            using var skiaImage = SKBitmap.Decode(imagePath);
-
-            var cropRect = new SKRectI(x, y, x + width, y + height);
-            cropRect.Intersect(new SKRectI(0, 0, skiaImage.Width, skiaImage.Height));
-
-            using var croppedImage = new SKBitmap(cropRect.Width, cropRect.Height);
-            using (var canvas = new SKCanvas(croppedImage))
-            {
-                canvas.DrawBitmap(skiaImage, cropRect, new SKRect(0, 0, cropRect.Width, cropRect.Height));
-            }
-
-            string tempPath = Path.Combine(Path.GetTempPath(), "croppedWallpaper.png");
-            // File.Create, not OpenWrite: OpenWrite doesn't truncate, so a smaller PNG written over
-            // a larger one leaves trailing bytes; autoset rewrites this file constantly
-            using (var stream = File.Create(tempPath))
-            {
-                croppedImage.Encode(stream, SKEncodedImageFormat.Png, 100);
-            }
-
-            SetWallpaper(tempPath, wallpaperStyle, monitorId);
+            using var src = Decode(imagePath);
+            using var crop = Subset(src, new SKRectI(x, y, x + width, y + height));
+            Apply(crop, null, wallpaperStyle, monitorId);
         }
 
-        #region Windows & macOS
-
-        private static void SetWallpaperWindows(string imagePath, string wallpaperStyle, string monitorId)
+        private static void Apply(SKBitmap src, string? file, string style, string monitorId)
         {
-            if (!File.Exists(imagePath))
-                throw new FileNotFoundException($"Image file not found: {imagePath}");
+            var monitors = App.Services.GetRequiredService<UniversalAppStore>().MonitorList.ToArray();
+            var mon = monitors.FirstOrDefault(m => m.MonitorIdPath == monitorId) ?? throw new ArgumentException("Unknown monitor: " + monitorId);
 
-            // Update registry values to set the style
-            SetRegistryValues(wallpaperStyle);
+            int left = monitors.Min(m => m.Bounds.X), top = monitors.Min(m => m.Bounds.Y);
+            var desktop = new PixelRect(left, top, monitors.Max(m => m.Bounds.Right) - left, monitors.Max(m => m.Bounds.Bottom) - top);
 
-            try
-            {
-                var dw = (IDesktopWallpaper)new DesktopWallpaper();
-                // Potentially also ensure large images are resized
-                string finalPath = EnsureImageUnderLimit(imagePath);
-                dw.SetWallpaper(monitorId, finalPath);
-                Debug.WriteLine($"SetWallpaper successful: monitor={monitorId}, file='{imagePath}'");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("SetWallpaperWindows via DesktopWallpaper failed: " + ex.Message);
-                // fallback using SystemParametersInfo if needed:
-                // SystemParametersInfo(20, 0, finalPath, 0x01 | 0x02);
-            }
+            // Span = this monitor's piece of the image filling the whole desktop, cut out at full resolution and then just filled
+            using var slice = style == "Span" ? SpanSlice(src, mon.Bounds, desktop) : null;
+            if (slice != null) { file = null; style = "Fill"; }
+            var img = slice ?? src;
+
+            if (OperatingSystem.IsWindows()) SetWindows(img, style, mon, monitors, desktop);
+            else if (OperatingSystem.IsLinux()) SetLinux(img, file, style, mon, monitors, desktop);
+            else throw new PlatformNotSupportedException("Setting wallpapers is only supported on Windows and Linux");
         }
 
-        private static void SetRegistryValues(string wallpaperStyle)
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", writable: true);
-            if (key == null)
-                throw new Exception("Failed to open HKCU\\Control Panel\\Desktop");
+        #region Windows
 
-            switch (wallpaperStyle.ToLower())
+        private static void SetWindows(SKBitmap img, string style, MonitorInfo mon, MonitorInfo[] monitors, PixelRect desktop)
+        {
+            var dw = (IDesktopWallpaper)new DesktopWallpaper();
+            uint bg = dw.GetBackgroundColor(); // 0x00BBGGRR, the colour windows shows around Fit/Center images
+            var background = new SKColor((byte)bg, (byte)(bg >> 8), (byte)(bg >> 16));
+
+            // Span is the one windows mode with a single image for all monitors. Leaving it would change the other monitors,
+            // so first give each of them its own exact copy of the part of the spanned image it's showing
+            if (dw.GetPosition() == DesktopWallpaperPosition.Span)
             {
-                case "fill":
-                    key.SetValue("WallpaperStyle", "10");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
-                case "fit":
-                    key.SetValue("WallpaperStyle", "6");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
-                case "stretch":
-                    key.SetValue("WallpaperStyle", "2");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
-                case "tile":
-                    key.SetValue("WallpaperStyle", "0");
-                    key.SetValue("TileWallpaper", "1");
-                    break;
-                case "center":
-                    key.SetValue("WallpaperStyle", "0");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
-                case "span":
-                    key.SetValue("WallpaperStyle", "22");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
-                default:
-                    key.SetValue("WallpaperStyle", "10");
-                    key.SetValue("TileWallpaper", "0");
-                    break;
+                using var current = TryLoad(dw.GetWallpaper(mon.MonitorIdPath))
+                    ?? TryLoad(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Windows", "Themes", "TranscodedWallpaper"));
+                dw.SetPosition(DesktopWallpaperPosition.Fill);
+                if (current != null)
+                    foreach (var other in monitors.Where(m => m != mon))
+                    {
+                        using var part = SpanSlice(current, other.Bounds, desktop);
+                        dw.SetWallpaper(other.MonitorIdPath, SaveRendered(part, "Fill", other, background));
+                    }
             }
+
+            // exactly the monitor's pixel size, so it shows 1:1 under any (desktop-wide) mode, which we leave alone
+            dw.SetWallpaper(mon.MonitorIdPath, SaveRendered(img, style, mon, background));
         }
 
-        private static void SetWallpaperMacOS(string imagePath)
+        private static string SaveRendered(SKBitmap img, string style, MonitorInfo mon, SKColor background)
         {
-            RunBash("osascript", "-e",
-                $"tell application \"Finder\" to set desktop picture to POSIX file \"{imagePath}\"");
-        }
-
-        /// <summary>
-        /// Ensures images bigger than ~ 9 million pixels are resized to avoid Windows wallpaper API issues.
-        /// </summary>
-        private static string EnsureImageUnderLimit(string originalPath, int maxWidth = 3840, int maxHeight = 3840)
-        {
-            try
+            using var output = new SKBitmap(mon.Bounds.Width, mon.Bounds.Height);
+            using (var c = new SKCanvas(output))
             {
-                using var inputStream = File.OpenRead(originalPath);
-                using var codec = SKCodec.Create(inputStream);
-                if (codec == null)
-                {
-                    Debug.WriteLine("Could not read image header for " + originalPath);
-                    return originalPath;
-                }
-
-                var info = codec.Info;
-                int width = info.Width;
-                int height = info.Height;
-
-                // Check size: if under ~ 10 million pixels, skip
-                if (width * height < 9000000)
-                    return originalPath;
-
-                float scale = Math.Min((float)maxWidth / width, (float)maxHeight / height);
-                int newWidth = (int)(width * scale);
-                int newHeight = (int)(height * scale);
-
-                inputStream.Seek(0, SeekOrigin.Begin);
-                using var originalBitmap = SKBitmap.Decode(inputStream);
-                if (originalBitmap == null)
-                {
-                    Debug.WriteLine("Failed to decode " + originalPath);
-                    return originalPath;
-                }
-
-                using var resizedBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.High);
-                if (resizedBitmap == null)
-                {
-                    Debug.WriteLine("Failed to resize " + originalPath);
-                    return originalPath;
-                }
-
-                string tempPath = Path.Combine(Path.GetTempPath(), "wallmod_resized_" + Path.GetFileName(originalPath));
-                using var image = SKImage.FromBitmap(resizedBitmap);
-                using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85);
-
-                using (var output = File.OpenWrite(tempPath))
-                {
-                    data.SaveTo(output);
-                }
-
-                Debug.WriteLine($"Resized image from {width}x{height} to {newWidth}x{newHeight}, saved at {tempPath}");
-                return tempPath;
+                c.Clear(background);
+                Draw(c, img, style, new SKRectI(0, 0, output.Width, output.Height));
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("EnsureImageUnderLimit error: " + ex.Message);
-                return originalPath;
-            }
+            string path = NextSlot(mon.MonitorIdPath, ".png");
+            Save(output, path);
+            return path;
         }
 
         #endregion
 
         #region Linux
 
-        private static void SetWallpaperLinux(string imagePath, string monitorId)
+        private static void SetLinux(SKBitmap img, string? file, string style, MonitorInfo mon, MonitorInfo[] monitors, PixelRect desktop)
         {
-            // CHANGED: rotating two-slot copy instead of a new GUID copy every time.
-            // Path still changes between consecutive sets (forces DE refresh),
-            // but disk usage is capped at 2 files per monitor instead of growing forever.
-            string uniqueCopy = CreateRotatingCopy(imagePath, monitorId);
+            string de = (Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ?? Environment.GetEnvironmentVariable("DESKTOP_SESSION") ?? "").ToLowerInvariant();
 
-            var desktopSession = (Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ??
-                                  Environment.GetEnvironmentVariable("GDMSESSION") ??
-                                  Environment.GetEnvironmentVariable("DESKTOP_SESSION") ??
-                                  "").ToLower();
+            if (de.Contains("kde") || de.Contains("plasma"))
+                SetKde(img, file, style, mon, monitors);
+            else if (de.Contains("xfce"))
+                SetXfce(img, file, style, mon);
+            else if (de.Contains("cinnamon"))
+                SetSpanned("org.cinnamon.desktop.background", "picture-uri", null, img, style, mon, AvaloniaLayout(monitors, desktop));
+            else if (de.Contains("mate"))
+                SetSpanned("org.mate.background", "picture-filename", null, img, style, mon, AvaloniaLayout(monitors, desktop));
+            else if (de.Contains("gnome") || de.Contains("unity") || de.Contains("budgie") || de.Contains("pantheon"))
+                SetSpanned("org.gnome.desktop.background", "picture-uri", "picture-uri-dark", img, style, mon, MutterLayout(monitors) ?? AvaloniaLayout(monitors, desktop));
+            else
+                SetFeh(img, style, mon, AvaloniaLayout(monitors, desktop), desktop);
+        }
 
-            bool isWayland = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"));
-            string imageUri = "file://" + uniqueCopy;
+        // KDE: a real wallpaper + fill mode per screen (X11 and Wayland). Plasma numbers screens its own way, so match by position
+        private static void SetKde(SKBitmap img, string? file, string style, MonitorInfo mon, MonitorInfo[] monitors)
+        {
+            int rank = monitors.OrderBy(m => m.Bounds.X).ThenBy(m => m.Bounds.Y).ToList().IndexOf(mon);
+            int fillMode = style switch { "Stretch" => 0, "Fit" => 1, "Tile" => 3, "Center" => 6, _ => 2 };
+            string uri = ToUri(SaveSource(img, file, mon.MonitorIdPath));
+            string script = $$"""
+                var ds = desktops().filter(function (d) { return d.screen >= 0; });
+                var screens = [];
+                ds.forEach(function (d) { if (screens.indexOf(d.screen) < 0) screens.push(d.screen); });
+                screens.sort(function (a, b) { var ga = screenGeometry(a), gb = screenGeometry(b); return ga.x - gb.x || ga.y - gb.y; });
+                ds.forEach(function (d) {
+                    if (d.screen !== screens[{{rank}}]) return;
+                    d.wallpaperPlugin = 'org.kde.image';
+                    d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+                    d.writeConfig('Image', '{{uri}}');
+                    d.writeConfig('FillMode', {{fillMode}});
+                });
+                """;
+            Run("dbus-send", "--session", "--print-reply", "--dest=org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", "string:" + script);
+        }
 
+        // XFCE: a real wallpaper + style per monitor, stored under the monitor's xrandr name
+        private static void SetXfce(SKBitmap img, string? file, string style, MonitorInfo mon)
+        {
+            string name = XrandrMonitors().Where(s => s.Rect == mon.Bounds).Select(s => s.Name).FirstOrDefault()
+                ?? throw new InvalidOperationException("Couldn't find this monitor in xrandr");
+            string imageStyle = style switch { "Center" => "1", "Tile" => "2", "Stretch" => "3", "Fit" => "4", _ => "5" };
+            string path = SaveSource(img, file, mon.MonitorIdPath);
+
+            string all;
+            try { all = Run("xfconf-query", "-c", "xfce4-desktop", "-l"); } catch { all = ""; }
+            var props = all.Split('\n').Select(p => p.Trim())
+                .Where(p => Regex.IsMatch(p, $@"^/backdrop/screen\d+/monitor{Regex.Escape(name)}/workspace\d+/last-image$")).ToList();
+            if (props.Count == 0) props.Add($"/backdrop/screen0/monitor{name}/workspace0/last-image");
+
+            foreach (var p in props)
+            {
+                Run("xfconf-query", "-c", "xfce4-desktop", "-p", p.Replace("/last-image", "/image-style"), "-n", "-t", "int", "-s", imageStyle);
+                Run("xfconf-query", "-c", "xfce4-desktop", "-p", p, "-n", "-t", "string", "-s", path);
+            }
+        }
+
+        // GNOME / Cinnamon / MATE: one image for all monitors. Rebuild every monitor exactly as the desktop draws it now
+        // (its image, picture-options and background colours), replace only this monitor's part, then show it spanned
+        private static void SetSpanned(string schema, string key, string? darkKey, SKBitmap img, string style, MonitorInfo mon, Layout layout)
+        {
+            string options = GGet(schema, "picture-options") ?? "zoom";
+            SKColor primary = ParseColor(GGet(schema, "primary-color")), secondary = ParseColor(GGet(schema, "secondary-color"));
+            string shading = GGet(schema, "color-shading-type") ?? "solid";
+            string? light = GGet(schema, key), dark = darkKey == null ? null : GGet(schema, darkKey);
+            var whole = new SKRectI(0, 0, layout.Width, layout.Height);
+
+            void Background(SKCanvas c, SKRectI r)
+            {
+                var end = shading == "horizontal" ? new SKPoint(r.Right, r.Top) : new SKPoint(r.Left, r.Bottom);
+                using var paint = new SKPaint { Color = primary };
+                if (shading != "solid")
+                    paint.Shader = SKShader.CreateLinearGradient(new SKPoint(r.Left, r.Top), end, new[] { primary, secondary }, SKShaderTileMode.Clamp);
+                c.DrawRect(r, paint);
+            }
+
+            string ComposeFrom(string tag, string? current) => Compose(tag, layout, c =>
+            {
+                foreach (var (r, _) in layout.Monitors.Values) Background(c, r);
+                using var cur = TryLoad(ToLocalPath(current));
+                if (cur == null || options == "none") return;
+
+                if (options == "spanned")
+                    Draw(c, cur, "Stretch", whole); // our own previous image is exactly this size, so it's copied 1:1
+                else
+                    foreach (var (r, native) in layout.Monitors.Values)
+                        Draw(c, cur, options switch { "scaled" => "Fit", "stretched" => "Stretch", "centered" => "Center", "wallpaper" => "Tile", _ => "Fill" }, r, native, whole);
+            }, Background, img, style, mon.MonitorIdPath);
+
+            string lightFile = ComposeFrom("desktop", light);
+            GSet(schema, key, key == "picture-filename" ? lightFile : ToUri(lightFile)); // MATE stores a path, the others a uri
+            if (darkKey != null && dark != null)
+                GSet(schema, darkKey, ToUri(dark == light ? lightFile : ComposeFrom("desktopdark", dark)));
+            GSet(schema, "picture-options", "spanned");
+        }
+
+        // plain X11 window managers: feh's own record of what it last showed (~/.fehbg) is what the monitors show now
+        private static void SetFeh(SKBitmap img, string style, MonitorInfo mon, Layout layout, PixelRect desktop)
+        {
+            var whole = new SKRectI(0, 0, layout.Width, layout.Height);
+            string fehbg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fehbg");
+            string last = File.Exists(fehbg) ? File.ReadAllText(fehbg) : ""; // e.g. feh --no-fehbg --bg-fill '/a.jpg' '/b.jpg'
+            string mode = Regex.Match(last, @"--bg-(\w+)").Groups[1].Value switch { "center" => "Center", "max" => "Fit", "scale" => "Stretch", "tile" => "Tile", _ => "Fill" };
+            var files = Regex.Matches(last, @"'((?:[^']|'\\'')*)'").Select(m => m.Groups[1].Value.Replace(@"'\''", "'")).ToList();
+
+            string path = Compose("desktop", layout, c =>
+            {
+                if (files.Count == 0) return;
+                if (last.Contains("--no-xinerama"))
+                {
+                    using var cur = TryLoad(files[0]);
+                    if (cur != null) Draw(c, cur, mode, whole);
+                    return;
+                }
+                // one image per screen, in xinerama order, reused when there are fewer images than screens
+                var screens = XrandrMonitors();
+                for (int i = 0; i < screens.Count; i++)
+                {
+                    using var cur = TryLoad(files[i % files.Count]);
+                    var r = screens[i].Rect;
+                    if (cur != null) Draw(c, cur, mode, SKRectI.Create(r.X - desktop.X, r.Y - desktop.Y, r.Width, r.Height));
+                }
+            }, (c, r) => { using var black = new SKPaint { Color = SKColors.Black }; c.DrawRect(r, black); }, img, style, mon.MonitorIdPath);
+
+            Run("feh", "--bg-fill", "--no-xinerama", path);
+        }
+
+        private static string Compose(string tag, Layout layout, Action<SKCanvas> paintCurrent, Action<SKCanvas, SKRectI> paintBackground, SKBitmap img, string style, string monitorId)
+        {
+            var (rect, native) = layout.Monitors[monitorId];
+            using var full = new SKBitmap(layout.Width, layout.Height);
+            using (var c = new SKCanvas(full))
+            {
+                c.Clear(SKColors.Black);
+                paintCurrent(c);
+                paintBackground(c, rect);
+                Draw(c, img, style, rect, native);
+            }
+            string path = NextSlot(tag, ".png");
+            Save(full, path);
+            return path;
+        }
+
+        private static Layout AvaloniaLayout(MonitorInfo[] monitors, PixelRect desktop) =>
+            new(desktop.Width, desktop.Height, monitors.ToDictionary(m => m.MonitorIdPath,
+                m => (SKRectI.Create(m.Bounds.X - desktop.X, m.Bounds.Y - desktop.Y, m.Bounds.Width, m.Bounds.Height), 1f)));
+
+        // GNOME (esp. Wayland with scaling) can report scaled-down monitor sizes to the app, which would make the image soft.
+        // Ask mutter for the real layout instead: each monitor's logical rect, its scale, and its true pixel size
+        private static Layout? MutterLayout(MonitorInfo[] monitors)
+        {
+            string state;
             try
             {
-                // KDE Plasma (X11 and Wayland) - branch structure UNCHANGED
-                if (desktopSession.Contains("kde") || desktopSession.Contains("plasma"))
-                {
-                    if (isWayland)
-                    {
-                        if (string.IsNullOrEmpty(monitorId))
-                            RunBash("plasma-apply-wallpaperimage", uniqueCopy);
-                        else
-                            RunBash("plasma-apply-wallpaperimage", "--output", monitorId, uniqueCopy);
-                    }
-                    else
-                    {
-                        int screenIndex = ParseScreenIndex(monitorId);
-                        string script = GenerateKdeScript(screenIndex, imageUri);
-                        RunBash("qdbus", "org.kde.plasmashell", "/PlasmaShell",
-                            "org.kde.PlasmaShell.evaluateScript", script);
-                    }
-                }
-                // GNOME-based (GNOME, Ubuntu/Unity, Cinnamon, Budgie) - UNCHANGED commands
-                else if (desktopSession.Contains("gnome") || desktopSession.Contains("ubuntu") ||
-                         desktopSession.Contains("unity") || desktopSession.Contains("cinnamon") ||
-                         desktopSession.Contains("budgie"))
-                {
-                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-uri", imageUri);
-                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", imageUri);
-                    RunBash("gsettings", "set", "org.gnome.desktop.background", "picture-options", "zoom");
-                }
-                // MATE - UNCHANGED
-                else if (desktopSession.Contains("mate"))
-                {
-                    RunBash("gsettings", "set", "org.mate.background", "picture-filename", uniqueCopy);
-                }
-                // Elementary / Pantheon - UNCHANGED
-                else if (desktopSession.Contains("pantheon"))
-                {
-                    RunBash("gsettings", "set", "org.pantheon.desktop.gala.background", "picture-uri", imageUri);
-                }
-                // Fallback - UNCHANGED
-                else
-                {
-                    RunBash("feh", "--bg-scale", uniqueCopy);
-                }
+                state = Run("gdbus", "call", "--session", "--dest", "org.gnome.Mutter.DisplayConfig", "--object-path", "/org/gnome/Mutter/DisplayConfig",
+                            "--method", "org.gnome.Mutter.DisplayConfig.GetCurrentState");
             }
-            catch (Exception ex)
+            catch { return null; }
+
+            const string Str = @"'(?:[^'\\]|\\.)*'";
+            // physical size of each connector's current mode
+            var heads = Regex.Matches(state, $@"\(\(({Str}), {Str}, {Str}, {Str}\), \[").ToList();
+            var modeSize = new Dictionary<string, (int W, int H)>();
+            foreach (Match m in Regex.Matches(state, $@"\({Str}, (\d+), (\d+), [^,]+, [^,]+, \[[^\]]*\], \{{[^}}]*'is-current': <true>"))
+                if (heads.LastOrDefault(h => h.Index < m.Index) is Match head)
+                    modeSize.TryAdd(head.Groups[1].Value, (int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value)));
+
+            bool logicalLayout = !state.Contains("'layout-mode': <uint32 2>"); // 2 = physical layout (X11)
+            var logical = new List<(int X, int Y, int W, int H, double Scale)>();
+            foreach (Match m in Regex.Matches(state, $@"\((-?\d+), (-?\d+), ([\d.]+), (?:uint32 )?(\d+), (?:true|false), \[\(({Str})"))
             {
-                Debug.WriteLine($"Linux wallpaper error: {ex.Message}");
-                throw;
+                if (!modeSize.TryGetValue(m.Groups[5].Value, out var px)) return null;
+                if (int.Parse(m.Groups[4].Value) % 2 == 1) px = (px.H, px.W); // rotated 90 / 270
+                double scale = logicalLayout ? double.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture) : 1;
+                logical.Add((int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value), (int)Math.Round(px.W / scale), (int)Math.Round(px.H / scale), scale));
             }
+            if (logical.Count != monitors.Length) return null;
+
+            int minX = logical.Min(l => l.X), minY = logical.Min(l => l.Y);
+            double width = logical.Max(l => l.X + l.W) - minX, height = logical.Max(l => l.Y + l.H) - minY;
+            // pixels per logical pixel = the sharpest monitor's scale, so no monitor is ever upscaled (capped at the 16384px GPU texture limit)
+            double k = Math.Min(logical.Max(l => l.Scale), 16384 / Math.Max(width, height));
+
+            var byPosition = logical.OrderBy(l => l.X).ThenBy(l => l.Y).ToList();
+            var rects = monitors.OrderBy(m => m.Bounds.X).ThenBy(m => m.Bounds.Y).Select((m, i) => (m.MonitorIdPath, L: byPosition[i]))
+                .ToDictionary(p => p.MonitorIdPath, p => (
+                    SKRectI.Round(SKRect.Create((float)((p.L.X - minX) * k), (float)((p.L.Y - minY) * k), (float)(p.L.W * k), (float)(p.L.H * k))),
+                    (float)(k / p.L.Scale)));
+            return new Layout((int)Math.Round(width * k), (int)Math.Round(height * k), rects);
         }
 
-        /// <summary>
-        /// Some KDE X11 flows allow passing a monitor index after "LINUX_MON_",
-        /// e.g. "LINUX_MON_1" => screenIndex=1.
-        /// If none present, returns -1 (apply to all).
-        /// </summary>
-        private static int ParseScreenIndex(string monitorId)
+        // active monitors in xinerama order, e.g. " 0: +*DP-1 2560/597x1440/336+0+0  DP-1"
+        private static List<(string Name, PixelRect Rect)> XrandrMonitors() =>
+            Run("xrandr", "--listactivemonitors").Split('\n')
+                .Select(l => Regex.Match(l, @"(\d+)/\d+x(\d+)/\d+\+(-?\d+)\+(-?\d+)\s+(\S+)\s*$"))
+                .Where(m => m.Success)
+                .Select(m => (m.Groups[5].Value, new PixelRect(int.Parse(m.Groups[3].Value), int.Parse(m.Groups[4].Value), int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value))))
+                .ToList();
+
+        private static string? GGet(string schema, string key)
         {
-            if (!string.IsNullOrEmpty(monitorId) && monitorId.StartsWith("LINUX_MON_"))
+            try
             {
-                if (int.TryParse(monitorId.Substring("LINUX_MON_".Length), out int index))
-                    return index;
+                string v = Run("gsettings", "get", schema, key).Trim();
+                return v.Length >= 2 && v[0] is '\'' or '"' ? v[1..^1].Replace("\\'", "'").Replace("\\\"", "\"").Replace("\\\\", "\\") : v;
             }
-            return -1; // Apply to all monitors
+            catch { return null; }
         }
 
-        /// <summary>
-        /// For KDE’s dbus-based set wallpaper. We optionally break once we set on the desired screen
-        /// if a screen index is provided.
-        /// </summary>
-        private static string GenerateKdeScript(int screenIndex, string imageUri)
-        {
-            string targetScreen = screenIndex >= 0
-                ? $"if (d.screen === {screenIndex}) {{"
-                : "// apply to all screens";
+        private static void GSet(string schema, string key, string value) => Run("gsettings", "set", schema, key, value);
 
-            return $@"
-                var allDesktops = desktops();
-                for (var i = 0; i < allDesktops.length; i++) {{
-                    var d = allDesktops[i];
-                    {targetScreen}
-                        d.wallpaperPlugin = 'org.kde.image';
-                        d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
-                        d.writeConfig('Image', '{imageUri}');
-                        {(screenIndex >= 0 ? "break;" : "")}
-                    {(screenIndex >= 0 ? "}" : "")}
-                }}".Replace("\r", "").Replace("\n", "");
+        private static SKColor ParseColor(string? v)
+        {
+            if (v is { Length: 13 }) v = "#" + v.Substring(1, 2) + v.Substring(5, 2) + v.Substring(9, 2); // old 16-bit #rrrrggggbbbb
+            return SKColor.TryParse(v ?? "", out var c) ? c : SKColors.Black;
         }
 
-        /// <summary>
-        /// alternates between two fixed filenames per monitor target. The returned path always differs from the
-        /// previous set (same forced-refresh effect as the old GUID copies), but
-        /// only two files ever exist per monitor. Stored in AppData so the file
-        /// referenced by the DE survives reboots (temp may be wiped on boot).
-        /// </summary>
-        private static string CreateRotatingCopy(string originalPath, string monitorId)
+        private static string? ToLocalPath(string? v) =>
+            string.IsNullOrEmpty(v) ? null : v.StartsWith("file://") ? new Uri(v).LocalPath : v;
+
+        #endregion
+
+        #region Drawing & files
+
+        // draws img into area the way style lays it out. native = output pixels per image pixel for Center/Tile (their natural size).
+        // Tiles start at the area's top-left, or are centred in tileFrame (how GNOME tiles)
+        private static void Draw(SKCanvas c, SKBitmap img, string style, SKRectI area, float native = 1, SKRectI? tileFrame = null)
         {
-            if (!File.Exists(originalPath))
-                throw new FileNotFoundException($"Image file not found: {originalPath}");
-
-            string dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "WallMod", "current");
-            Directory.CreateDirectory(dir);
-
-            // sanitize monitor id into a filename-safe tag
-            var tag = new StringBuilder("wall");
-            foreach (char c in monitorId ?? "all")
-                tag.Append(char.IsLetterOrDigit(c) ? c : '_');
-
-            string extension = Path.GetExtension(originalPath);
-            string slotA = Path.Combine(dir, tag + "_a" + extension);
-            string slotB = Path.Combine(dir, tag + "_b" + extension);
-
-            // overwrite whichever slot is older (missing files report year 1601, so they get picked first)
-            string target = File.GetLastWriteTimeUtc(slotA) <= File.GetLastWriteTimeUtc(slotB)
-                ? slotA
-                : slotB;
-
-            File.Copy(originalPath, target, overwrite: true);
-            return target;
-        }
-
-        /// <summary>
-        /// runs the program directly with ArgumentList.
-        /// Same commands, same arguments - but no shell layer, so filenames with
-        /// quotes/spaces/$ can never break the command, and stderr is drained
-        /// concurrently so large error output can't deadlock the process.
-        /// </summary>
-        private static void RunBash(string fileName, params string[] args)
-        {
-            using var process = new Process();
-            process.StartInfo = new ProcessStartInfo
+            float sx = native, sy = native;
+            if (style is "Fill" or "Fit" or "Stretch")
             {
-                FileName = fileName,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            foreach (var a in args)
-                process.StartInfo.ArgumentList.Add(a);
+                sx = (float)area.Width / img.Width;
+                sy = (float)area.Height / img.Height;
+                if (style != "Stretch") sx = sy = style == "Fit" ? Math.Min(sx, sy) : Math.Max(sx, sy);
+            }
+            int w = Math.Max(1, (int)Math.Round(img.Width * sx)), h = Math.Max(1, (int)Math.Round(img.Height * sy));
+            using var resized = w == img.Width && h == img.Height ? null
+                : img.Resize(new SKImageInfo(w, h), SKFilterQuality.High) ?? throw new InvalidOperationException("Couldn't resize the image");
+            var bmp = resized ?? img;
 
-            if (!process.Start())
-                throw new Exception("Failed to start " + fileName);
+            c.Save();
+            c.ClipRect(area);
+            if (style == "Tile")
+            {
+                var f = tileFrame ?? area;
+                int ox = tileFrame == null ? f.Left : f.Left + (f.Width - w) / 2, oy = tileFrame == null ? f.Top : f.Top + (f.Height - h) / 2;
+                for (int y = oy - (int)Math.Ceiling((oy - area.Top) / (double)h) * h; y < area.Bottom; y += h)
+                    for (int x = ox - (int)Math.Ceiling((ox - area.Left) / (double)w) * w; x < area.Right; x += w)
+                        c.DrawBitmap(bmp, x, y);
+            }
+            else
+            {
+                c.DrawBitmap(bmp, area.Left + (area.Width - w) / 2, area.Top + (area.Height - h) / 2);
+            }
+            c.Restore();
+        }
 
-            var errTask = process.StandardError.ReadToEndAsync();
+        // the part of src a monitor shows when src fills the whole desktop, cut out at the image's own resolution
+        private static SKBitmap SpanSlice(SKBitmap src, PixelRect mon, PixelRect desktop)
+        {
+            float s = Math.Max((float)desktop.Width / src.Width, (float)desktop.Height / src.Height);
+            float left = (src.Width - desktop.Width / s) / 2, top = (src.Height - desktop.Height / s) / 2;
+            return Subset(src, SKRectI.Round(SKRect.Create(left + (mon.X - desktop.X) / s, top + (mon.Y - desktop.Y) / s, mon.Width / s, mon.Height / s)));
+        }
+
+        private static SKBitmap Subset(SKBitmap src, SKRectI r)
+        {
+            var part = new SKBitmap();
+            if (src.ExtractSubset(part, SKRectI.Intersect(r, new SKRectI(0, 0, src.Width, src.Height)))) return part;
+            part.Dispose();
+            throw new ArgumentException("Area is outside the image");
+        }
+
+        // for desktops that lay the image out themselves: a copy of the original file when it's untouched, else the cut-out piece
+        private static string SaveSource(SKBitmap img, string? file, string tag)
+        {
+            string path = NextSlot(tag, file != null ? Path.GetExtension(file) : ".png");
+            if (file != null) File.Copy(file, path, true);
+            else Save(img, path);
+            return path;
+        }
+
+        // two files per target, written alternately: the path changes on every set so the desktop always reloads it,
+        // but only two ever exist. In AppData since the desktop keeps pointing at it after a reboot
+        private static string NextSlot(string tag, string extension)
+        {
+            Directory.CreateDirectory(Dir);
+            tag = string.Concat(tag.Where(char.IsLetterOrDigit));
+            DateTime Age(string slot) => Directory.GetFiles(Dir, $"{tag}_{slot}.*").Select(File.GetLastWriteTimeUtc).DefaultIfEmpty(DateTime.MinValue).Max();
+            string slot = Age("a") <= Age("b") ? "a" : "b";
+            foreach (var old in Directory.GetFiles(Dir, $"{tag}_{slot}.*")) File.Delete(old);
+            return Path.Combine(Dir, $"{tag}_{slot}{extension}");
+        }
+
+        private static void Save(SKBitmap image, string path)
+        {
+            using var stream = File.Create(path);
+            image.Encode(stream, SKEncodedImageFormat.Png, 100);
+        }
+
+        // decode straight to the normal 32-bit format, so grayscale/indexed images resize and draw like any other
+        private static SKBitmap Decode(string path)
+        {
+            using var codec = SKCodec.Create(path) ?? throw new InvalidDataException("Can't read image: " + path);
+            return SKBitmap.Decode(codec, codec.Info.WithColorType(SKImageInfo.PlatformColorType).WithAlphaType(SKAlphaType.Premul))
+                ?? throw new InvalidDataException("Can't decode image: " + path);
+        }
+
+        // the user's current wallpaper, whatever it is; null if there isn't one
+        private static SKBitmap? TryLoad(string? path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            if (path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) && (path = XmlImage(path)) == null) return null;
+            try { return Decode(path); } catch { }
+            if (!OperatingSystem.IsLinux()) return null;
+            // formats Skia can't read (jxl, svg, ...): convert with gdk-pixbuf, the same loader the desktop itself uses
+            try
+            {
+                string png = Path.Combine(Path.GetTempPath(), "wallmod_current.png");
+                Run("gdk-pixbuf-thumbnailer", "-s", "16384", path, png);
+                return Decode(png);
+            }
+            catch { return null; }
+        }
+
+        // GNOME slideshow / day-night .xml wallpapers: the first still image, in its biggest size
+        private static string? XmlImage(string path)
+        {
+            try
+            {
+                var doc = XDocument.Load(path);
+                var file = doc.Descendants("static").Elements("file").FirstOrDefault() ?? doc.Descendants("file").FirstOrDefault();
+                var best = file?.Elements("size").OrderByDescending(s => (int?)s.Attribute("width") ?? 0).FirstOrDefault() ?? file;
+                return best?.Value.Trim();
+            }
+            catch { return null; }
+        }
+
+        private static string ToUri(string path) => new Uri(path).AbsoluteUri.Replace("'", "%27");
+
+        // runs the program directly (no shell), so paths with spaces/quotes can't break anything; throws if it fails
+        private static string Run(string fileName, params string[] args)
+        {
+            var info = new ProcessStartInfo(fileName) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+            foreach (var a in args) info.ArgumentList.Add(a);
+
+            using var process = Process.Start(info) ?? throw new Exception("Failed to start " + fileName);
+            var error = process.StandardError.ReadToEndAsync();
             string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
 
             if (process.ExitCode != 0)
-            {
-                throw new Exception($"Command failed (exit={process.ExitCode}): {errTask.Result}");
-            }
-
-            Debug.WriteLine($"{fileName} output: {output}");
+                throw new Exception($"{fileName} failed (exit {process.ExitCode}): {error.Result}");
+            return output;
         }
 
         #endregion
     }
+
 }

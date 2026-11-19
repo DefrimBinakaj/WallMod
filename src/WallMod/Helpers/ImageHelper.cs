@@ -128,10 +128,14 @@ public class ImageHelper
         using (resizedBitmap) return resizedBitmap == null ? null : ToBitmap(EncodeJpeg(resizedBitmap));
     }
 
-    // full-resolution image for the preview pane
-    public static Bitmap GetBitmapFromPath(string filePath)
+    // image for the preview pane, decoded no wider than maxWidth (big jpegs decode straight at 1/2, 1/4 or 1/8 size)
+    public static Bitmap GetBitmapFromPath(string filePath, int maxWidth)
     {
-        if (File.Exists(filePath)) return new Bitmap(filePath);
+        if (File.Exists(filePath))
+        {
+            using var stream = File.OpenRead(filePath);
+            return Bitmap.DecodeToWidth(stream, maxWidth, BitmapInterpolationMode.HighQuality);
+        }
         else
         {
             Debug.WriteLine("!!!!! " + filePath + " doesnt exist");
