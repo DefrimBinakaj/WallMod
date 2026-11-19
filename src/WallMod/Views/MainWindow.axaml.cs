@@ -201,7 +201,7 @@ public partial class MainWindow : Window
         if (sender is ListBox { SelectedItem: Wallpaper wallpaper } && DataContext is MainWindowViewModel vm) vm.ImageDoubleTapped(wallpaper);
     }
 
-    // also called by the history view when one of its images is clicked
+    // also used by HistoryView
     public async Task HandleImageSelected(Wallpaper wallpaper)
     {
         // if user clicked a diff wallpaper than before, reset rect and disable set button
@@ -348,7 +348,7 @@ public partial class MainWindow : Window
         DragRectHandle.IsVisible = true;
     }
 
-    // pointer pressed -> decide drag vs resize
+    // decide drag vs resize
     private void DragRect_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         _isPointerDown = true;
@@ -369,7 +369,7 @@ public partial class MainWindow : Window
         double rectRight = _rectStartX + _rectStartWidth;
         double rectBottom = _rectStartY + _rectStartHeight;
 
-        // near the bottom-right corner = resize, anywhere else = drag
+        // bottom-right corner = resize, anywhere else = drag
         bool nearCorner = Math.Abs(pos.X - rectRight) < CornerHitSize && Math.Abs(pos.Y - rectBottom) < CornerHitSize;
         _operation = nearCorner ? RectOperation.Resizing : RectOperation.Dragging;
     }
@@ -450,7 +450,6 @@ public partial class MainWindow : Window
         if (vm.SelectedWallpaperStyle == "Custom Area") ShowDraggableRectangle(monitor);
     }
 
-    // no monitor highlighted + set button off
     private void UnselectAllPreviewMonitors()
     {
         (DataContext as MainWindowViewModel)?.UnselectAllMonitors();
@@ -461,7 +460,7 @@ public partial class MainWindow : Window
         if (sender is not RadioButton { IsChecked: true } || DataContext is not MainWindowViewModel vm) return;
 
         vm.AllMonitorsMode = false;
-        UnselectAllPreviewMonitors(); // also turns the set button off until a monitor is picked
+        UnselectAllPreviewMonitors();
         ResetRectangle();
     }
 
@@ -521,8 +520,7 @@ public partial class MainWindow : Window
     }
 
 
-    // converts the current DragRect to original-image pixels (plus the monitor it targets)
-    // and stores it in the VM, so add-to-queue can snapshot it without touching controls
+    // DragRect -> original-image pixels, stored in the vm so add-to-queue can use it
     private void UpdatePendingCropInVm()
     {
         if (DataContext is not MainWindowViewModel vm) return;

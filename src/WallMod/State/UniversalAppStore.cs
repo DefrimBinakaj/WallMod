@@ -17,8 +17,7 @@ public class UniversalAppStore : ViewModelBase
     SettingsHistoryHelper settingsHistoryHelper = new SettingsHistoryHelper();
 
 
-    // loads every saved setting once, when the store is first created (at startup, right before the main window).
-    // fields are set directly so nothing gets saved straight back
+    // loads the saved settings (fields set directly so nothing gets saved back)
     public UniversalAppStore()
     {
         bool boolSetting(string key) => bool.Parse(settingsHistoryHelper.GetSettingEntry(key));
@@ -74,7 +73,7 @@ public class UniversalAppStore : ViewModelBase
 
     // =======================================================
     // FILTERS
-    // [ the main vm re-runs applyAllFilters() when these change ] ; each one is saved when it changes
+    // [ filters in vm must have applyAllFilters() ]
     private string filterSearchText = "";
     public string FilterSearchText { get => filterSearchText; set { if (SetProperty(ref filterSearchText, value)) settingsHistoryHelper.UpdateSetting("SearchFilter", value); } }
 
@@ -118,7 +117,7 @@ public class UniversalAppStore : ViewModelBase
 
 
     // =======================================================
-    // SETTINGS (the saved ones are written to the settings json when they change)
+    // SETTINGS
     private bool mainGridVisibility = true;
     public bool MainGridVisibility { get => mainGridVisibility; set => SetProperty(ref mainGridVisibility, value); }
 

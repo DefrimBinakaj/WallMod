@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         uniVM.PropertyChanged += (_, e) =>
         {
-            // mirror every store change onto the same-named proxy here (theme colours, view visibility, progress, ...)
+            // store changes reach the proxies here
             OnPropertyChanged(e.PropertyName);
 
             // hardcoded re-exec of selectDirec in order to change foldercount for all
@@ -50,7 +50,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // set default img
         CurrentWallpaperPreview = new Bitmap(AssetLoader.Open(new Uri("avares://Wallmod/Assets/placeholder-icon.png")));
 
-        // saved settings (incl. remembered filters) are already loaded by the store, so the folder opens already filtered
+        // settings are already loaded by the store
         if (uniVM.AutoOpenLastDirectory)
         {
             string previousDir = settingsHistoryHelper.GetSettingEntry("LastChosenDirectory");
@@ -65,7 +65,7 @@ public partial class MainWindowViewModel : ViewModelBase
             UpdateQueueCount();
             if (!isRestoringQueue)
             {
-                queueHistoryHelper.SaveQueue(uniVM.WallpaperQueue); // add/remove/reorder/clear all persist
+                queueHistoryHelper.SaveQueue(uniVM.WallpaperQueue);
                 RefreshTileBadges();
             }
         };
@@ -77,10 +77,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // UI variables ------------------------------------------------------------------------------
 
-    // store proxies: the store raises the change, the constructor passes it on
+    // store proxies
     public bool MainGridVisibility { get => uniVM.MainGridVisibility; set => uniVM.MainGridVisibility = value; }
     public bool SettingsViewVisibility { get => uniVM.SettingsViewVisibility; set => uniVM.SettingsViewVisibility = value; }
-    public bool StayRunningInBackground => uniVM.StayRunningInBackground; // read by App.axaml.cs when the window closes
+    public bool StayRunningInBackground => uniVM.StayRunningInBackground; // used by App.axaml.cs
     public bool UpdateAvailableVisible => uniVM.UpdateAvailableVisible;
     public Color SelectedBackgroundColour => uniVM.SelectedBackgroundColour;
     public Color SelectedPrimaryAccentColour => uniVM.SelectedPrimaryAccentColour;
@@ -90,12 +90,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
     // enlarge ============================================================
-    // shows the real file at full res. it's decoded off the UI thread and only shown once it's fully decoded (null = closed)
+    // full-res image, shown once it's decoded (null = closed)
 
     private Bitmap? enlargedWallpaper;
     public Bitmap? EnlargedWallpaper { get => enlargedWallpaper; set { if (SetProperty(ref enlargedWallpaper, value)) OnPropertyChanged(nameof(MainGridOpacity)); } }
 
-    // the main grid hides behind the enlarged image
     public double MainGridOpacity => EnlargedWallpaper != null ? 0.01 : 1;
 
     public bool EnlargeRequested { get; private set; }
@@ -109,7 +108,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             var fullRes = await Task.Run(() => new Bitmap(path));
             if (EnlargeRequested && EnlargedWallpaper == null) EnlargedWallpaper = fullRes;
-            else fullRes.Dispose(); // closed while it was still loading
+            else fullRes.Dispose(); // closed while loading
         }
         catch (Exception ex)
         {
@@ -117,7 +116,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    // full res is ~130MB for an 8k image, so it's freed as soon as it closes
+    // frees the full-res image
     public void CloseEnlarged()
     {
         EnlargeRequested = false;
@@ -137,7 +136,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
 
     // preview button states ============================================================
-    // the fav and mirror buttons get an accent background while they're on, transparent when off
+    // accent while on, transparent while off
 
     private Color favouriteButtonColour = Colors.Transparent;
     public Color FavouriteButtonColour { get => favouriteButtonColour; set => SetProperty(ref favouriteButtonColour, value); }
@@ -145,7 +144,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private Color mirrorButtonColour = Colors.Transparent;
     public Color MirrorButtonColour { get => mirrorButtonColour; set => SetProperty(ref mirrorButtonColour, value); }
 
-    // number badge on the queue button
+    // queue button badge
     public void UpdateQueueCount()
     {
         QueueCount = LastSelectedWallpaper == null ? 0 : uniVM.WallpaperQueue.Count(w => w.FilePath == LastSelectedWallpaper.FilePath);
@@ -173,7 +172,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (originalBeforeMirror != null)
         {
-            // currently mirrored -> restore the original gallery object
+            // un-mirror
             LastSelectedWallpaper = originalBeforeMirror;
             originalBeforeMirror = null;
         }
@@ -182,7 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
             string? mirroredPath = ImageHelper.GetMirroredCopy(LastSelectedWallpaper.FilePath);
             if (mirroredPath == null) return;
 
-            // build the mirrored stand-in; same dims/name/date/colour so UI text stays identical
+            // same name/size/date/colour as the original
             var mirroredThumbnail = new ImageHelper().getWallpaperObjectFromPath(mirroredPath).ImageThumbnailBitmap;
 
             originalBeforeMirror = LastSelectedWallpaper;
@@ -199,7 +198,7 @@ public partial class MainWindowViewModel : ViewModelBase
             };
         }
 
-        CurrentWallpaperPreview = await GetPreview(LastSelectedWallpaper); // un-mirroring comes straight from the cache
+        CurrentWallpaperPreview = await GetPreview(LastSelectedWallpaper);
         UpdateMirrorButtonColour();
     }
 
@@ -207,15 +206,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // autoset queue ============================================================
 
-    // Autoset button: opens / closes the autoset (queue) view
+    // Autoset button
     [RelayCommand] public void autoSetNavCommand() => IsAutoSetVisible = !IsAutoSetVisible;
 
-    // on startup: puts the saved queue back, each item with its monitor badge
+    // loads the saved queue on startup
     private async void RestoreQueueFromHistory()
     {
         try
         {
-            var saved = await Task.Run(() => queueHistoryHelper.LoadQueue()); // thumbnails off the UI thread
+            var saved = await Task.Run(() => queueHistoryHelper.LoadQueue());
 
             isRestoringQueue = true;
             foreach (var wp in saved)

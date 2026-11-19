@@ -14,8 +14,7 @@ namespace WallMod.ViewModels;
 public partial class MainWindowViewModel
 {
 
-    // set of styles available (eg. fill, fit, tile, etc)
-    // styles are drawn into a monitor-sized image per monitor (same result on Windows + Linux) ; Custom Area = drag rect
+    // styles for all monitors / one monitor (Custom Area = drag rect)
     private static readonly string[] AllMonitorStyles = { "Fill", "Fit", "Stretch", "Tile", "Center", "Span" };
     private static readonly string[] OneMonitorStyles = { "Custom Area", "Fill", "Fit", "Stretch", "Tile", "Center" };
     private string lastAllMonitorsStyle = "Fill";
@@ -48,12 +47,12 @@ public partial class MainWindowViewModel
     private bool isAutoSetVisible;
     public bool IsAutoSetVisible { get => isAutoSetVisible; set => SetProperty(ref isAutoSetVisible, value); }
 
-    // how many times the selected image is already in the queue (badge on the queue button)
+    // badge on the queue button
     private int queueCount;
     public int QueueCount { get => queueCount; set { if (SetProperty(ref queueCount, value)) OnPropertyChanged(nameof(QueueButtonTip)); } }
     public string QueueButtonTip => QueueCount > 0 ? $"Add To Queue (Q) · {QueueCount} already in queue" : "Add To Queue (Q)";
 
-    // "Added to queue · #N" beside the Autoset button for a few secs (text stays put while it fades out)
+    // "Added to queue · #N" note beside the Autoset button
     private string queueAddedText = "";
     public string QueueAddedText { get => queueAddedText; set => SetProperty(ref queueAddedText, value); }
 
@@ -62,7 +61,7 @@ public partial class MainWindowViewModel
 
     public bool SetBackgroundButtonEnabled { get => uniVM.SetBackgroundButtonEnabled; set => uniVM.SetBackgroundButtonEnabled = value; }
 
-    // All toggle on = set every monitor ; off = one monitor
+    // All = every monitor, One = one monitor
     private bool allMonitorsMode;
     public bool AllMonitorsMode
     {
@@ -70,7 +69,7 @@ public partial class MainWindowViewModel
         set
         {
             if (!SetProperty(ref allMonitorsMode, value)) return;
-            if (!value) lastAllMonitorsStyle = SelectedWallpaperStyle ?? "Fill"; // remember the All style for next time
+            if (!value) lastAllMonitorsStyle = SelectedWallpaperStyle ?? "Fill"; // remember it for next time
 
             WallpaperStyleList = value ? AllMonitorStyles : OneMonitorStyles;
             SelectedWallpaperStyle = value ? lastAllMonitorsStyle : "Custom Area";
@@ -87,17 +86,16 @@ public partial class MainWindowViewModel
 
 
     // preview ==========================================================
-    // decoded at the pane's real pixel width, not the file's (enlarge loads the real file itself):
-    // jpegs decode straight at 1/2, 1/4 or 1/8 size, so a 4k image is ~4x less work in a typical pane
+    // decoded at the pane's pixel width, not the full file
 
-    // preview pane width in real pixels (set by the view on splitter / window / dpi changes)
+    // set by the view when the pane resizes
     private int previewPixelWidth = 1280;
     public int PreviewPixelWidth { get => previewPixelWidth; set { if (SetProperty(ref previewPixelWidth, value)) SharpenPreviewIfSoft(); } }
 
-    // capped at the image's own width so small images aren't upscaled
+    // never wider than the image itself
     private int PreviewDecodeWidth(Wallpaper wp) => Math.Min(wp.ImageWidth ?? PreviewPixelWidth, PreviewPixelWidth);
 
-    // recent previews by path: going back to an image, or arrowing onto a prefetched one, is instant
+    // recent previews, so going back is instant
     private readonly ConcurrentDictionary<string, Bitmap> previewCache = new();
     private const int MaxCachedPreviews = 24;
 
@@ -111,12 +109,12 @@ public partial class MainWindowViewModel
             var bitmap = ImageHelper.GetBitmapFromPath(wp.FilePath, width);
             if (bitmap == null) return null;
 
-            if (previewCache.Count >= MaxCachedPreviews) previewCache.Clear(); // same simple policy as the thumbnail cache
+            if (previewCache.Count >= MaxCachedPreviews) previewCache.Clear();
             return previewCache[wp.FilePath] = bitmap;
         });
     }
 
-    // left / right neighbours decode in the background while you look at this one
+    // decode the neighbours ahead of time
     private void PrefetchNeighbours(Wallpaper wp)
     {
         int i = DisplayWallpaperList.IndexOf(wp);
@@ -127,7 +125,7 @@ public partial class MainWindowViewModel
         }
     }
 
-    // pane got wider than the current decode -> re-decode once the splitter / window settles
+    // pane got wider: decode again once resizing stops
     private int sharpenVersion;
     private async void SharpenPreviewIfSoft()
     {
@@ -144,7 +142,7 @@ public partial class MainWindowViewModel
 
     // image setting to background ============================================================
 
-    // crop currently outlined by the DragRect, in original-image pixels (null = none)
+    // crop drawn with the DragRect, in image pixels (null = none)
     private (int X, int Y, int W, int H, string MonitorId)? pendingCrop;
     public void SetPendingCrop(int x, int y, int w, int h, string monitorId) => pendingCrop = (x, y, w, h, monitorId);
     public void ClearPendingCrop() => pendingCrop = null;
@@ -163,7 +161,7 @@ public partial class MainWindowViewModel
         }
         catch (Exception ex)
         {
-            AppStorageHelper.LogCrash(ex); // eg. a linux desktop command failed ; logged instead of crashing the app
+            AppStorageHelper.LogCrash(ex);
         }
     }
 
@@ -175,7 +173,7 @@ public partial class MainWindowViewModel
 
         try
         {
-            // crop already matches the monitor's aspect, so Fill is exact (Custom Area isn't an OS style)
+            // the crop already matches the monitor's shape
             SetWallpaperHelper.SetWallpaperCropped(LastSelectedWallpaper.FilePath, "Fill", crop.MonitorId, crop.X, crop.Y, crop.W, crop.H);
 
             if (uniVM.AllowSaveHistory) wallpaperHistoryHelper.AddToHistory(LastSelectedWallpaper.FilePath);
@@ -205,7 +203,7 @@ public partial class MainWindowViewModel
 
         Wallpaper queueItem = LastSelectedWallpaper;
 
-        // a crop is active (with a real size) -> queue a copy carrying the crop, so the gallery object stays untouched
+        // a crop is drawn: queue a copy that carries it
         if (pendingCrop is { W: > 0, H: > 0 } crop)
         {
             queueItem = new Wallpaper
@@ -216,7 +214,6 @@ public partial class MainWindowViewModel
                 IsDirectory = false,
                 ImageWidth = LastSelectedWallpaper.ImageWidth,
                 ImageHeight = LastSelectedWallpaper.ImageHeight,
-                // queue shows what will actually be set; falls back to the full thumb if the crop render fails
                 ImageThumbnailBitmap = ImageHelper.GetCroppedThumbnail(LastSelectedWallpaper.FilePath, crop.X, crop.Y, crop.W, crop.H)
                                        ?? LastSelectedWallpaper.ImageThumbnailBitmap,
                 ColourCategory = LastSelectedWallpaper.ColourCategory,
@@ -230,11 +227,11 @@ public partial class MainWindowViewModel
         }
         else
         {
-            // uncropped -> autoset applies it to every monitor, so the badge shows all lit
+            // no crop: autoset uses every monitor
             queueItem.MonitorBadge = MonitorHelper.BuildMiniMonitorBadge(uniVM.MonitorList, null, "#8ccd00");
         }
 
-        uniVM.WallpaperQueue.Add(queueItem); // CollectionChanged handler updates the badge + saves
+        uniVM.WallpaperQueue.Add(queueItem);
         ShowQueueAdded(uniVM.WallpaperQueue.Count);
     }
 
@@ -268,7 +265,7 @@ public partial class MainWindowViewModel
 
     // monitors ============================================================
 
-    // selected monitor tile = accent at ~55% so the number on it stays readable
+    // selected monitor = accent at ~55%
     private string SelectedMonitorFill => Color.FromArgb(140, SelectedPrimaryAccentColour.R, SelectedPrimaryAccentColour.G, SelectedPrimaryAccentColour.B).ToString();
 
     // monitor rect tapped in UI - used for selecting monitor to set background of
@@ -292,7 +289,7 @@ public partial class MainWindowViewModel
         }
     }
 
-    // nothing selected: every monitor idle and the set button off until one is picked
+    // no monitor selected
     public void UnselectAllMonitors()
     {
         LastSelMonitor = null;

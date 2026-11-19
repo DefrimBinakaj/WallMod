@@ -23,17 +23,17 @@ public partial class MainWindowViewModel
     // cancels the running gallery load whenever a new one starts
     private CancellationTokenSource? loadCts;
 
-    // gallery fill pacing: milliseconds per tile (0 = no pacing, show tiles the instant they decode)
+    // ms between tiles appearing while a folder loads
     private const int FrameMs = 1;
 
-    // all wallpapers from a directory (never bound in XAML, so a plain list)
+    // every wallpaper in the current folder
     public List<Wallpaper> AllWallpapers { get; set; } = new List<Wallpaper>();
 
-    // current display of wallpapers after filtering; replaced wholesale by applyAllFilters
+    // what the gallery shows (after filters)
     private ObservableCollection<Wallpaper> displayWallpaperList = new();
     public ObservableCollection<Wallpaper> DisplayWallpaperList { get => displayWallpaperList; set => SetProperty(ref displayWallpaperList, value); }
 
-    // number next to the folder name; follows the Folder count setting like the per-folder badges
+    // count beside the folder name
     public int GalleryCount => uniVM.FolderCountIncludesFolders ? DisplayWallpaperList.Count : DisplayWallpaperList.Count(w => w.IsDirectory != true);
 
     // list of history wallpapers
@@ -42,7 +42,7 @@ public partial class MainWindowViewModel
     // list of recent directories (directory history)
     public ObservableCollection<DirectoryHistoryRecord> DirectoryHistoryList { get; } = new();
 
-    // holds the untouched gallery object while the mirrored copy is selected (null = not mirrored)
+    // the original wallpaper while its mirrored copy is shown
     private Wallpaper? originalBeforeMirror;
 
     private Wallpaper lastSelectedWallpaper;
@@ -57,7 +57,7 @@ public partial class MainWindowViewModel
     private bool isDirectoryHistoryOpen;
     public bool IsDirectoryHistoryOpen { get => isDirectoryHistoryOpen; set => SetProperty(ref isDirectoryHistoryOpen, value); }
 
-    // store proxies: the store raises the change, the constructor passes it on
+    // store proxies
     public double ImgLoadProgress { get => uniVM.ImgLoadProgress; set => uniVM.ImgLoadProgress = value; }
     public string CurrentSelectedDirectory { get => uniVM.CurrentSelectedDirectory; set => uniVM.CurrentSelectedDirectory = value; }
     public string CurrentSelectedDirecName { get => uniVM.CurrentSelectedDirecName; set => uniVM.CurrentSelectedDirecName = value; }
@@ -67,7 +67,7 @@ public partial class MainWindowViewModel
 
 
     // filter ==============================================================
-    // every filter re-runs applyAllFilters when it changes. the first four are saved settings, so they live in the store
+    // filters (each one re-runs applyAllFilters)
 
     public string FilterSearchText { get => uniVM.FilterSearchText; set { if (uniVM.FilterSearchText == value) return; uniVM.FilterSearchText = value; applyAllFilters(); } }
     public bool ShowFolders { get => uniVM.ShowFolders; set { if (uniVM.ShowFolders == value) return; uniVM.ShowFolders = value; applyAllFilters(); } }
@@ -83,12 +83,12 @@ public partial class MainWindowViewModel
     private bool onlyHighRes;
     public bool OnlyHighRes { get => onlyHighRes; set { if (SetProperty(ref onlyHighRes, value)) applyAllFilters(); } }
 
-    // at least as big as the largest monitor -> never upscaled anywhere
+    // at least as big as the biggest monitor
     private bool IsHighRes(Wallpaper wp) =>
         uniVM.MonitorList.Count == 0
         || (wp.ImageWidth >= uniVM.MonitorList.Max(m => m.Bounds.Width) && wp.ImageHeight >= uniVM.MonitorList.Max(m => m.Bounds.Height));
 
-    // accent funnel while anything in the filter popup is off its default (sort = Name, show folders = on)
+    // accent funnel when any filter isn't default
     public Color FilterIconColour =>
         CurrentSortChoice != "Name" || !ShowFolders || !string.IsNullOrEmpty(FilterSearchText) || CurrentAspectRatio != "All" || ColourFilter != "All" || OnlyFavourites || OnlyHighRes
             ? SelectedPrimaryAccentColour : Colors.White;
@@ -100,7 +100,7 @@ public partial class MainWindowViewModel
         IsFilterOpen = true;
     }
 
-    // search / show-folders / aspect-ratio / colour filters for one tile (folders always pass the aspect + colour filters)
+    // folders only get filtered by search and show folders
     private bool PassesFilters(Wallpaper wp) =>
         (ShowFolders || wp.IsDirectory == false)
         && (string.IsNullOrEmpty(FilterSearchText) || (wp.Name != null && wp.Name.Contains(FilterSearchText, StringComparison.OrdinalIgnoreCase)))
@@ -114,7 +114,7 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(FilterIconColour));
         var result = AllWallpapers.Where(PassesFilters).ToList();
 
-        // name/date/size/colour sort; folders always listed before images
+        // folders always go first
         var folderList = result.Where(wp => wp.IsDirectory == true);
         var imageList = result.Where(wp => wp.IsDirectory == false);
         switch (CurrentSortChoice)
@@ -135,7 +135,7 @@ public partial class MainWindowViewModel
                 folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
                 imageList = imageList.OrderBy(wp => wp.ColourCategory);
                 break;
-            case "Width": // widest (x divided by y); tiebreak by sorting by resolution afterwards
+            case "Width": // widest first, then by resolution
                 folderList = folderList.OrderBy(wp => wp.Name, StringComparer.OrdinalIgnoreCase);
                 imageList = imageList.OrderByDescending(wp => Math.Round((double)(wp.ImageWidth ?? 0) / Math.Max(1, wp.ImageHeight ?? 1), 2))
                 .ThenByDescending(wp => (wp.ImageWidth ?? 0) * (wp.ImageHeight ?? 0));
@@ -145,17 +145,16 @@ public partial class MainWindowViewModel
         galleryFill = FillGallery(folderList.Concat(imageList).ToList());
     }
 
-    // the gallery refill running right now (tiles streaming in wait for it, so their order stays right)
+    // the refill running right now
     private Task galleryFill = Task.CompletedTask;
     private int galleryFillVersion;
 
-    // every Add builds a tile on the UI thread, so do ~8ms of them per frame, then let input + drawing run.
-    // building them all in one go is what froze the window; a newer call stops an older fill
+    // adds tiles ~8ms at a time so the window doesn't freeze
     private async Task FillGallery(List<Wallpaper> ordered)
     {
         int version = ++galleryFillVersion;
         var display = new ObservableCollection<Wallpaper>();
-        display.CollectionChanged += (_, _) => OnPropertyChanged(nameof(GalleryCount)); // tiles are added after the list is set
+        display.CollectionChanged += (_, _) => OnPropertyChanged(nameof(GalleryCount)); // count follows the tiles as they're added
         DisplayWallpaperList = display;
         OnPropertyChanged(nameof(GalleryCount));
         var frame = Stopwatch.StartNew();
@@ -165,7 +164,7 @@ public partial class MainWindowViewModel
             display.Add(wp);
             if (frame.ElapsedMilliseconds < 8) continue;
 
-            await Dispatcher.Yield(); // input + rendering run first
+            await Dispatcher.Yield();
             if (version != galleryFillVersion) return;
             frame.Restart();
         }
@@ -188,7 +187,7 @@ public partial class MainWindowViewModel
         foreach (var img in result)
         {
             string selectedFilePath = img.Path.LocalPath;
-            AllWallpapers.Add(await Task.Run(() => imgHelper.getWallpaperObjectFromPath(selectedFilePath))); // decode off the UI thread
+            AllWallpapers.Add(await Task.Run(() => imgHelper.getWallpaperObjectFromPath(selectedFilePath)));
         }
 
         RefreshTileBadges();
@@ -199,14 +198,14 @@ public partial class MainWindowViewModel
 
     // select directory ==========================================================
 
-    [RelayCommand] public void selectedDirectory() => selectDirec(null); // no folder in particular -> picker
+    [RelayCommand] public void selectedDirectory() => selectDirec(null); // null = folder picker
 
     [RelayCommand]
     public void navigateToParentDirec()
     {
         string currentDir = Path.TrimEndingDirectorySeparator(CurrentSelectedDirectory);
 
-        // back from favourites -> reopen the folder favourites was opened from; otherwise -> parent folder
+        // from favourites, go back to the folder it was opened from
         string? parentDir = CurrentSelectedDirecName == "Favourites" ? currentDir : Path.GetDirectoryName(currentDir);
         if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
         {
@@ -214,20 +213,19 @@ public partial class MainWindowViewModel
         }
     }
 
-    // folder tiles show straight away, then the images stream in
     public async void selectDirec(string? direcChoice)
     {
         try
         {
             string? folderChoice = direcChoice ?? await FileExplorerHelper.PickFolder("Select an Image Directory");
-            if (folderChoice == null) return; // picker cancelled - leave the current gallery (and any running load) alone
+            if (folderChoice == null) return; // picker cancelled
 
             var token = StartNewLoad();
             uniVM.CurrentSelectedDirectory = " Loading...";
 
             ImageHelper imgHelper = new ImageHelper();
             var direcContents = await Task.Run(() => imgHelper.getDirecContents(folderChoice));
-            if (token.IsCancellationRequested) return; // user already moved on
+            if (token.IsCancellationRequested) return;
 
             if (direcContents == null) // no access to folder
             {
@@ -244,18 +242,17 @@ public partial class MainWindowViewModel
 
             await StreamImages(imgHelper, imgFiles, token);
         }
-        catch (OperationCanceledException) { } // user moved to another folder mid-load
+        catch (OperationCanceledException) { } // moved to another folder
         catch (Exception ex)
         {
             AppStorageHelper.LogCrash(ex);
         }
     }
 
-    // decoding runs flat out in the background; tiles are *shown* one every FrameMs so they stream in smoothly
+    // images decode in the background and show one every FrameMs
     private async Task StreamImages(ImageHelper imgHelper, List<FileInfo> imgFiles, CancellationToken token)
     {
-        // Name/Date order is known from the file list, so images can arrive already sorted;
-        // Size/Colour need every image decoded first, so those re-sort once at the end
+        // Name/Date can load already sorted, other sorts re-sort at the end
         string loadOrder = CurrentSortChoice == "Date" ? "Date" : "Name";
         var imgFilePaths = (loadOrder == "Date"
                 ? imgFiles.OrderByDescending(file => file.LastWriteTime)
@@ -265,30 +262,28 @@ public partial class MainWindowViewModel
         int processedFiles = 0;
         uniVM.ImgLoadProgress = imgFiles.Count == 0 ? 100 : 0;
 
-        // the clock keeps the real rate even though Windows' timer only wakes every ~15ms
         var revealClock = Stopwatch.StartNew();
         long nextRevealAt = 0;
 
-        RefreshTileBadges(); // favourites file read once per load, not once per tile
+        RefreshTileBadges();
 
         await foreach (var wallpaper in imgHelper.LoadWallpapersInOrder(imgFilePaths, token))
         {
-            // wait for this tile's turn (hidden tiles skip the wait)
             if (PassesFilters(wallpaper))
             {
                 long now = revealClock.ElapsedMilliseconds;
-                if (now - nextRevealAt > 30) nextRevealAt = now; // coming out of a stall (eg. one slow image): stream the backlog, don't dump it
+                if (now - nextRevealAt > 30) nextRevealAt = now; // catch up after a slow image
                 if (nextRevealAt > now) await Task.Delay((int)(nextRevealAt - now), token);
                 nextRevealAt += FrameMs;
             }
 
-            if (token.IsCancellationRequested) return; // another folder / favourites owns the gallery now
+            if (token.IsCancellationRequested) return;
 
             SetTileBadges(wallpaper);
             AllWallpapers.Add(wallpaper);
-            if (PassesFilters(wallpaper)) // re-checked: filters may have changed during the wait
+            if (PassesFilters(wallpaper)) // filters may have changed while waiting
             {
-                while (!galleryFill.IsCompleted) await galleryFill; // a refill is mid-way: land after it, not inside it
+                while (!galleryFill.IsCompleted) await galleryFill; // let a refill finish first so the order stays right
                 DisplayWallpaperList.Add(wallpaper);
             }
 
@@ -296,11 +291,10 @@ public partial class MainWindowViewModel
             uniVM.ImgLoadProgress = (double)processedFiles / imgFiles.Count * 100;
         }
 
-        // tiles streamed in loadOrder; Size/Colour (or a sort picked mid-load) need the full set -> sort once now
         if (CurrentSortChoice != loadOrder) applyAllFilters();
     }
 
-    // cancels any load still running, so a slow old folder can't finish late and overwrite the newer view
+    // cancels the old load so it can't overwrite the new one
     private CancellationToken StartNewLoad()
     {
         loadCts?.Cancel();
@@ -324,13 +318,13 @@ public partial class MainWindowViewModel
 
             LastSelectedWallpaper = wallpaper;
             originalBeforeMirror = null;
-            UpdateMirrorButtonColour(); // selecting from the gallery always exits mirror mode
+            UpdateMirrorButtonColour();
 
             CurrentWallpaperPreview = await GetPreview(wallpaper);
             CurrentWallpaperName = wallpaper.Name;
             if (CurrentWallpaperPreview != null)
             {
-                // preview may be decoded smaller, so the real size comes from the wallpaper itself
+                // real size (the preview may be decoded smaller)
                 CurrentWallpaperSize = wallpaper.ImageWidth + " x " + wallpaper.ImageHeight;
 
                 string ratio = ImageHelper.GetAspectRatio(wallpaper.ImageWidth, wallpaper.ImageHeight);
@@ -365,7 +359,7 @@ public partial class MainWindowViewModel
 
     // gallery tile corner badges (favourite / queued) ============================================================
 
-    // path lookups, rebuilt by RefreshTileBadges; tiles streaming in mid-load read these per tile
+    // rebuilt by RefreshTileBadges
     private HashSet<string> favouritePaths = new HashSet<string>();
     private HashSet<string> queuedPaths = new HashSet<string>();
 
@@ -396,7 +390,7 @@ public partial class MainWindowViewModel
             return;
         }
 
-        var token = StartNewLoad(); // stops a directory load from landing on top of favourites
+        var token = StartNewLoad();
         var favWallpapers = await favouritesHelper.GetFavouriteWallpapers();
         if (token.IsCancellationRequested) return;
 
@@ -430,7 +424,7 @@ public partial class MainWindowViewModel
     [RelayCommand]
     public void directoryHistoryClicked()
     {
-        // refresh on every open; folders deleted/moved since are skipped
+        // folders deleted since are skipped
         DirectoryHistoryList.Clear();
         ImageHelper imgHelper = new ImageHelper();
         foreach (var direc in directoryHistoryHelper.LoadRecentJson().Where(direc => direc != CurrentSelectedDirectory && Directory.Exists(direc)))
@@ -443,7 +437,7 @@ public partial class MainWindowViewModel
         IsDirectoryHistoryOpen = true;
     }
 
-    // each recent-directory row binds the generated openDirectoryHistoryCommand with its path
+    // recent folder rows pass their path to openDirectoryHistoryCommand
     [RelayCommand]
     public void openDirectoryHistory(string direc)
     {
