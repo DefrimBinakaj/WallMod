@@ -82,15 +82,8 @@ public partial class SettingsViewModel : ObservableObject
     {
         uniVM.HistoryWallpaperList.Clear();
 
-        var history = wallpaperHistoryHelper.LoadHistoryJson();
-
-        foreach (var filePath in history)
-        {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-        }
+        if (File.Exists(AppStorageHelper.appWallpaperHistoryFile))
+            File.Delete(AppStorageHelper.appWallpaperHistoryFile);
     }
 
 

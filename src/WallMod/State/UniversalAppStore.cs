@@ -125,7 +125,7 @@ public class UniversalAppStore : ViewModelBase
     public bool SettingsViewVisibility { get => settingsViewVisibility; set => SetProperty(ref settingsViewVisibility, value); }
 
     private bool allowSaveHistory;
-    public bool AllowSaveHistory { get => allowSaveHistory; set => SetProperty(ref allowSaveHistory, value); }
+    public bool AllowSaveHistory { get => allowSaveHistory; set { if (SetProperty(ref allowSaveHistory, value)) settingsHistoryHelper.UpdateSetting("AllowSaveHistory", value.ToString()); } }
 
     private bool stayRunningInBackground;
     public bool StayRunningInBackground { get => stayRunningInBackground; set { if (SetProperty(ref stayRunningInBackground, value)) settingsHistoryHelper.UpdateSetting("StayRunningInBackground", value.ToString()); } }
