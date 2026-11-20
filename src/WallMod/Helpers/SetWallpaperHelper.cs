@@ -88,7 +88,8 @@ namespace WallMod.Helpers
 
             if (OperatingSystem.IsWindows()) SetWindows(img, style, mon, monitors, desktop);
             else if (OperatingSystem.IsLinux()) SetLinux(img, file, style, mon, monitors, desktop);
-            else throw new PlatformNotSupportedException("Setting wallpapers is only supported on Windows and Linux");
+            else if (OperatingSystem.IsMacOS()) SetMac(img, style, mon);
+            else throw new PlatformNotSupportedException("Setting wallpapers is only supported on Windows, Linux and macOS");
         }
 
         #region Windows
@@ -118,9 +119,11 @@ namespace WallMod.Helpers
             dw.SetWallpaper(mon.MonitorIdPath, SaveRendered(img, style, mon, background));
         }
 
-        private static string SaveRendered(SKBitmap img, string style, MonitorInfo mon, SKColor background)
+        // size = the image's pixel size, the monitor's bounds unless given (macOS bounds are points, not pixels)
+        private static string SaveRendered(SKBitmap img, string style, MonitorInfo mon, SKColor background, PixelSize? size = null)
         {
-            using var output = new SKBitmap(mon.Bounds.Width, mon.Bounds.Height);
+            var s = size ?? mon.Bounds.Size;
+            using var output = new SKBitmap(s.Width, s.Height);
             using (var c = new SKCanvas(output))
             {
                 c.Clear(background);
@@ -130,6 +133,89 @@ namespace WallMod.Helpers
             Save(output, path);
             return path;
         }
+
+        #endregion
+
+        #region macOS
+
+        // each screen is set on its own (NSWorkspace setDesktopImageURL:forScreen:), so other screens are never touched.
+        // Like Windows, the style is drawn into an image of the screen's exact pixel size and handed over as Fill, so it shows 1:1.
+        // Only the screen's current Space (virtual desktop) changes: macOS has no API for the others
+        private static void SetMac(SKBitmap img, string style, MonitorInfo mon)
+        {
+            if (!mon.MonitorIdPath.StartsWith(MonitorHelper.MacIdPrefix) || !uint.TryParse(mon.MonitorIdPath[MonitorHelper.MacIdPrefix.Length..], out uint displayId))
+                throw new ArgumentException("Not a macOS display: " + mon.MonitorIdPath);
+
+            IntPtr screen = MacScreen(displayId);
+
+            // avalonia gives macOS screens in points; the image needs real pixels (2x on retina)
+            double scale = SendDouble(screen, Sel("backingScaleFactor"));
+            var pixels = new PixelSize((int)Math.Round(mon.Bounds.Width * scale), (int)Math.Round(mon.Bounds.Height * scale));
+
+            // black around Fit/Center: macOS no longer reports the user's own fill colour
+            string path = SaveRendered(img, style, mon, SKColors.Black, pixels);
+
+            // Fill = scale proportionally (NSImageScaleProportionallyUpOrDown = 3) + allow clipping; a no-op for an exact-size image
+            IntPtr appKit = NativeLibrary.Load(AppKit);
+            IntPtr Key(string name) => Marshal.ReadIntPtr(NativeLibrary.GetExport(appKit, name)); // AppKit's NSString constants
+            IntPtr nsNumber = Class("NSNumber");
+            IntPtr options = Send(Class("NSMutableDictionary"), Sel("dictionary"));
+            SendVoid(options, Sel("setObject:forKey:"), Send(nsNumber, Sel("numberWithUnsignedInteger:"), (nuint)3), Key("NSWorkspaceDesktopImageScalingKey"));
+            SendVoid(options, Sel("setObject:forKey:"), SendBool(nsNumber, Sel("numberWithBool:"), true), Key("NSWorkspaceDesktopImageAllowClippingKey"));
+
+            IntPtr url = Send(Class("NSURL"), Sel("fileURLWithPath:"), MacString(path));
+            IntPtr workspace = Send(Class("NSWorkspace"), Sel("sharedWorkspace"));
+            if (!SendSetDesktopImage(workspace, Sel("setDesktopImageURL:forScreen:options:error:"), url, screen, options, IntPtr.Zero))
+                throw new InvalidOperationException("macOS refused the wallpaper for display " + displayId);
+        }
+
+        // the NSScreen whose NSScreenNumber is this display id
+        private static IntPtr MacScreen(uint displayId)
+        {
+            IntPtr screens = Send(Class("NSScreen"), Sel("screens"));
+            IntPtr numberKey = MacString("NSScreenNumber");
+            for (nuint i = 0, count = SendNUInt(screens, Sel("count")); i < count; i++)
+            {
+                IntPtr screen = Send(screens, Sel("objectAtIndex:"), i);
+                IntPtr number = Send(Send(screen, Sel("deviceDescription")), Sel("objectForKey:"), numberKey);
+                if (number != IntPtr.Zero && SendUInt(number, Sel("unsignedIntValue")) == displayId) return screen;
+            }
+            throw new InvalidOperationException("Display is no longer connected: " + displayId);
+        }
+
+        private static IntPtr MacString(string s)
+        {
+            IntPtr utf8 = Marshal.StringToCoTaskMemUTF8(s);
+            try { return Send(Class("NSString"), Sel("stringWithUTF8String:"), utf8); }
+            finally { Marshal.FreeCoTaskMem(utf8); }
+        }
+
+        // tells macOS WallMod is doing user-requested work, so it never gets napped (timers throttled) while hidden.
+        // NSActivityUserInitiatedAllowingIdleSystemSleep: no App Nap, but the Mac can still go to sleep. Kept for the app's lifetime
+        public static void MacBeginActivity()
+        {
+            IntPtr processInfo = Send(Class("NSProcessInfo"), Sel("processInfo"));
+            IntPtr activity = SendActivity(processInfo, Sel("beginActivityWithOptions:reason:"), 0x00EFFFFFUL, MacString("Changing wallpapers on a schedule"));
+            Send(activity, Sel("retain")); // the activity lasts as long as this object does
+        }
+
+        // Objective-C runtime (Apple's C API for calling AppKit). objc_msgSend needs one exact signature per argument/return shape
+        private const string ObjC = "/usr/lib/libobjc.A.dylib";
+        private const string AppKit = "/System/Library/Frameworks/AppKit.framework/AppKit";
+
+        [DllImport(ObjC, EntryPoint = "objc_getClass")] private static extern IntPtr Class(string name);
+        [DllImport(ObjC, EntryPoint = "sel_registerName")] private static extern IntPtr Sel(string name);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern IntPtr Send(IntPtr receiver, IntPtr selector);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern IntPtr Send(IntPtr receiver, IntPtr selector, IntPtr arg);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern IntPtr Send(IntPtr receiver, IntPtr selector, nuint arg);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern IntPtr SendBool(IntPtr receiver, IntPtr selector, [MarshalAs(UnmanagedType.I1)] bool arg);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern void SendVoid(IntPtr receiver, IntPtr selector, IntPtr arg1, IntPtr arg2);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern nuint SendNUInt(IntPtr receiver, IntPtr selector);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern uint SendUInt(IntPtr receiver, IntPtr selector);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern double SendDouble(IntPtr receiver, IntPtr selector);
+        [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern IntPtr SendActivity(IntPtr receiver, IntPtr selector, ulong options, IntPtr reason);
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool SendSetDesktopImage(IntPtr receiver, IntPtr selector, IntPtr url, IntPtr screen, IntPtr options, IntPtr error);
 
         #endregion
 

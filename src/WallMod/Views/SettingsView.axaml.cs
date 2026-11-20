@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Diagnostics;
 using WallMod.Helpers;
 using WallMod.State;
@@ -26,10 +27,18 @@ public partial class SettingsView : UserControl
 
     private async void ExecVersionCheck()
     {
-        var (fullyUpdated, _, _) = await updateVersionHelper.GetGithubVersionAndInstallLink();
-        if (fullyUpdated == false)
+        // offline / github down / etc -> dont show the update badge
+        try
         {
-            uniVM.UpdateAvailableVisible = true;
+            var (fullyUpdated, _, _) = await updateVersionHelper.GetGithubVersionAndInstallLink();
+            if (fullyUpdated == false)
+            {
+                uniVM.UpdateAvailableVisible = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("version check failed: " + ex.Message);
         }
     }
 

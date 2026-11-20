@@ -21,6 +21,9 @@ public class MonitorHelper
     public const string PrimaryStroke = "#E0B84D";
     public const string SecondaryStroke = "#B3FFFFFF";
 
+    // mac compat
+    public const string MacIdPrefix = "MAC_MON_";
+
     // monitor canvas size in the preview panel
     public static readonly double CanvasWidth = 200;
     public static readonly double CanvasHeight = 100;
@@ -142,7 +145,10 @@ public class MonitorHelper
 
         foreach (var screen in screens.All)
         {
-            string syntheticId = "LINUX_MON_" + index;
+            // macOS compat: the display's own id, which the wallpaper setter uses to find the screen
+            string syntheticId = OperatingSystem.IsMacOS() && screen.TryGetPlatformHandle() is { HandleDescriptor: "CGDirectDisplayID" } display
+                ? MacIdPrefix + (uint)display.Handle
+                : "LINUX_MON_" + index;
             index++;
 
             var info = new MonitorInfo

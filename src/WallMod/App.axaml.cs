@@ -50,13 +50,25 @@ public partial class App : Application
                 InitializeTrayIcon(mainWindow);
                 mainWindow.Closing += (_, e) =>
                 {
-                    if (((MainWindowViewModel)mainWindow.DataContext!).StayRunningInBackground)
+                    // only the window's own close button hides to tray; quitting the app (Cmd+Q on macOS) or the OS shutting down still quits
+                    if (e.CloseReason == WindowCloseReason.WindowClosing && ((MainWindowViewModel)mainWindow.DataContext!).StayRunningInBackground)
                     {
                         e.Cancel = true;
                         mainWindow.Hide();
                         Debug.WriteLine("App minimised to tray");
                     }
                 };
+
+                // macOS compat: clicking the dock icon brings the hidden window back
+                if (this.TryGetFeature<IActivatableLifetime>() is { } activatable)
+                    activatable.Activated += (_, e) =>
+                    {
+                        if (e.Kind == ActivationKind.Reopen) { mainWindow.Show(); mainWindow.WindowState = WindowState.Normal; }
+                    };
+                // macOS compat: stop App Nap from throttling autoset's timer while WallMod sits hidden in the background
+                if (OperatingSystem.IsMacOS()) SetWallpaperHelper.MacBeginActivity();
+
+
                 mainWindow.Show();
                 splash.Close();
             }, DispatcherPriority.Background);

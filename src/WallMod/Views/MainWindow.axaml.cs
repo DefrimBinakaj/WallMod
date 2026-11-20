@@ -44,6 +44,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        AppIcon.IsVisible = !OperatingSystem.IsMacOS(); // macOS compat - it puts its window buttons in that corner
+
         DataContext = vm;
 
         this.SizeChanged += OnWindowSizeChanged;

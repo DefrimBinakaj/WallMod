@@ -1,4 +1,6 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using System;
 using System.Collections.Generic;
@@ -17,10 +19,14 @@ namespace WallMod.Helpers;
 public class FileExplorerHelper
 {
 
+
+    // mac compat
+    public static IStorageProvider MainStorage => ((IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!).MainWindow!.StorageProvider;
+
     // folder picker shared by the gallery + random autoset; null = cancelled
     public static async Task<string?> PickFolder(string title)
     {
-        var folderOpenPick = await new Window().StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        var folderOpenPick = await MainStorage.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = title,
             AllowMultiple = false
@@ -45,7 +51,7 @@ public class FileExplorerHelper
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Process.Start("open", "-R " + filePath);
+                Process.Start("open", new[] { "-R", filePath });
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -74,7 +80,7 @@ public class FileExplorerHelper
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Process.Start("open", $"\"{folderPath}\"");
+                Process.Start("open", new[] { folderPath });
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {

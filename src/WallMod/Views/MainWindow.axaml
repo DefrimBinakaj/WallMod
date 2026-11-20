@@ -70,11 +70,17 @@
 			</ExperimentalAcrylicBorder.Material>
 		</ExperimentalAcrylicBorder>
 
-		<Image Source="avares://Wallmod/Assets/wallmodicon.ico"
+		<Image x:Name="AppIcon"
+			   Source="avares://Wallmod/Assets/wallmodicon.ico"
 			   Width="18" Height="18"
 			   HorizontalAlignment="Left" VerticalAlignment="Top"
 			   Margin="8,8,0,0"
 			   IsHitTestVisible="False"/>
+
+		<!-- the empty strip above the panes = window drag area. macOS needs it marked (it has no drawn title bar there);
+		     Windows already drags here, so nothing changes for it -->
+		<Border Height="24" VerticalAlignment="Top" Background="Transparent"
+				WindowDecorationProperties.ElementRole="TitleBar"/>
 
 		<Grid Margin="24" x:Name="MainGrid" IsVisible="{Binding MainGridVisibility}" Opacity="{Binding MainGridOpacity}">
 			<Grid.ColumnDefinitions>

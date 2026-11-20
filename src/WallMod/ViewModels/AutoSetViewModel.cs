@@ -327,27 +327,35 @@ public partial class AutoSetViewModel : ObservableObject
 
                 var wp = WallpaperQueue.First();
 
-                // cropped item -> apply only to the monitor the crop was drawn for, if it's still connected
-                bool setCropped = false;
-                if (wp.CropX is int cx && wp.CropY is int cy &&
-                    wp.CropWidth is int cw && wp.CropHeight is int ch &&
-                    cw > 0 && ch > 0 && wp.CropMonitorId is string cropMonId)
+                // a failed set (file deleted, display unplugged, ...) gets logged and the queue moves on, instead of crashing the app
+                try
                 {
-                    var targetMon = uniVM.MonitorList.FirstOrDefault(m => m.MonitorIdPath == cropMonId);
-                    if (targetMon != null)
+                    // cropped item -> apply only to the monitor the crop was drawn for, if it's still connected
+                    bool setCropped = false;
+                    if (wp.CropX is int cx && wp.CropY is int cy &&
+                        wp.CropWidth is int cw && wp.CropHeight is int ch &&
+                        cw > 0 && ch > 0 && wp.CropMonitorId is string cropMonId)
                     {
-                        SetWallpaperHelper.SetWallpaperCropped(wp.FilePath, "Fill", targetMon.MonitorIdPath, cx, cy, cw, ch);
-                        setCropped = true;
+                        var targetMon = uniVM.MonitorList.FirstOrDefault(m => m.MonitorIdPath == cropMonId);
+                        if (targetMon != null)
+                        {
+                            SetWallpaperHelper.SetWallpaperCropped(wp.FilePath, "Fill", targetMon.MonitorIdPath, cx, cy, cw, ch);
+                            setCropped = true;
+                        }
+                    }
+
+                    // uncropped item, or the crop's monitor is gone -> full image on all monitors as before
+                    if (!setCropped)
+                    {
+                        foreach (var mon in uniVM.MonitorList)
+                        {
+                            SetWallpaperHelper.SetWallpaper(wp.FilePath, "Fill", mon.MonitorIdPath);
+                        }
                     }
                 }
-
-                // uncropped item, or the crop's monitor is gone -> full image on all monitors as before
-                if (!setCropped)
+                catch (Exception ex)
                 {
-                    foreach (var mon in uniVM.MonitorList)
-                    {
-                        SetWallpaperHelper.SetWallpaper(wp.FilePath, "Fill", mon.MonitorIdPath);
-                    }
+                    AppStorageHelper.LogCrash(ex);
                 }
 
                 WallpaperQueue.RemoveAt(0);
@@ -404,30 +412,38 @@ public partial class AutoSetViewModel : ObservableObject
 
             if (RandDirImageCollection.Count > 0 && TotalSeconds >= 1)
             {
-                // choose between one rand image for all monitors, or diff rand for each monitor
-                if (RandomizeEachMonitor == true)
+                // a failed set gets logged and the queue moves on, instead of crashing the app
+                try
                 {
-                    // make different rand image for each monitor
-                    foreach (var mon in uniVM.MonitorList)
+                    // choose between one rand image for all monitors, or diff rand for each monitor
+                    if (RandomizeEachMonitor == true)
                     {
+                        // make different rand image for each monitor
+                        foreach (var mon in uniVM.MonitorList)
+                        {
+                            var randInit = new Random();
+                            var randWallpaperChoice = RandDirImageCollection.OrderBy(rnd => randInit.Next()).First();
+                            SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
+                            RandDirImageCollection.Remove(randWallpaperChoice);
+                            RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
+                        }
+                    }
+                    else if (RandomizeEachMonitor == false)
+                    {
+                        // use same image for all monitors
                         var randInit = new Random();
                         var randWallpaperChoice = RandDirImageCollection.OrderBy(rnd => randInit.Next()).First();
-                        SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
+                        foreach (var mon in uniVM.MonitorList)
+                        {
+                            SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
+                        }
                         RandDirImageCollection.Remove(randWallpaperChoice);
                         RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
                     }
                 }
-                else if (RandomizeEachMonitor == false)
+                catch (Exception ex)
                 {
-                    // use same image for all monitors
-                    var randInit = new Random();
-                    var randWallpaperChoice = RandDirImageCollection.OrderBy(rnd => randInit.Next()).First();
-                    foreach (var mon in uniVM.MonitorList)
-                    {
-                        SetWallpaperHelper.SetWallpaper(randWallpaperChoice.FilePath, "Fill", mon.MonitorIdPath);
-                    }
-                    RandDirImageCollection.Remove(randWallpaperChoice);
-                    RandWallpapersRemaining = "Wallpapers Remaining = " + RandDirImageCollection.Count.ToString();
+                    AppStorageHelper.LogCrash(ex);
                 }
             }
 

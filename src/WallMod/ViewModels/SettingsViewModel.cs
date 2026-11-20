@@ -108,8 +108,15 @@ public partial class SettingsViewModel : ObservableObject
 
     public async void UpdateApp()
     {
-        var versionList = updateVersionHelper.GetGithubVersionAndInstallLink();
-        await updateVersionHelper.ExecuteAppUpdate(versionList.Result.Item2, versionList.Result.Item3);
+        try
+        {
+            var versionList = await updateVersionHelper.GetGithubVersionAndInstallLink();
+            await updateVersionHelper.ExecuteAppUpdate(versionList.Item2, versionList.Item3);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("update failed: " + ex.Message);
+        }
     }
 
 

@@ -177,7 +177,7 @@ public partial class MainWindowViewModel
     [RelayCommand]
     public async Task uploadClicked()
     {
-        var result = await new Window().StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var result = await FileExplorerHelper.MainStorage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             FileTypeFilter = new List<FilePickerFileType> { FilePickerFileTypes.ImageAll },
             AllowMultiple = true

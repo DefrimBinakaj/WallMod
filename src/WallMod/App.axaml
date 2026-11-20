@@ -1,12 +1,17 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 			 xmlns:converters="using:WallMod.Converters"
+			 Name="WallMod"
              x:Class="WallMod.App"
              xmlns:local="using:WallMod"
 			 xmlns:vm="using:WallMod.ViewModels"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
+	<NativeMenu.Menu>
+		<NativeMenu />
+	</NativeMenu.Menu>
+	
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
