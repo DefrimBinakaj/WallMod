@@ -263,8 +263,7 @@
 														<TextBlock Grid.Column="2" FontSize="12" MaxWidth="320" TextTrimming="PrefixCharacterEllipsis" Margin="8,5,6,5"
 																   Foreground="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).SelectedPrimaryAccentColour, Converter={StaticResource ColorToBrushConverter}}">
 															<!-- keep this weird formatting for the Runs so that theres no space between the two -->
-															<Run Text="{Binding ParentPath}" Foreground="White" />
-															<Run Text="{Binding FolderName}"/>
+															<Run Text="{Binding ParentPath}" Foreground="White" /><Run Text="{Binding FolderName}"/>
 														</TextBlock>
 													</Grid>
 												</Button>
