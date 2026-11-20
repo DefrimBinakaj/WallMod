@@ -10,8 +10,9 @@ jobs:
   build:
 
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         configuration: [Release]
 
     runs-on: ${{ matrix.os }}
@@ -40,7 +41,8 @@ jobs:
 
     # -v normal + -tl:off = full plain-text output, so a failure shows its real error
     - name: Build
-      run: dotnet build ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore -v normal -tl:off
+      shell: bash
+      run: dotnet build ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore -v normal -tl:off -m:1
 
     - name: Execute unit tests
       run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build
