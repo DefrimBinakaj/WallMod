@@ -239,7 +239,7 @@ public class UniversalAppStore : ViewModelBase
 
 
     // version ===================================================
-    private string appNameVersion = "v0.3.2";
+    private string appNameVersion = "v0.4.1";
     public string AppNameVersion { get => appNameVersion; set => SetProperty(ref appNameVersion, value); }
 
     private bool updateAvailableVisible = false;

@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. v0.4.1)"
+        required: true
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: write # lets the last job create the tag and release
+
+env:
+  PROJECT: src/WallMod/WallMod.csproj
+  VERSION: ${{ inputs.version || github.ref_name }}
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 8.0.x
+    - name: Publish
+      run: dotnet publish ${{ env.PROJECT }} -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o out
+    - name: Name it
+      shell: bash
+      run: mv out/WallMod.exe WallMod-Windows_x64.exe
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows
+        path: WallMod-Windows_x64.exe
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 8.0.x
+    - name: Publish
+      run: dotnet publish ${{ env.PROJECT }} -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o out
+    - name: Name it
+      run: mv out/WallMod WallMod-Linux_x64
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux
+        path: WallMod-Linux_x64
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 8.0.x
+    - name: Publish
+      run: dotnet publish ${{ env.PROJECT }} -c Release -r osx-${{ matrix.arch }} --self-contained -o out
+    - name: Build .app
+      run: |
+        mkdir -p WallMod.app/Contents/MacOS WallMod.app/Contents/Resources
+        cp -R out/ WallMod.app/Contents/MacOS/
+        sed "s/__VERSION__/${VERSION#v}/g" build/macos/Info.plist > WallMod.app/Contents/Info.plist
+    - name: Ad-hoc sign
+      run: codesign --force --deep --sign - WallMod.app
+    - name: Zip
+      run: ditto -c -k --keepParent WallMod.app WallMod-macOS_${{ matrix.arch }}.zip
+    - uses: actions/upload-artifact@v4
+      with:
+        name: macos-${{ matrix.arch }}
+        path: WallMod-macOS_${{ matrix.arch }}.zip
+
+  release:
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        merge-multiple: true
+    - name: Create GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
